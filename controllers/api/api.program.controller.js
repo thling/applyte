@@ -15,7 +15,7 @@ var listBySchoolId = function *() {
 }
 
 /**
- * List all programs from a specified school by school ID
+ * List all programs from a specified school by school name
  */
 var listBySchoolName = function *() {
     this.body = "hello world for " + this.params.schoolname;
