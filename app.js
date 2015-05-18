@@ -8,18 +8,18 @@ var koa = require('koa');
 var path = require('path');
 
 var app = module.exports = koa();
-var config = require('./config/configure.js');
+var config = require('./config');
 
 // Requires from the root (the file which 'npm start' script calls)
-global.rootreq = function(reqPath) {
+global.rootreq = function (reqPath) {
     return require(path.join(__dirname, reqPath));
-}
+};
 
 // Logger
 app.use(logger());
 
 // JSON prettifier
-if (config.jsonPrettify.prettify == true) {
+if (config.jsonPrettify.prettify === true) {
     app.use(json(
         {
             pretty: true,

@@ -11,14 +11,14 @@ function request() {
 
 describe('API Routing tests', function() {
     describe('Outer API Routes', function() {
-        describe('GET /api', function(done) {
+        describe('GET /api', function() {
             it('Should return 404', function(done) {
                 request()
                     .get('/api')
                     .expect(404, done);
             });
         });
-    })
+    });
 
     describe('Program API Routes', function() {
         describe('GET /api/program', function() {

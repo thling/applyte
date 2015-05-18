@@ -12,4 +12,4 @@ module.exports = function(router) {
 
     // List all availalbe programs from a school by school name
     router.get('/api/program/school/name/:schoolname', programApi.listBySchoolName);
-}
+};
