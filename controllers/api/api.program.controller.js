@@ -1,9 +1,11 @@
 'use strict';
 
+var r = require(basedir + 'models/r');
+
 /**
  * Lists all the programs we have
  */
-var list = function *() {
+ module.exports.list = function *() {
     this.body = [
         {
             schoolId: '123',
@@ -19,7 +21,7 @@ var list = function *() {
 /**
  * List all programs from a specified school by school ID
  */
-var listBySchoolId = function *() {
+ module.exports.listBySchoolId = function *() {
     this.body = {
         schoolId: this.params.schoolid,
         value: 'hello world for id'
@@ -29,14 +31,9 @@ var listBySchoolId = function *() {
 /**
  * List all programs from a specified school by school name
  */
-var listBySchoolName = function *() {
+ module.exports.listBySchoolName = function *() {
     this.body = {
         schoolName: this.params.schoolname,
         value: 'hello world for name'
     };
 };
-
-// Export our methods
-module.exports.list = list;
-module.exports.listBySchoolId = listBySchoolId;
-module.exports.listBySchoolName = listBySchoolName;

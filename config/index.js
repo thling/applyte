@@ -1,22 +1,28 @@
 'use strict';
-var _ = require('lodash');
 
-// Default configurations
 var defaults = require('./config.defaults');
-
-// List of configuration per environment
-var config = require('./config');
+var config   = require('./config');
+var path     = require('path');
+var _        = require('lodash');
 
 // Decide which environment this app runs on
 var nodeEnv = process.env.NODE_ENV;
 
-// Fallback to safe mode to avoid leaking anything while support minimal operation
+// If the node environment is not defined, kill process (need better way)
 // This SHOULD NOT happen
 if (_.isUndefined(nodeEnv)) {
-    console.log('Cannot find NODE_ENV environment variable; default to safemode');
-    console.log('Please shutdown the app and set the NODE_ENV environment variable immediately');
-    nodeEnv = 'safemode';
+    console.error('Cannot find NODE_ENV environment variable; default to safemode');
+    console.error('Please shutdown the app and set the NODE_ENV environment variable immediately');
+    process.exit();
 }
+
+// Configure the basedir global variable
+global.basedir = path.resolve(__dirname, '../') + '/';
+
+// Requires from the root (the file which 'npm start' script calls)
+global.rootreq = function (reqPath) {
+    return require(basedir + reqPath);
+};
 
 // Export the correct configuration)
 module.exports = _.assign(defaults, config[nodeEnv]);

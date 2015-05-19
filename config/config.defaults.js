@@ -1,11 +1,17 @@
+'use strict';
+
 /**
  * Default configurations.
  *
  * Everything here will be overwritten by config.js if same configuration is available.
  */
 module.exports = {
-        // MongoDB URL
-        db: 'mongodb://localhost:27017',
+        // RethinkDB development connection
+        rethink: {
+            host: 'localhost',  // Hostname
+            port: 28015,        // Port for DB connection
+            db: 'school_app'    // Default database name
+        },
 
         // Server port to listen to
         port: 3000,

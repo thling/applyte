@@ -1,6 +1,6 @@
 'use strict';
 var superagent = require('supertest');
-var app = require('../app');
+var app        = require('../app');
 
 /**
  * Creates superagent function, allows us to test HTTP requests

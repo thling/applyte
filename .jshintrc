@@ -21,6 +21,7 @@
     "noyield": true,
     "globals": {
         "rootreq": true,
+        "basedir": true,
         "describe": true,
         "it": true
     }

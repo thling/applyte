@@ -1,7 +1,7 @@
 'use strict';
 
 // Routing for programs
-var programApi = rootreq('controllers/api/api.program.controller');
+var programApi = require(basedir + 'controllers/api/api.program.controller');
 
 module.exports = function(router) {
     // List all available programs

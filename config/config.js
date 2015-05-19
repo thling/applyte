@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * Per envrionment configuration.
  *
@@ -18,8 +20,12 @@ module.exports = {
         // These configurations will be used on production server
         production: {
             mode: 'production',
-            db: process.env.MONGOLAB_URI,		// Production DB environment variable
-            port: process.env.PORT 			// Production port environment variable
+            rethink: {
+                host: process.env.RETHINKDB_HOST,
+                port: process.env.RETHINKDB_PORT,
+                db: process.env.RETHINKDB_DBNAME
+            },
+            port: process.env.PORT
         },
 
         safemode: {
