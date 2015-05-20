@@ -1,14 +1,14 @@
 'use strict';
 
 var r = require('../models/r')();
-var tableName = 'schools';
+var TABLE = 'schools';
 
 module.exports.up = function(next) {
-    r.tableCreate(tableName)
+    r.tableCreate(TABLE)
         .run(next);
 };
 
 module.exports.down = function(next) {
-    r.tableDrop(tableName)
+    r.tableDrop(TABLE)
         .run(next);
 };
