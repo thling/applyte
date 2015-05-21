@@ -1,15 +1,22 @@
 'use strict';
 
 var _       = require('lodash');
-var schemas = require('./schemas');
 var r       = require('./r')();
+var schemas = require('./schemas');
 
 const TABLE = 'schools';
 const SCHEMA = schemas.schools;
 
 var School = function (properties) {
-    _.assign(this, properties);
+    this._data = {};
+    _.assign(this._data, _.pick(properties, _.keys(SCHEMA)));
+
+    if (_.has(properties, 'id')) {
+        this._data.id = properties.id;
+    }
 };
+
+// Static methods
 
 /**
  * Queries the database for matching ID
@@ -26,44 +33,58 @@ School.findById = function *(id) {
     return (result)? new School(result) : null;
 };
 
-// Getters
+// Getter and setters
+School.prototype = {
+    get id() {
+        return this._data.id;
+    },
+    get name() {
+        return this._data.name;
+    },
+    set name(value) {
+        this._data.name = value;
+    },
+    get phone() {
+        return this._data.phone;
+    },
+    set phone(value) {
+        this._data.phone = value;
+    },
+    get email() {
+        return this._data.email;
+    },
+    set email(value) {
+        this._data.email = value;
+    },
+    get address() {
+        return this._data.address;
+    },
+    set address(value) {
+        _.assign(this._data.address, value);
+    },
+    get links() {
+        return this._data.links;
+    },
 
-School.prototype.getName = function () {
-    return this.name;
-};
-
-School.prototype.getPhone = function () {
-    return this.phone;
-};
-
-School.prototype.getEmail = function () {
-    return this.email;
-};
-
-School.prototype.getLinks = function () {
-    return this.links;
-};
-
-School.prototype.getAddress = function () {
-    return this.address;
-};
-
-School.prototype.getId = function () {
-    return this.id;
-};
-
-// Setters
-
-School.prototype.setPhone = function (number) {
-    this.number = number;
-};
-
-School.prototype.setEmail = function (email) {
-    this.email = email;
-};
-
-School.prototype.setAddress = function (address) {
-    _.assign(this.address, address);
+    /**
+     * Returns a generator function that iterates through the links list
+     *
+     * @return  Generator function
+     */
+    get linksIter() {
+        return function *() {
+            for (var i = 0; i < this._data.links.length; i++) {
+                yield this._data.links[i];
+            }
+        };
+    },
+    set links(value) {
+        // TODO: Add validation
+        this._data.links = value;
+    },
+    get data() {
+        return this._data;
+    },
 };
 
 /**
@@ -73,8 +94,11 @@ School.prototype.setAddress = function (address) {
  * @param   name    The name of the new link
  * @param   url     The link to add
  */
-School.prototype.addLink = function (name, url) {
-    this.links[name] = url;
+School.prototype.addLink = function (linkName, linkUrl) {
+    this._data.links.push({
+        name: linkName,
+        url: linkUrl
+    });
 };
 
 /**
@@ -95,7 +119,7 @@ School.prototype.update = function (properties) {
         data.address = _.pick(data.address, _.keys(SCHEMA.address));
     }
 
-    _.assign(this, data);
+    _.assign(this._data, data);
 };
 
 /**
@@ -109,13 +133,13 @@ School.prototype.save = function *() {
     var result, data;
 
     // Retrieve only data we specified in SCHEMA
-    data = _.pick(this, _.keys(SCHEMA));
+    data = _.pick(this._data, _.keys(SCHEMA));
 
     try {
-        if (this.getId()) {
+        if (this._data.id) {
             // If there is an ID, update the data
             result = yield r.table(TABLE)
-                    .get(this.getId())
+                    .get(this._data.id)
                     .update(data)
                     .run();
         } else {
@@ -126,7 +150,7 @@ School.prototype.save = function *() {
 
             // Verify result, and store ID in this object
             if (result && result.inserted === 1) {
-                this.id = result.generated_keys[0];
+                this._data.id = result.generated_keys[0];
             }
         }
     } catch (error) {
