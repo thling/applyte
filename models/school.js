@@ -1,11 +1,12 @@
 'use strict';
 
 var _       = require('lodash');
+var Program = require('./program');
 var r       = require('./r')();
 var schemas = require('./schemas');
 
 const TABLE = 'schools';
-const SCHEMA = schemas.schools;
+const SCHEMA = schemas[TABLE];
 
 var School = function (properties) {
     this._data = {};
@@ -14,6 +15,10 @@ var School = function (properties) {
     if (_.has(properties, 'id')) {
         this._data.id = properties.id;
     }
+};
+
+School.getTable = function () {
+    return TABLE;
 };
 
 // Static methods
@@ -26,11 +31,32 @@ var School = function (properties) {
  *          of the data found; otherwise, null is returned
  */
 School.findById = function *(id) {
-    var result = yield r.table(TABLE)
+    let result = yield r.table(TABLE)
             .get(id)
             .run();
 
     return (result)? new School(result) : null;
+};
+
+/**
+ * Get all the schools available
+ *
+ * @return  Array of school objects
+ */
+School.getAllSchools = function *() {
+    let result, ret = [];
+    try {
+        result = yield r.table(TABLE)
+                .run();
+    } catch (error) {
+        console.error(error);
+    }
+
+    for (let res of result) {
+        ret.push(new School(res));
+    }
+
+    return ret;
 };
 
 // Getter and setters
@@ -44,17 +70,29 @@ School.prototype = {
     set name(value) {
         this._data.name = value;
     },
-    get phone() {
-        return this._data.phone;
+    get desc() {
+        return this._data.desc;
     },
-    set phone(value) {
-        this._data.phone = value;
+    set desc(value) {
+        this._data.desc = value;
     },
     get email() {
         return this._data.email;
     },
     set email(value) {
         this._data.email = value;
+    },
+    get phone() {
+        return this._data.phone;
+    },
+    set phone(value) {
+        this._data.phone = value;
+    },
+    get logo() {
+        return this._data.logo;
+    },
+    set logo(value) {
+        this._data.logo = value;
     },
     get address() {
         return this._data.address;
@@ -73,8 +111,8 @@ School.prototype = {
      */
     get linksIter() {
         return function *() {
-            for (var i = 0; i < this._data.links.length; i++) {
-                yield this._data.links[i];
+            for (let link of this._data.links) {
+                yield link;
             }
         };
     },
@@ -84,7 +122,51 @@ School.prototype = {
     },
     get data() {
         return this._data;
-    },
+    }
+};
+
+/**
+ * Get all the programs that belong to this school
+ *
+ * @return  Array of programs
+ */
+School.prototype.getAllPrograms = function *() {
+    return yield this.getProgramsWith({ schoolId: this.id });
+};
+
+/**
+ * Return all programs that satisfy the condition.
+ *
+ * @param   condition   JSON object or function using ReQL
+ * @return  Array of programs that satisfy the specified condition
+ */
+School.prototype.getProgramsWith = function *(condition) {
+    if (!_.isObject(condition) && !_.isFunction(condition)) {
+        throw 'Invalid condition specification; expected Object or Function';
+    }
+
+    let result, ret = [];
+    let query = r.table(Program.getTable());
+
+    // If condition is an object and does not filter by id yet,
+    // or if condition is a function using ReQL, add new id filter
+    if ((_.isObject(condition) && !_.has(condition, 'schoolId'))
+            || _.isFunction(condition)) {
+        query = query.filter({ schoolId: this.id });
+    }
+
+    try {
+        result = yield query.filter(condition).run();
+    } catch (error) {
+        console.error(error);
+    }
+
+    // Create a new program for each of the result
+    for (let prog of result) {
+        ret.push(new Program(prog));
+    }
+
+    return ret;
 };
 
 /**
@@ -106,13 +188,16 @@ School.prototype.addLink = function (linkName, linkUrl) {
  * The properties configuration will be validated, and
  * unwanted properties will be discarded.
  *
+ * This function does not persist the data to database yet;
+ * you need to call 'save()'.
+ *
  * @param   properties  The new property to assign to this object
  */
 School.prototype.update = function (properties) {
     // TODO: Add validation
 
     // Make sure we only retrieve what we want
-    var data = _.pick(properties, _.keys(SCHEMA));
+    let data = _.pick(properties, _.keys(SCHEMA));
 
     // Make sure the address only contain the fields we want
     if (_.has(data.address)) {
@@ -130,7 +215,7 @@ School.prototype.update = function (properties) {
  * @return  True if save is success; false otherwise.
  */
 School.prototype.save = function *() {
-    var result, data;
+    let result, data;
 
     // Retrieve only data we specified in SCHEMA
     data = _.pick(this._data, _.keys(SCHEMA));

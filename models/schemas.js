@@ -14,23 +14,31 @@ module.exports = {
     // Schools schema
     schools: {
         name: null,
-        address: address,
+        desc: null,
         email: null,
         phone: null,
-        links: []
+        logo: null,
+        address: address,
+        links: []       // In the form of [{name: '', url: ''}]
     },
     // Programs schema
     programs: {
         name: null,
         degree: null,
         level: null,
-        areas: [],
+        desc: null,
         schoolId: null,
+        areas: [],      // In the form of [{name: '', categoryId: ''}]
         contact: {
             fax: null,
             phone: null,
             email: null,
             address: address
         }
+    },
+    // Category schema
+    category: {
+        name: null,
+        desc: null
     }
 };

@@ -5,7 +5,7 @@ var r       = require('./r')();
 var schemas = require('./schemas');
 
 const TABLE  = 'programs';
-const SCHEMA = schemas.programs;
+const SCHEMA = schemas[TABLE];
 
 var Program = function (properties) {
     this._data = {};
@@ -14,6 +14,10 @@ var Program = function (properties) {
     if (_.has(properties, 'id')) {
         this._data.id = properties.id;
     }
+};
+
+Program.getTable = function () {
+    return TABLE;
 };
 
 /**
@@ -29,6 +33,31 @@ Program.findById = function *(id) {
             .run();
 
     return (result)? new Program(result) : null;
+};
+
+/**
+ * Return all programs of the specified level
+ *
+ * @param   level   The leve of the programs to fund
+ * @return  Array of programs of the level
+ */
+Program.findByLevel = function *(level) {
+    let result, ret = [];
+
+    try {
+        result = yield r.table(TABLE)
+                .filter({level: level})
+                .run();
+    } catch (error) {
+        console.error(error);
+    }
+
+    // Create a array of Programs
+    for (let res of result) {
+        ret.push(new Program(res));
+    }
+
+    return ret;
 };
 
 // Getters and setters
@@ -54,24 +83,30 @@ Program.prototype = {
     set level(value) {
         this._data.level = value;
     },
-    get areas() {
-        return this._data.areas;
+    get desc() {
+        return this._data.desc;
     },
-    get areaIter() {
-        return function *() {
-            for (var i in this._data.areas) {
-                yield this._data.areas[i];
-            }
-        };
-    },
-    set areas(value) {
-        this._data.areas = value;
+    set desc(value) {
+        this._data.desc = value;
     },
     get schoolId() {
         return this._data.schoolId;
     },
     set schoolId(value) {
         this._data.schoolId = value;
+    },
+    get areas() {
+        return this._data.areas;
+    },
+    get areasIter() {
+        return function *() {
+            for (var area of this._data.areas) {
+                yield area;
+            }
+        };
+    },
+    set areas(value) {
+        this._data.areas = value;
     },
     get contact() {
         return this._data.contact;
@@ -81,6 +116,12 @@ Program.prototype = {
     }
 };
 
+/**
+ * Updates this program object. Note this this function
+ * does not save to database, you need to call save().
+ *
+ * @param   properties  An object with new values to update this program with
+ */
 Program.prototype.update = function (properties) {
     // TODO: Add validation
 
@@ -101,6 +142,13 @@ Program.prototype.update = function (properties) {
     _.assign(this._data, data);
 };
 
+/**
+ * Save changes to the database. The method will detect
+ * whether this object has an id already; if so, it will
+ * perform db update; otherwise, it will insert the data.
+ *
+ * @return  True if save is success; false otherwise.
+ */
 Program.prototype.save = function *() {
     var result, data;
 
