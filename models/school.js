@@ -1,14 +1,14 @@
 'use strict';
 
-var _       = require('lodash');
-var Program = require('./program');
-var r       = require('./r')();
-var schemas = require('./schemas');
+let _       = require('lodash');
+let Program = require('./program');
+let r       = require('./r')();
+let schemas = require('./schemas');
 
 const TABLE = 'schools';
 const SCHEMA = schemas[TABLE];
 
-var School = function (properties) {
+let School = function (properties) {
     this._data = {};
     _.assign(this._data, _.pick(properties, _.keys(SCHEMA)));
 
@@ -180,6 +180,17 @@ School.prototype.addLink = function (linkName, linkUrl) {
     this._data.links.push({
         name: linkName,
         url: linkUrl
+    });
+};
+
+/**
+ * Remvoes a link from the school
+ *
+ * @param   linkName    The name of the link to remove
+ */
+School.prototype.removeLink = function(linkName) {
+    _.remove(this._data.links, function (obj) {
+        return obj.name === linkName;
     });
 };
 

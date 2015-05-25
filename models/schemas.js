@@ -1,7 +1,7 @@
 'use strict';
 
 // General address object
-var address = {
+let address = {
     address1: null,
     address2: null,
     city: null,
@@ -28,7 +28,9 @@ module.exports = {
         level: null,
         desc: null,
         schoolId: null,
-        areas: [],      // In the form of [{name: '', categoryId: ''}]
+        department: null,
+        faculty: null,  // Also known as 'College of *' in US
+        areas: [],      // In the form of [{name: '', categoryIds: []}]
         contact: {
             fax: null,
             phone: null,
@@ -37,7 +39,7 @@ module.exports = {
         }
     },
     // Category schema
-    category: {
+    area_categories: {
         name: null,
         desc: null
     }

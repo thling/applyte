@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node --harmony app.js",
-    "test": "mocha --harmony"
+    "test": "mocha --harmony $(find test -name '*.js')"
   },
   "dependencies": {
     "co-body": "^0.0.1",

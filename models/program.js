@@ -1,13 +1,13 @@
 'use strict';
 
-var _       = require('lodash');
-var r       = require('./r')();
-var schemas = require('./schemas');
+let _       = require('lodash');
+let r       = require('./r')();
+let schemas = require('./schemas');
 
 const TABLE  = 'programs';
 const SCHEMA = schemas[TABLE];
 
-var Program = function (properties) {
+let Program = function (properties) {
     this._data = {};
     _.assign(this._data, _.pick(properties, _.keys(SCHEMA)));
 
@@ -24,11 +24,11 @@ Program.getTable = function () {
  * Queries the database for matching ID
  *
  * @param   id  The id to search for
- * @return  Returns a new School object that is populated
+ * @return  Returns a new program object that is populated
  *          of the data found; otherwise, null is returned
  */
 Program.findById = function *(id) {
-    var result = yield r.table(TABLE)
+    let result = yield r.table(TABLE)
             .get(id)
             .run();
 
@@ -95,17 +95,30 @@ Program.prototype = {
     set schoolId(value) {
         this._data.schoolId = value;
     },
+    get department() {
+        return this._data.department;
+    },
+    set department(value) {
+        this._data.department = value;
+    },
+    get faculty() {
+        return this._data.faculty;
+    },
+    set faculty(value) {
+        this._data.faculty = value;
+    },
     get areas() {
         return this._data.areas;
     },
     get areasIter() {
         return function *() {
-            for (var area of this._data.areas) {
+            for (let area of this._data.areas) {
                 yield area;
             }
         };
     },
     set areas(value) {
+        // TODO: Add validation
         this._data.areas = value;
     },
     get contact() {
@@ -114,6 +127,19 @@ Program.prototype = {
     set contact(value) {
         this._data.contact = value;
     }
+};
+
+Program.prototype.addArea = function (name, categoryIds) {
+    this._data.areas.push({
+        name: name,
+        categoryIds: categoryIds
+    });
+};
+
+Program.prototype.removeArea = function (name) {
+    _.remove(this._data.areas, function (obj) {
+        return obj.name === name;
+    });
 };
 
 /**
@@ -126,7 +152,7 @@ Program.prototype.update = function (properties) {
     // TODO: Add validation
 
     // Make sure we only retrieve what we want
-    var data = _.pick(properties, _.keys(SCHEMA));
+    let data = _.pick(properties, _.keys(SCHEMA));
 
     // Make sure the address only contain the fields we want
     if (_.has(data.contact)) {
@@ -150,7 +176,7 @@ Program.prototype.update = function (properties) {
  * @return  True if save is success; false otherwise.
  */
 Program.prototype.save = function *() {
-    var result, data;
+    let result, data;
 
     // Retrieve only data we specified in SCHEMA
     data = _.pick(this._data, _.keys(SCHEMA));

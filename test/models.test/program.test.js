@@ -1,19 +1,19 @@
 'use strict';
 
-var assert  = require('assert');
-var _       = require('lodash');
-var master  = require('./test.master');
-var Program = require('../models/program');
-var r       = require('../models/r')();
-var School  = require('../models/school');
+let assert  = require('assert');
+let _       = require('lodash');
+let master  = require('../test.master');
+let Program = require('../../models/program');
+let r       = require('../../models/r')();
+let School  = require('../../models/school');
 
 require('co-mocha');
 
 const TABLE = Program.getTable();
 
 describe('Program model tests', function () {
-    var template = master.program.template;
-    var school, program;
+    let template = master.program.template;
+    let school, program;
 
     before('adding dummy school', function *() {
         school = new School(master.school.template);
@@ -43,13 +43,16 @@ describe('Program model tests', function () {
      * @param   prog    The prog to validate
      * @throws  AssertionError if not valid
      */
-    var validateProgram = function (prog, temp) {
+    let validateProgram = function (prog, temp) {
         assert(_.isObject(prog), 'Program is not a object');
         assert.strictEqual(prog.name, temp.name);
         assert.strictEqual(prog.degree, temp.degree);
         assert.strictEqual(prog.level, temp.level);
         assert.strictEqual(prog.desc, temp.desc);
         assert.strictEqual(prog.schoolId, temp.schoolId);
+        assert.strictEqual(prog.department, temp.department);
+        assert.strictEqual(prog.faculty, temp.faculty);
+
         assert.deepEqual(prog.areas, temp.areas);
         assert.deepEqual(prog.contact, temp.contact);
     };
@@ -68,14 +71,23 @@ describe('Program model tests', function () {
                 assert.deepEqual(template.areas[i], area.value);
             }
         });
+
+        it('should remove an area then add it back', function () {
+            let newTemp = master.program.template;
+            let toRemove = _.takeRight(newTemp.areas)[0];
+            newTemp.areas = _.take(newTemp.areas, newTemp.areas.length - 1);
+            newTemp.schoolId = template.schoolId;
+
+            program.removeArea(toRemove.name);
+            validateProgram(program, newTemp);
+
+            program.addArea(toRemove.name, toRemove.categoryIds);
+            validateProgram(program, template);
+        });
     });
 
     describe('Program model database test', function () {
         describe('Basic database test', function () {
-            before('saving program', function *() {
-                assert(yield program.save(), 'DB connection error?');
-            });
-
             after('cleaning database', function *() {
                 try {
                     yield r.table(TABLE)
@@ -87,29 +99,30 @@ describe('Program model tests', function () {
                 }
             });
 
-            it('should have an ID assigned to it', function () {
-                assert(program.id, 'Cannot find ID');
+            it('should save to database and have an ID assigned to it', function *() {
+                assert(yield program.save(), 'failed to save data: DB connection lost?');
+                assert(!_.isUndefined(program.id) && !_.isNull(program.id));
             });
 
-            it('should save properly to database', function *() {
-                var foundProgram = yield Program.findById(program.id);
+            it('should retrieve the inserted program', function *() {
+                let foundProgram = yield Program.findById(program.id);
                 validateProgram(foundProgram, template);
             });
 
             it('should be able to update one field', function *() {
-                var newTemp = master.program.template;
+                let newTemp = master.program.template;
                 newTemp.schoolId = template.schoolId;
                 newTemp.degree = 'Master of Business Administration';
 
                 program.degree = 'Master of Business Administration';
                 yield program.save();
 
-                var foundProgram = yield Program.findById(program.id);
+                let foundProgram = yield Program.findById(program.id);
                 validateProgram(foundProgram, newTemp);
             });
 
             it('should be able to bulk update muliple fields', function *() {
-                var newTemp = master.program.template;
+                let newTemp = master.program.template;
                 newTemp.schoolId = template.schoolId;
                 newTemp.degree = 'Master of Business Administration';
                 newTemp.name = 'Management';
@@ -123,7 +136,7 @@ describe('Program model tests', function () {
                 program.update(newTemp);
                 yield program.save();
 
-                var foundProgram = yield Program.findById(program.id);
+                let foundProgram = yield Program.findById(program.id);
                 validateProgram(foundProgram, newTemp);
             });
         });
@@ -183,6 +196,10 @@ describe('Program model tests', function () {
                 let gradPrograms = [program1, program4, program5];
                 master.program.listEquals(programs, gradPrograms);
             });
+
+            it('should be able to search by name');
+            it('should be able to search by area');
+            it('should be able to search by school');
         });
     });
 });

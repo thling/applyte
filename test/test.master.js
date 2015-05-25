@@ -51,19 +51,21 @@ module.exports.program = {
             degree: 'Master of Science',
             level: 'Graduate',
             desc: 'The Department of Computer Sciences is good.',
-            faculty: 'College of Science',
             schoolId: null,
-            areas: [{
+            department: 'Department of Computer Science',
+            faculty: 'College of Science',
+            areas: [
+                {
                     name: 'Databases',
-                    categoryId: []
+                    categoryIds: []
                 },
                 {
                     name: 'Distributed System',
-                    categoryId: []
+                    categoryIds: []
                 },
                 {
                     name: 'Information Security and Assurance',
-                    categoryId: []
+                    categoryIds: []
                 }
             ],
             contact: {
