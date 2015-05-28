@@ -108,7 +108,7 @@ School.findByLocation = function *(location) {
 };
 
 /**
- * Get all the schools. Use is not recommended.
+ * Get all the schools. Use of this is not recommended.
  *
  * @return  Array of school objects
  */

@@ -165,6 +165,11 @@ Program.findByLevel = function *(level) {
     return ret;
 };
 
+/**
+ * Get all the programs. Use of this function is not recommended.
+ *
+ * @return  Array of program objects
+ */
 Program.getAllPrograms = function *() {
     let result, ret = [];
 
@@ -183,6 +188,17 @@ Program.getAllPrograms = function *() {
     return ret;
 };
 
+/**
+ * Returns the programs in the specified index range (page), starting from
+ * start-th item (inclusive) to (start + length)-th item (exclusive).
+ *
+ * This is sorted by name + campus, alphabetically.
+ *
+ * @param   start   Start index
+ * @param   length  The number of items to fetch beginning from start index
+ * @param   desc    True to sort descendingly; false to sort ascendingly
+ * @return  An array of program objects that fall into the range
+ */
 Program.getProgramsRange = function *(start, length, desc) {
     let result, ret = [];
     let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
