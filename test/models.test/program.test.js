@@ -1,11 +1,12 @@
 'use strict';
 
-let assert  = require('assert');
-let _       = require('lodash');
-let master  = require('../test.master');
-let Program = require('../../models/program');
-let r       = require('../../models/r')();
-let School  = require('../../models/school');
+let assert   = require('assert');
+let _        = require('lodash');
+let Category = require('../../models/category');
+let master   = require('../test.master');
+let Program  = require('../../models/program');
+let r        = require('../../models/r')();
+let School   = require('../../models/school');
 
 require('co-mocha');
 
@@ -17,24 +18,16 @@ describe('Program model tests', function () {
 
     before('adding dummy school', function *() {
         school = new School(master.school.template);
-
-        try  {
-            yield school.save();
-            template.schoolId = school.id;
-        } catch (error) {
-            console.error(error);
-        }
+        yield Program.findById('');
+        yield school.save();
+        template.schoolId = school.id;
     });
 
     after('cleaning database', function *() {
-        try {
-            yield r.table('schools')
-                    .get(school.id)
-                    .delete()
-                    .run();
-        } catch (error) {
-            console.error(error);
-        }
+        yield r.table('schools')
+                .get(school.id)
+                .delete()
+                .run();
     });
 
     /**
@@ -81,7 +74,7 @@ describe('Program model tests', function () {
             program.removeArea(toRemove.name);
             validateProgram(program, newTemp);
 
-            program.addArea(toRemove.name, toRemove.categoryIds);
+            program.addArea(toRemove.name, toRemove.categories);
             validateProgram(program, template);
         });
     });
@@ -89,14 +82,10 @@ describe('Program model tests', function () {
     describe('Program model database test', function () {
         describe('Basic database test', function () {
             after('cleaning database', function *() {
-                try {
-                    yield r.table(TABLE)
-                            .get(program.id)
-                            .delete()
-                            .run();
-                } catch (error) {
-                    console.error(error);
-                }
+                yield r.table(TABLE)
+                        .get(program.id)
+                        .delete()
+                        .run();
             });
 
             it('should save to database and have an ID assigned to it', function *() {
@@ -142,42 +131,65 @@ describe('Program model tests', function () {
         });
 
         describe('Complex database test', function () {
-            let program1 = new Program(master.program.template),
-                program2 = new Program(master.program.template),
-                program3 = new Program(master.program.template),
-                program4 = new Program(master.program.template),
-                program5 = new Program(master.program.template);
+            let compsci = new Program(master.program.template),
+                mecheng = new Program(master.program.template),
+                indseng = new Program(master.program.template),
+                management = new Program(master.program.template),
+                philosophy = new Program(master.program.template);
 
-            let testPrograms = [program1, program2, program3, program4, program5];
+            let security = new Category(master.category.template),
+                database = new Category(master.category.template),
+                systems = new Category(master.category.template);
+
+            let testPrograms = [compsci, mecheng, indseng, management, philosophy];
 
             before('Adding multiple programs', function *() {
-                program2.update({
+                security.name = 'Security';
+                database.name = 'Database';
+                systems.name = 'Systems';
+
+                yield security.save();
+                yield database.save();
+                yield systems.save();
+
+                mecheng.update({
                     name: 'Mechanical Engineering',
                     degree: 'Bachelor of Science',
                     level: 'Undergraduate'
                 });
 
-                program3.update({
+                indseng.update({
                     name: 'Industrial Engineering',
                     degree: 'Bachelor of Science',
                     level: 'Undergraduate'
                 });
 
-                program4.update({
+                indseng.removeArea('Databases');
+                indseng.removeArea('Information Security and Assurance');
+
+                management.update({
                     name: 'Management',
-                    degree: 'Master of Business Administration'
+                    degree: 'Master of Business Administration',
+                    areas: [
+                        {
+                            name: 'Database Security',
+                            categories: [security.name, systems.name, database.name]
+                        }
+                    ]
                 });
 
-                program5.update({
+                philosophy.update({
                     name: 'Philosophy',
                     degree: 'Master of Arts'
                 });
 
-                yield program1.save();
-                yield program2.save();
-                yield program3.save();
-                yield program4.save();
-                yield program5.save();
+                philosophy.removeArea('Information Security and Assurance');
+
+                yield compsci.save();
+                yield mecheng.save();
+                yield indseng.save();
+                yield management.save();
+                yield philosophy.save();
             });
 
             after('Cleaning up programs', function *() {
@@ -188,18 +200,66 @@ describe('Program model tests', function () {
                             .delete()
                             .run();
                 }
+
+                for (let cat of [security, systems, database]) {
+                    yield r.table(Category.getTable())
+                            .get(cat.id)
+                            .delete()
+                            .run();
+                }
+            });
+
+            // Might want to delete in the future
+            it('should return all programs', function *() {
+                let foundPrograms = yield Program.getAllPrograms();
+                master.listEquals(
+                        foundPrograms,
+                        [compsci, mecheng, indseng, management, philosophy]
+                );
             });
 
             it('should return all graduate programs', function *() {
-                this.timeout(60000);
                 let programs = yield Program.findByLevel('Graduate');
-                let gradPrograms = [program1, program4, program5];
-                master.program.listEquals(programs, gradPrograms);
+                master.listEquals(programs, [compsci, management, philosophy]);
             });
 
-            it('should be able to search by name');
-            it('should be able to search by area');
-            it('should be able to search by school');
+            it('should return Industrial Engineering program', function *() {
+                let foundPrograms = yield Program.findByName('Industrial Engineering');
+                master.listEquals(foundPrograms, [indseng]);
+            });
+
+            it('should return any program with name "Engineering"', function *() {
+                let foundPrograms = yield Program.findByName('Engineering');
+                master.listEquals(foundPrograms, [mecheng, indseng]);
+            });
+
+            it('should be able to search by area name ("Security")', function *() {
+                let foundPrograms = yield Program.findByAreaName('Security');
+                master.listEquals(foundPrograms, [compsci, mecheng, management]);
+            });
+
+            it('should be able to search by single category ("Database")', function *() {
+                let foundPrograms = yield Program.findByAreaCategories('Database');
+                master.listEquals(foundPrograms, [compsci, mecheng, management, philosophy]);
+            });
+
+            it('should be able to search by categories ("Database" and "Security")', function *() {
+                let foundPrograms = yield Program.findByAreaCategories(['Database', 'Security']);
+                master.listEquals(foundPrograms, [management]);
+            });
+            
+            describe('Pagination test', function() {
+                it('should return programs from 3rd to 5th position (MGMT, ME, PHIL)', function *() {
+                    let foundPrograms = yield Program.getProgramsRange(2, 3);
+                    master.listEquals(foundPrograms, [management, mecheng, philosophy]);
+                });
+
+                it('should return programs from 4th to 2nd position (ME, MGMT, IE)', function *() {
+                    let foundPrograms = yield Program.getProgramsRange(1, 3, true);
+                    master.listEquals(foundPrograms, [mecheng, management, indseng]);
+                });
+            });
+
         });
     });
 });

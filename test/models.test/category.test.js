@@ -15,7 +15,7 @@ describe('Category model test', function () {
     let category;
 
     let validateCategory = function (cat, temp) {
-        assert(_.isObject(cat), 'School is not an object');
+        assert(_.isObject(cat), 'Category is not an object');
         assert.strictEqual(cat.name, temp.name);
         assert.strictEqual(cat.desc, temp.desc);
     };
@@ -64,8 +64,33 @@ describe('Category model test', function () {
         });
 
         describe('Complex database test', function () {
-            it('should be able to search by name');
-            it('should be able to search by name');
+            let database, systems, network;
+
+            before('adding more entries to database', function *() {
+                database = new Category(master.category.template);
+                database.name = 'Database';
+
+                systems = new Category(master.category.template);
+                systems.name = 'Systems';
+
+                network = new Category(master.category.template);
+                network.name = 'Network';
+
+                yield database.save();
+                yield systems.save();
+                yield network.save();
+            });
+
+            after('cleaning up database', function *() {
+                for (let cat of [database, systems, network]) {
+                    yield r.table(TABLE).get(cat.id).delete().run();
+                }
+            });
+
+            it('should be able to search by name', function *() {
+                let foundCategory = yield Category.findByName('Systems');
+                validateCategory(foundCategory, systems);
+            });
         });
     });
 });

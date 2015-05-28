@@ -1,12 +1,18 @@
 'use strict';
 
-var r        = require('../models/r')();
+var r = require('../models/r')();
 
 var TABLE = 'area_categories';
+var NAME_INDEX = 'name';
 
 exports.up = function (next) {
     r.tableCreate(TABLE)
-        .run(next);
+        .run()
+        .then(function () {
+            r.table(TABLE)
+                .indexCreate(NAME_INDEX)
+                .run(next);
+        });
 };
 
 exports.down = function (next) {

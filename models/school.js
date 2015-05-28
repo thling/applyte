@@ -6,6 +6,7 @@ let r       = require('./r')();
 let schemas = require('./schemas');
 
 const TABLE = 'schools';
+const NAME_INDEX = 'name_campus_index';
 const SCHEMA = schemas[TABLE];
 
 let School = function (properties) {
@@ -31,29 +32,132 @@ School.getTable = function () {
  *          of the data found; otherwise, null is returned
  */
 School.findById = function *(id) {
-    let result = yield r.table(TABLE)
-            .get(id)
-            .run();
+    let result;
 
-    return (result)? new School(result) : null;
-};
-
-/**
- * Get all the schools available
- *
- * @return  Array of school objects
- */
-School.getAllSchools = function *() {
-    let result, ret = [];
     try {
         result = yield r.table(TABLE)
+                .get(id)
                 .run();
     } catch (error) {
         console.error(error);
     }
 
-    for (let res of result) {
-        ret.push(new School(res));
+    return (result)? new School(result) : null;
+};
+
+/**
+ * Find all schools that contain the name
+ *
+ * @param   name    The name of the school
+ * @return  An array of schools that has the specified string in the name
+ */
+School.findByName = function *(name) {
+    let result, ret = [];
+
+    try {
+        result = yield r.table(TABLE)
+                .filter(
+                    r.row('name').match('.*' + name + '.*')
+                )
+                .run();
+
+        for (let res of result) {
+            ret.push(new School(res));
+        }
+    } catch (error) {
+        console.error(error);
+    }
+
+    return ret;
+};
+
+/**
+ * Find schools that satisfy the location constraints
+ *
+ * @param   location    An object with one or more of the following properties:
+ *                          {
+ *                              address1: 'anything',
+ *                              address2: 'anything',
+ *                              city: 'anything',
+ *                              state: 'anything',
+ *                              postalCode: 'anything',
+ *                              country: 'anything'
+ *                          }
+ *                      Any missing field will NOT be tested.
+ *                      Regular expression is NOT supported.
+ * @return  An array of school objects satisfying the location constraints.
+ */
+School.findByLocation = function *(location) {
+    let result, ret = [];
+
+    try {
+        result = yield r.table(TABLE)
+                .filter({
+                    address: location
+                })
+                .run();
+
+        for (let res of result) {
+            ret.push(new School(res));
+        }
+    } catch (error) {
+        console.error(error);
+    }
+
+    return ret;
+};
+
+/**
+ * Get all the schools. Use is not recommended.
+ *
+ * @return  Array of school objects
+ */
+School.getAllSchools = function *() {
+    // TODO: Support for pagination
+    let result, ret = [];
+
+    try {
+        result = yield r.table(TABLE)
+                .orderBy({ index: NAME_INDEX })
+                .run();
+
+        for (let res of result) {
+            ret.push(new School(res));
+        }
+    } catch (error) {
+        console.error(error);
+    }
+
+    return ret;
+};
+
+/**
+ * Returns the schools in the specified index range (page), starting from
+ * start-th item (inclusive) to (start + length)-th item (exclusive).
+ *
+ * This is sorted by name + campus, alphabetically.
+ *
+ * @param   start   Start index
+ * @param   length  The number of items to fetch beginning from start index
+ * @param   desc    True to sort descendingly; false to sort ascendingly
+ * @return  An array of school objects that fall into the range
+ */
+School.getSchoolsRange = function *(start, length, desc) {
+    let result, ret = [];
+    let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
+
+    try {
+        result = yield r.table(TABLE)
+                // Using our compound index on [name, campus]
+                .orderBy({ index: orderIndex })
+                .slice(start, start + length)
+                .run();
+
+        for (let res of result) {
+            ret.push(new School(res));
+        }
+    } catch (error) {
+        console.error(error);
     }
 
     return ret;
@@ -69,6 +173,12 @@ School.prototype = {
     },
     set name(value) {
         this._data.name = value;
+    },
+    get campus() {
+        return this._data.campus;
+    },
+    set campus(value) {
+        this._date.campus = value;
     },
     get desc() {
         return this._data.desc;
@@ -211,8 +321,9 @@ School.prototype.update = function (properties) {
     let data = _.pick(properties, _.keys(SCHEMA));
 
     // Make sure the address only contain the fields we want
-    if (_.has(data.address)) {
-        data.address = _.pick(data.address, _.keys(SCHEMA.address));
+    if (_.has(data, 'address')) {
+        this.address = _.pick(data.address, _.keys(SCHEMA.address));
+        data = _.omit(data, 'address');
     }
 
     _.assign(this._data, data);

@@ -5,6 +5,8 @@ let r       = require('./r')();
 let schemas = require('./schemas');
 
 const TABLE  = 'programs';
+const LEVEL_INDEX = 'level';
+const NAME_INDEX = 'name';
 const SCHEMA = schemas[TABLE];
 
 let Program = function (properties) {
@@ -28,11 +30,114 @@ Program.getTable = function () {
  *          of the data found; otherwise, null is returned
  */
 Program.findById = function *(id) {
-    let result = yield r.table(TABLE)
-            .get(id)
-            .run();
+    let result;
+
+    try {
+        result = yield r.table(TABLE)
+                .get(id)
+                .run();
+    } catch (error) {
+        console.error(error);
+    }
 
     return (result)? new Program(result) : null;
+};
+
+/**
+ * Find programs that contain the specified name
+ *
+ * @param   name    The name to search for
+ * @return  An array of programs that has the specified string in the name
+ */
+Program.findByName = function *(name) {
+    let result, ret = [];
+
+    try {
+        result = yield r.table(TABLE)
+                .filter(function (prog) {
+                    // Return those with matching names
+                    return prog('name').match('.*' + name + '.*');
+                })
+                .run();
+
+        for (let prog of result) {
+            ret.push(new Program(prog));
+        }
+    } catch (error) {
+        console.error(error);
+    }
+
+    return ret;
+};
+
+/**
+ * Get all the programs with area names that contain the specified string.
+ *
+ * @param   areaName    The name of the area to search for
+ * @return  An array of programs with area names of the specified string
+ */
+Program.findByAreaName = function *(areaName) {
+    let result, ret = [];
+
+    try {
+        result = yield r.table(TABLE)
+                .filter(function (obj) {
+                    return obj('areas').contains(
+                        // We need to use contains because areas is an array,
+                        // we cannot directly access the object property
+                        function (area) {
+                            return area('name').match('.*' + areaName + '.*');
+                        }
+                    );
+                })
+                .run();
+
+        // Create an array for return
+        for (let res of result) {
+            ret.push(new Program(res));
+        }
+    } catch (error) {
+        console.error(error);
+    }
+
+    return ret;
+};
+
+/**
+ * Find programs with areas that fall into the specified categories
+ *
+ * @param   categories  Name of the category/categories. Can be a string
+ *                      or an array of strings
+ * @return  An array of programs with areas that fall into the
+ *          specified categories
+ */
+Program.findByAreaCategories = function *(categories) {
+    if (_.isString(categories)) {
+        // Wrap as array if it is a single string
+        categories = [categories];
+    }
+
+    let result, ret = [];
+    try {
+        result = yield r.table(TABLE)
+                .filter(function (prog) {
+                    // Return all programs whose categories field has what we want
+                    return prog('areas')('categories').contains(function (cat) {
+                        // r.args will generate a special object for
+                        // ReQL functions that accept variable arguments
+                        return cat.contains(r.args(categories));
+                    });
+                })
+                .run();
+
+        for (let res of result) {
+            ret.push(new Program(res));
+        }
+    } catch (error) {
+        console.error(error);
+    }
+
+    return ret;
 };
 
 /**
@@ -46,7 +151,7 @@ Program.findByLevel = function *(level) {
 
     try {
         result = yield r.table(TABLE)
-                .filter({level: level})
+                .getAll(level, { index: LEVEL_INDEX })
                 .run();
     } catch (error) {
         console.error(error);
@@ -55,6 +160,44 @@ Program.findByLevel = function *(level) {
     // Create a array of Programs
     for (let res of result) {
         ret.push(new Program(res));
+    }
+
+    return ret;
+};
+
+Program.getAllPrograms = function *() {
+    let result, ret = [];
+
+    try {
+        result = yield r.table(TABLE)
+                .orderBy({ index: NAME_INDEX })
+                .run();
+
+        for (let res of result) {
+            ret.push(new Program(res));
+        }
+    } catch (error) {
+        console.error(error);
+    }
+
+    return ret;
+};
+
+Program.getProgramsRange = function *(start, length, desc) {
+    let result, ret = [];
+    let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
+
+    try {
+        result = yield r.table(TABLE)
+                .orderBy({ index: orderIndex })
+                .slice(start, start + length)
+                .run();
+
+        for (let res of result) {
+            ret.push(new Program(res));
+        }
+    } catch (error) {
+        console.error(error);
     }
 
     return ret;
@@ -129,10 +272,14 @@ Program.prototype = {
     }
 };
 
-Program.prototype.addArea = function (name, categoryIds) {
+Program.prototype.addArea = function (name, categories) {
+    if (!_.isArray(this._data.areas)) {
+        this._data.areas = [];
+    }
+
     this._data.areas.push({
         name: name,
-        categoryIds: categoryIds
+        categories: categories
     });
 };
 

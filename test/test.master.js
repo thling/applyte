@@ -1,19 +1,49 @@
 'use strict';
 
-var assert = require('assert');
+let assert = require('assert');
+let _      = require('lodash');
 
 /**
- * This file is strictly used for utilities related to testing.
+ * This file is strictly used as utilities for testing.
  */
 
- var address = {
-     address1: '610 Purdue Mall',
-     address2: null,
-     city: 'West Lafayette',
-     state: 'Indiana',
-     postalCode: '47907',
-     country: 'United States of America'
- };
+// Sample address
+let address = {
+    address1: '610 Purdue Mall',
+    address2: null,
+    city: 'West Lafayette',
+    state: 'Indiana',
+    postalCode: '47907',
+    country: 'United States of America'
+};
+
+/**
+ * Verifies that two sets (list) of programs contain the same data
+ *
+ * @param   progs   The first list to test
+ * @param   tests   The second list to test
+ * @throws  Assertion error if two lists differ
+ */
+module.exports.listEquals = function (items, tests, print) {
+    assert.strictEqual(items.length, tests.length);
+    let count = items.length;
+
+    for (let item of items) {
+        for (let test of tests) {
+            if (test.id === item.id) {
+                if (print) {
+                    console.log(item);
+                    console.log(test);
+                }
+                assert.deepEqual(test, item);
+                count -= 1;
+                break;
+            }
+        }
+    }
+
+    assert.strictEqual(count, 0, 'The lists do not match');
+};
 
 /**
  * For tests on school
@@ -22,11 +52,12 @@ module.exports.school = {
     get template() {
         return {
             name: 'Purdue University',
+            campus: 'West Lafayette',
             desc: 'Better than IU in every aspect',
             email: null,
             phone: '+1 (765) 494-4600',
             logo: null,
-            address: address,
+            address: _.cloneDeep(address),
             links: [
                 {
                      name: 'Official Website',
@@ -57,44 +88,24 @@ module.exports.program = {
             areas: [
                 {
                     name: 'Databases',
-                    categoryIds: []
+                    categories: ['Database', 'Systems']
                 },
                 {
                     name: 'Distributed System',
-                    categoryIds: []
+                    categories: ['Systems']
                 },
                 {
                     name: 'Information Security and Assurance',
-                    categoryIds: []
+                    categories: ['Security']
                 }
             ],
             contact: {
                 fax: '+1 (765) 494-0739',
                 phone: '+1 (765) 494-6010',
                 email: 'grad-info@cs.purdue.edu',
-                address: address
+                address: _.cloneDeep(address)
             }
         };
-    },
-
-    /**
-     * Verifies that two sets (list) of programs contain the same data
-     *
-     * @param   progs   The first list to test
-     * @param   tests   The second list to test
-     * @throws  Assertion error if two lists differ
-     */
-    listEquals: function (progs, tests) {
-        assert.strictEqual(progs.length, tests.length);
-
-        for (let prog of progs) {
-            for (let testProg of tests) {
-                if (testProg.id === prog.id) {
-                    assert.deepEqual(testProg, prog);
-                    break;
-                }
-            }
-        }
     }
 };
 

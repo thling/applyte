@@ -25,6 +25,7 @@ describe('School model test', function () {
     let validateSchool = function (school, temp) {
         assert(_.isObject(school), 'School is not an object');
         assert.strictEqual(school.name, temp.name);
+        assert.strictEqual(school.campus, temp.campus);
         assert.strictEqual(school.desc, temp.desc);
         assert.strictEqual(school.email, temp.email);
         assert.strictEqual(school.phone, temp.phone);
@@ -130,6 +131,13 @@ describe('School model test', function () {
 
             let testPrograms = [program1, program2, program3, program4, program5];
 
+            let purdue = new School(master.school.template),
+                purdueCal = new School(master.school.template),
+                uiuc = new School(master.school.template),
+                umich = new School(master.school.template),
+                bu = new School(master.school.template),
+                mit = new School(master.school.template);
+
             before('Adding multiple programs', function *() {
                 program1.schoolId = school.id;
 
@@ -164,6 +172,56 @@ describe('School model test', function () {
                 yield program3.save();
                 yield program4.save();
                 yield program5.save();
+
+                purdueCal.update({
+                    campus: 'Calumet',
+                    address: {
+                        city: 'Hammond'
+                    }
+                });
+
+                uiuc.update({
+                    name: 'University of Illinois',
+                    campus: 'Urbana-Champaign',
+                    address: {
+                        city: 'Champaign',
+                        state: 'Illinois'
+                    }
+                });
+
+                umich.update({
+                    name: 'University of Michigan',
+                    campus: 'Ann Arbor',
+                    address: {
+                        city: 'Ann Arbor',
+                        state: 'Michigan'
+                    }
+                });
+
+                bu.update( {
+                    name: 'Boston University',
+                    campus: 'Boston',
+                    address: {
+                        city: 'Boston',
+                        state: 'Massachusetts'
+                    }
+                });
+
+                mit.update({
+                    name: 'Massachusetts Institute of Technology',
+                    campus: 'Cambridge',
+                    address: {
+                        city: 'Cambridge',
+                        state: 'Massachusetts'
+                    }
+                });
+
+                yield purdue.save();
+                yield purdueCal.save();
+                yield uiuc.save();
+                yield umich.save();
+                yield bu.save();
+                yield mit.save();
             });
 
             after('Cleaning up programs', function *() {
@@ -174,11 +232,27 @@ describe('School model test', function () {
                             .delete()
                             .run();
                 }
+
+                for (let testSchool of [purdue, purdueCal, uiuc, umich, bu, mit]) {
+                    yield r.table(TABLE)
+                            .get(testSchool.id)
+                            .delete()
+                            .run();
+                }
+            });
+
+            // Might want to remove in teh future
+            it('should return all schools', function *() {
+                let foundSchools = yield School.getAllSchools();
+                master.listEquals(
+                        foundSchools,
+                        [school, purdue, purdueCal, uiuc, umich, bu, mit]
+                );
             });
 
             it('should return all programs it has', function *() {
                 let programs = yield school.getAllPrograms();
-                master.program.listEquals(programs, testPrograms);
+                master.listEquals(programs, testPrograms);
             });
 
             it('should return all programs with undergraduate degree of science', function *() {
@@ -188,11 +262,30 @@ describe('School model test', function () {
                 });
 
                 let tests = [program2, program3];
-                master.program.listEquals(programs, tests);
+                master.listEquals(programs, tests);
             });
 
-            it('should be able to search by name');
-            it('should be able to search by location');
+            it('should be return Purdue University', function *() {
+                let foundSchools = yield School.findByName('Purdue');
+                master.listEquals(foundSchools, [purdue, purdueCal]);
+            });
+
+            it('should be able to search by location', function *() {
+                let foundSchools = yield School.findByLocation({ state: 'Massachusetts' });
+                master.listEquals(foundSchools, [bu, mit]);
+            });
+
+            describe('Pagination test', function () {
+                it('should return schools from 2nd to 4th position', function *() {
+                    let foundSchools = yield School.getSchoolsRange(1, 3);
+                    master.listEquals(foundSchools, [mit, purdueCal, purdue]);
+                });
+
+                it('should return schools from 6nd to 4th position', function *() {
+                    let foundSchools = yield School.getSchoolsRange(4, 3, true);
+                    master.listEquals(foundSchools, [purdueCal, mit, bu]);
+                });
+            });
         });
     });
 });

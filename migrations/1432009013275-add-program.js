@@ -3,10 +3,22 @@
 var r       = require('../models/r')();
 
 var TABLE = 'programs';
+var LEVEL_INDEX = 'level';
+var NAME_INDEX = 'name';
 
 exports.up = function(next) {
     r.tableCreate(TABLE)
-        .run(next);
+        .run()
+    .then(function () {
+        r.table(TABLE)
+            .indexCreate(LEVEL_INDEX)
+            .run()
+        .then(function () {
+            r.table(TABLE)
+                .indexCreate(NAME_INDEX)
+                .run(next);
+        });
+    });
 };
 
 exports.down = function(next) {

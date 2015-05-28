@@ -5,6 +5,7 @@ let r       = require('./r')();
 let schemas = require('./schemas');
 
 const TABLE = 'area_categories';
+const NAME_INDEX = 'name';
 const SCHEMA = schemas[TABLE];
 
 let Category = function (properties) {
@@ -20,22 +21,52 @@ Category.getTable = function () {
     return TABLE;
 };
 
+/**
+ * Get the corrresponding category of the specified ID
+ *
+ * @param   id  The Id of the category to retireve
+ * @return  The category object with the specified ID
+ */
 Category.findById = function *(id) {
-    let result;
+    let result, ret = null;
 
     try {
         result = yield r.table(TABLE)
                 .get(id)
                 .run();
+
+        if (result) {
+            ret = new Category(result);
+        }
     } catch (error) {
         console.error(error);
     }
 
-    return (result)? new Category(result) : null;
+    return ret;
 };
 
+/**
+ * Get the categories with the name
+ *
+ * @param   name    The name to search for
+ * @return  A category object of the found category
+ */
 Category.findByName = function *(name) {
+    let result, ret = null;
 
+    try {
+        result = yield r.table(TABLE)
+                .getAll(name, { index: NAME_INDEX })
+                .run();
+
+        if (result.length === 1) {
+            ret = new Category(result[0]);
+        }
+    } catch (error) {
+        console.error(error);
+    }
+
+    return ret;
 };
 
 Category.prototype = {
@@ -95,14 +126,24 @@ Category.prototype.save = function *() {
                     .update(data)
                     .run();
         } else {
-            // If there is no ID yet, insert this data
-            result = yield r.table(TABLE)
-                    .insert(data)
-                    .run();
+            // First check if name already existed
+            let foundName = yield Category.findByName(this._data.name);
+            if (!_.isNull(foundName)) {
+                // If name already existed
+                console.error('Name "' + this.name + ' already existed');
 
-            // Verify result, and store ID in this object
-            if (result && result.inserted === 1) {
-                this._data.id = result.generated_keys[0];
+                // Set the id if name already existed
+                this._data.id = foundName.id;
+            } else {
+                // Otherwise, insert this data
+                result = yield r.table(TABLE)
+                        .insert(data)
+                        .run();
+
+                // Verify result, and store ID in this object
+                if (result && result.inserted === 1) {
+                    this._data.id = result.generated_keys[0];
+                }
             }
         }
     } catch (error) {
