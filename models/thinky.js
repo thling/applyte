@@ -1,18 +1,18 @@
 'use strict';
 
-var rethinkdb = require('rethinkdbdash');
-var config    = require('../config');
+let thinkyOrm = require('thinky');
+let config    = require('../config');
 
-var r;
+let thinky;
 
 module.exports = function (dbOptions) {
     dbOptions = dbOptions || config.rethink;
 
     // Create connection if not existed
-    if (!r) {
-        r = rethinkdb(dbOptions);
+    if (!thinky) {
+        thinky = thinkyOrm(dbOptions);
     }
 
     // Return the database object
-    return r;
+    return thinky;
 };

@@ -1,6 +1,6 @@
 'use strict';
 
-var r = require(basedir + 'models/r');
+let thinky = require(basedir + 'models/thinky');
 
 /**
  * Lists all the programs we have

@@ -5,12 +5,9 @@ let _        = require('lodash');
 let Category = require('../../models/category');
 let master   = require('../test.master');
 let Program  = require('../../models/program');
-let r        = require('../../models/r')();
 let School   = require('../../models/school');
 
 require('co-mocha');
-
-const TABLE = Program.getTable();
 
 describe('Program model tests', function () {
     let template = master.program.template;
@@ -18,16 +15,12 @@ describe('Program model tests', function () {
 
     before('adding dummy school', function *() {
         school = new School(master.school.template);
-        yield Program.findById('');
         yield school.save();
         template.schoolId = school.id;
     });
 
     after('cleaning database', function *() {
-        yield r.table('schools')
-                .get(school.id)
-                .delete()
-                .run();
+        yield school.delete();
     });
 
     /**
@@ -59,10 +52,11 @@ describe('Program model tests', function () {
 
     describe('Program object basic functionality test', function () {
         it('should return a generator with program.areasIter', function () {
-            let areas = program.areasIter();
-            for (let area = areas.next(), i = 0; !area.done; area = areas.next(), i++) {
-                assert.deepEqual(template.areas[i], area.value);
+            let i = 0, areas = program.areasIter();
+            for (let area of areas()) {
+                assert.deepEqual(template.areas[i++], area);
             }
+
         });
 
         it('should remove an area then add it back', function () {
@@ -82,10 +76,7 @@ describe('Program model tests', function () {
     describe('Program model database test', function () {
         describe('Basic database test', function () {
             after('cleaning database', function *() {
-                yield r.table(TABLE)
-                        .get(program.id)
-                        .delete()
-                        .run();
+                yield program.delete();
             });
 
             it('should save to database and have an ID assigned to it', function *() {
@@ -117,9 +108,9 @@ describe('Program model tests', function () {
                 newTemp.name = 'Management';
                 newTemp.contact.email = 'mba@purdue.edu';
                 newTemp.areas = [
-                    'Information Technology Management',
-                    'Product Management',
-                    'Supply Chain Management'
+                    { name: 'Information Technology Management', categories: [] },
+                    { name: 'Product Management', categories: [] },
+                    { name: 'Supply Chain Management', categories: [] }
                 ];
 
                 program.update(newTemp);
@@ -173,6 +164,7 @@ describe('Program model tests', function () {
                     areas: [
                         {
                             name: 'Database Security',
+                            // categories:['Security', 'Systems', 'Database']
                             categories: [security.name, systems.name, database.name]
                         }
                     ]
@@ -195,17 +187,15 @@ describe('Program model tests', function () {
             after('Cleaning up programs', function *() {
                 // Don't need those in database anymore, clean up now
                 for (let testProg of testPrograms) {
-                    yield r.table(Program.getTable())
-                            .get(testProg.id)
-                            .delete()
-                            .run();
+                    yield testProg.delete();
                 }
 
                 for (let cat of [security, systems, database]) {
-                    yield r.table(Category.getTable())
-                            .get(cat.id)
-                            .delete()
-                            .run();
+                //     // yield r.table(Category.getTable())
+                //     //         .get(cat.id)
+                //     //         .delete()
+                //     //         .run();
+                    yield cat.delete();
                 }
             });
 
@@ -247,7 +237,7 @@ describe('Program model tests', function () {
                 let foundPrograms = yield Program.findByAreaCategories(['Database', 'Security']);
                 master.listEquals(foundPrograms, [management]);
             });
-            
+
             describe('Pagination test', function() {
                 it('should return programs from 3rd to 5th position (MGMT, ME, PHIL)', function *() {
                     let foundPrograms = yield Program.getProgramsRange(2, 3);
@@ -259,7 +249,6 @@ describe('Program model tests', function () {
                     master.listEquals(foundPrograms, [mecheng, management, indseng]);
                 });
             });
-
         });
     });
 });
