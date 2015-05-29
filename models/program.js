@@ -264,42 +264,4 @@ Program.define('update', function (properties) {
     _.assign(this, data);
 });
 
-/**
- * Save changes to the database. The method will detect
- * whether this object has an id already; if so, it will
- * perform db update; otherwise, it will insert the data.
- *
- * @return  True if save is success; false otherwise.
- */
-// Program.prototype.save = function *() {
-//     let result, data;
-//
-//     // Retrieve only data we specified in SCHEMA
-//     data = _.pick(this._data, _.keys(SCHEMA));
-//
-//     try {
-//         if (this._data.id) {
-//             // If there is an ID, update the data
-//             result = yield r.table(TABLE)
-//                     .get(this._data.id)
-//                     .update(data)
-//                     .run();
-//         } else {
-//             // If there is no ID yet, insert this data
-//             result = yield r.table(TABLE)
-//                     .insert(data)
-//                     .run();
-//
-//             // Verify result, and store ID in this object
-//             if (result && result.inserted === 1) {
-//                 this._data.id = result.generated_keys[0];
-//             }
-//         }
-//     } catch (error) {
-//         console.error(error);
-//     }
-//
-//     return (result)? true : false;
-// };
-
 module.exports = Program;
