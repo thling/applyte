@@ -4,11 +4,8 @@ let _        = require('lodash');
 let assert   = require('assert');
 let master   = require('../test.master');
 let Category = require('../../models/category');
-let r        = require('../../models/r')();
 
 require('co-mocha');
-
-const TABLE = Category.getTable();
 
 describe('Category model test', function () {
     let template = master.category.template;
@@ -29,14 +26,7 @@ describe('Category model test', function () {
 
     describe('Category database test', function () {
         after('cleaning up database', function *() {
-            try {
-                yield r.table(TABLE)
-                        .get(category.id)
-                        .delete()
-                        .run();
-            } catch (error) {
-                console.error(error);
-            }
+            yield category.delete();
         });
 
         describe('Basic database test', function () {
@@ -83,7 +73,7 @@ describe('Category model test', function () {
 
             after('cleaning up database', function *() {
                 for (let cat of [database, systems, network]) {
-                    yield r.table(TABLE).get(cat.id).delete().run();
+                    yield cat.delete();
                 }
             });
 

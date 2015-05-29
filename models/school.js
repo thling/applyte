@@ -2,27 +2,18 @@
 
 let _       = require('lodash');
 let Program = require('./program');
-let r       = require('./r')();
 let schemas = require('./schemas');
+let thinky  = require('./thinky')();
+
+let r = thinky.r;
 
 const TABLE = 'schools';
 const NAME_INDEX = 'name_campus_index';
 const SCHEMA = schemas[TABLE];
 
-let School = function (properties) {
-    this._data = {};
-    _.assign(this._data, _.pick(properties, _.keys(SCHEMA)));
-
-    if (_.has(properties, 'id')) {
-        this._data.id = properties.id;
-    }
-};
-
-School.getTable = function () {
-    return TABLE;
-};
-
-// Static methods
+let School = thinky.createModel(TABLE, SCHEMA, {
+    enforce_extra: 'strict'
+});
 
 /**
  * Queries the database for matching ID
@@ -31,19 +22,17 @@ School.getTable = function () {
  * @return  Returns a new School object that is populated
  *          of the data found; otherwise, null is returned
  */
-School.findById = function *(id) {
+School.defineStatic('findById', function *(id) {
     let result;
 
     try {
-        result = yield r.table(TABLE)
-                .get(id)
-                .run();
+        result = yield School.get(id);
     } catch (error) {
         console.error(error);
     }
 
     return (result)? new School(result) : null;
-};
+});
 
 /**
  * Find all schools that contain the name
@@ -51,7 +40,7 @@ School.findById = function *(id) {
  * @param   name    The name of the school
  * @return  An array of schools that has the specified string in the name
  */
-School.findByName = function *(name) {
+School.defineStatic('findByName', function *(name) {
     let result, ret = [];
 
     try {
@@ -69,7 +58,7 @@ School.findByName = function *(name) {
     }
 
     return ret;
-};
+});
 
 /**
  * Find schools that satisfy the location constraints
@@ -87,7 +76,7 @@ School.findByName = function *(name) {
  *                      Regular expression is NOT supported.
  * @return  An array of school objects satisfying the location constraints.
  */
-School.findByLocation = function *(location) {
+School.defineStatic('findByLocation', function *(location) {
     let result, ret = [];
 
     try {
@@ -105,15 +94,14 @@ School.findByLocation = function *(location) {
     }
 
     return ret;
-};
+});
 
 /**
  * Get all the schools. Use of this is not recommended.
  *
  * @return  Array of school objects
  */
-School.getAllSchools = function *() {
-    // TODO: Support for pagination
+School.defineStatic('getAllSchools', function *() {
     let result, ret = [];
 
     try {
@@ -129,7 +117,7 @@ School.getAllSchools = function *() {
     }
 
     return ret;
-};
+});
 
 /**
  * Returns the schools in the specified index range (page), starting from
@@ -142,7 +130,7 @@ School.getAllSchools = function *() {
  * @param   desc    True to sort descendingly; false to sort ascendingly
  * @return  An array of school objects that fall into the range
  */
-School.getSchoolsRange = function *(start, length, desc) {
+School.defineStatic('getSchoolsRange', function *(start, length, desc) {
     let result, ret = [];
     let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
 
@@ -161,88 +149,16 @@ School.getSchoolsRange = function *(start, length, desc) {
     }
 
     return ret;
-};
-
-// Getter and setters
-School.prototype = {
-    get id() {
-        return this._data.id;
-    },
-    get name() {
-        return this._data.name;
-    },
-    set name(value) {
-        this._data.name = value;
-    },
-    get campus() {
-        return this._data.campus;
-    },
-    set campus(value) {
-        this._date.campus = value;
-    },
-    get desc() {
-        return this._data.desc;
-    },
-    set desc(value) {
-        this._data.desc = value;
-    },
-    get email() {
-        return this._data.email;
-    },
-    set email(value) {
-        this._data.email = value;
-    },
-    get phone() {
-        return this._data.phone;
-    },
-    set phone(value) {
-        this._data.phone = value;
-    },
-    get logo() {
-        return this._data.logo;
-    },
-    set logo(value) {
-        this._data.logo = value;
-    },
-    get address() {
-        return this._data.address;
-    },
-    set address(value) {
-        _.assign(this._data.address, value);
-    },
-    get links() {
-        return this._data.links;
-    },
-
-    /**
-     * Returns a generator function that iterates through the links list
-     *
-     * @return  Generator function
-     */
-    get linksIter() {
-        return function *() {
-            for (let link of this._data.links) {
-                yield link;
-            }
-        };
-    },
-    set links(value) {
-        // TODO: Add validation
-        this._data.links = value;
-    },
-    get data() {
-        return this._data;
-    }
-};
+});
 
 /**
  * Get all the programs that belong to this school
  *
  * @return  Array of programs
  */
-School.prototype.getAllPrograms = function *() {
+School.define('getAllPrograms', function *() {
     return yield this.getProgramsWith({ schoolId: this.id });
-};
+});
 
 /**
  * Return all programs that satisfy the condition.
@@ -250,13 +166,13 @@ School.prototype.getAllPrograms = function *() {
  * @param   condition   JSON object or function using ReQL
  * @return  Array of programs that satisfy the specified condition
  */
-School.prototype.getProgramsWith = function *(condition) {
+School.define('getProgramsWith', function *(condition) {
     if (!_.isObject(condition) && !_.isFunction(condition)) {
         throw 'Invalid condition specification; expected Object or Function';
     }
 
     let result, ret = [];
-    let query = r.table(Program.getTable());
+    let query = r.table(Program.getTableName());
 
     // If condition is an object and does not filter by id yet,
     // or if condition is a function using ReQL, add new id filter
@@ -277,7 +193,7 @@ School.prototype.getProgramsWith = function *(condition) {
     }
 
     return ret;
-};
+});
 
 /**
  * Add a new link to this school. If the link already existsed,
@@ -286,23 +202,23 @@ School.prototype.getProgramsWith = function *(condition) {
  * @param   name    The name of the new link
  * @param   url     The link to add
  */
-School.prototype.addLink = function (linkName, linkUrl) {
-    this._data.links.push({
+School.define('addLink', function (linkName, linkUrl) {
+    this.links.push({
         name: linkName,
         url: linkUrl
     });
-};
+});
 
 /**
  * Remvoes a link from the school
  *
  * @param   linkName    The name of the link to remove
  */
-School.prototype.removeLink = function(linkName) {
-    _.remove(this._data.links, function (obj) {
+School.define('removeLink', function(linkName) {
+    _.remove(this.links, function (obj) {
         return obj.name === linkName;
     });
-};
+});
 
 /**
  * Update the entire object to match the properties.
@@ -314,11 +230,11 @@ School.prototype.removeLink = function(linkName) {
  *
  * @param   properties  The new property to assign to this object
  */
-School.prototype.update = function (properties) {
+School.define('update', function (properties) {
     // TODO: Add validation
 
     // Make sure we only retrieve what we want
-    let data = _.pick(properties, _.keys(SCHEMA));
+    let data = _.pick(properties, _.keys(SCHEMA));//thinky.getSchema(School));
 
     // Make sure the address only contain the fields we want
     if (_.has(data, 'address')) {
@@ -326,45 +242,21 @@ School.prototype.update = function (properties) {
         data = _.omit(data, 'address');
     }
 
-    _.assign(this._data, data);
-};
+    _.assign(this, data);
+});
 
 /**
- * Save changes to the database. The method will detect
- * whether this object has an id already; if so, it will
- * perform db update; otherwise, it will insert the data.
+ * Returns a generator function for the links array
  *
- * @return  True if save is success; false otherwise.
+ * @return  A generator function for the links array
  */
-School.prototype.save = function *() {
-    let result, data;
-
-    // Retrieve only data we specified in SCHEMA
-    data = _.pick(this._data, _.keys(SCHEMA));
-
-    try {
-        if (this._data.id) {
-            // If there is an ID, update the data
-            result = yield r.table(TABLE)
-                    .get(this._data.id)
-                    .update(data)
-                    .run();
-        } else {
-            // If there is no ID yet, insert this data
-            result = yield r.table(TABLE)
-                    .insert(data)
-                    .run();
-
-            // Verify result, and store ID in this object
-            if (result && result.inserted === 1) {
-                this._data.id = result.generated_keys[0];
-            }
+School.define('linksIter', function () {
+    let links = this.links;
+    return function *() {
+        for (let link of links) {
+            yield link;
         }
-    } catch (error) {
-        console.error(error);
-    }
-
-    return (result)? true: false;
-};
+    };
+});
 
 module.exports = School;
