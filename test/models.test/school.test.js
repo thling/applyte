@@ -4,12 +4,11 @@ let _       = require('lodash');
 let assert  = require('assert');
 let master  = require('../test.master');
 let Program = require('../../models/program');
-let r       = require('../../models/r')();
 let School  = require('../../models/school');
 
 require('co-mocha');
 
-const TABLE = School.getTable();
+// const TABLE = School.getTableName();
 
 describe('School model test', function () {
     // The template for test-purpose school
@@ -43,15 +42,15 @@ describe('School model test', function () {
     });
 
     describe('School object basic functionality test', function () {
-        it('should return a generator with program.areasIter', function () {
+        it('should return a generator with school.linksIter', function () {
             let links = school.linksIter();
-            for (let link = links.next(); !link.done; link = links.next()) {
-                assert.notStrictEqual(template.links.indexOf(link.value), -1);
+            for (let link of links()) {
+                assert.notStrictEqual(template.links.indexOf(link), -1);
             }
         });
 
         it('should remove a link, then add it back', function () {
-            let newLinks = _.take(template.links, school.links.length - 1);
+            let newLinks = _.take(template.links, template.links.length - 1);
             let newTemp = master.school.template;
             let toRemove = _.takeRight(school.links)[0];
             school.removeLink(toRemove.name);
@@ -66,14 +65,7 @@ describe('School model test', function () {
 
     describe('School model database test', function (){
         after('cleaning up created test school', function *() {
-            try {
-                yield r.table(TABLE)
-                        .get(school.id)
-                        .delete()
-                        .run();
-            } catch (error) {
-                console.error(error);
-            }
+            yield school.delete();
         });
 
         describe('Basic database test', function () {
@@ -227,17 +219,11 @@ describe('School model test', function () {
             after('Cleaning up programs', function *() {
                 // Don't need those in database anymore, clean up now
                 for (let testProg of testPrograms) {
-                    yield r.table(Program.getTable())
-                            .get(testProg.id)
-                            .delete()
-                            .run();
+                    yield testProg.delete();
                 }
 
                 for (let testSchool of [purdue, purdueCal, uiuc, umich, bu, mit]) {
-                    yield r.table(TABLE)
-                            .get(testSchool.id)
-                            .delete()
-                            .run();
+                    yield testSchool.delete();
                 }
             });
 

@@ -1,5 +1,7 @@
 'use strict';
 
+let type = require('thinky')().type;
+
 /**
  * This file is used as a barebone for each table. The reason to
  * have this data in a schema-less database system (RethinkDB) is
@@ -17,46 +19,55 @@
 
 // General address object
 let address = {
-    address1: null,
-    address2: null,
-    city: null,
-    state: null,
-    postalCode: null,
-    country: null,
+    address1: type.string(),
+    address2: type.string(),
+    city: type.string(),
+    state: type.string(),
+    postalCode: type.string(),
+    country: type.string()
 };
 
 module.exports = {
     // Schools schema
     schools: {
-        name: null,
-        campus: null,
-        desc: null,
-        email: null,
-        phone: null,
-        logo: null,
+        id: type.string(),      // Primary key
+        name: type.string(),
+        campus: type.string(),
+        desc: type.string(),
+        email: type.string(),
+        phone: type.string(),
+        logo: type.string(),
         address: address,
-        links: []       // In the form of [{name: '', url: ''}]
+        links: [{
+            name: type.string(),
+            url: type.string()
+        }]
     },
     // Programs schema
     programs: {
-        name: null,
-        degree: null,
-        level: null,
-        desc: null,
-        schoolId: null,
-        department: null,
-        faculty: null,  // Also known as 'College of *' in US
-        areas: [],      // In the form of [{name: '', categories: []}]
+        id: type.string(),
+        name: type.string(),
+        degree: type.string(),
+        level: type.string(),
+        desc: type.string(),
+        schoolId: type.string(),
+        department: type.string(),
+        faculty: type.string(),     // Also known as 'College of *' in US
+        areas: [{
+            name: type.string(),
+            categories: [type.string()]
+        }],
         contact: {
-            fax: null,
-            phone: null,
-            email: null,
+            fax: type.string(),
+            phone: type.string(),
+            email: type.string(),
             address: address
         }
     },
     // Category schema
     area_categories: {
-        name: null,     // Primary key
-        desc: null
+        id: type.string(),
+        name: type.string(),     // Primary key
+        desc: type.string()
     }
 };
