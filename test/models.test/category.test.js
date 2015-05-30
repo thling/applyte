@@ -11,16 +11,10 @@ describe('Category model test', function () {
     let template = master.category.template;
     let category;
 
-    let validateCategory = function (cat, temp) {
-        assert(_.isObject(cat), 'Category is not an object');
-        assert.strictEqual(cat.name, temp.name);
-        assert.strictEqual(cat.desc, temp.desc);
-    };
-
     describe('Category object instantiation test', function () {
         it('should create a newly populated category object', function () {
             category = new Category(template);
-            validateCategory(category, template);
+            master.category.assertEqual(category, template);
         });
     });
 
@@ -37,7 +31,7 @@ describe('Category model test', function () {
 
             it('should retrieve the inserted category', function *() {
                 let newCat = yield Category.findById(category.id);
-                validateCategory(newCat, template);
+                master.category.assertEqual(newCat, template);
             });
 
             it('should be able to update one field', function *() {
@@ -49,7 +43,7 @@ describe('Category model test', function () {
                 yield category.save();
 
                 let newCat = yield Category.findById(category.id);
-                validateCategory(newCat, newTemp);
+                master.category.assertEqual(newCat, newTemp);
             });
         });
 
@@ -79,7 +73,7 @@ describe('Category model test', function () {
 
             it('should be able to search by name', function *() {
                 let foundCategory = yield Category.findByName('Systems');
-                validateCategory(foundCategory, systems);
+                master.category.assertEqual(foundCategory, systems);
             });
         });
     });

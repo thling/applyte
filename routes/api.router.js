@@ -3,13 +3,22 @@
 // Routing for programs
 var programApi = require(basedir + 'controllers/api/api.program.controller');
 
-module.exports = function(router) {
+module.exports = function (router) {
     // List all available programs
-    router.get('/api/program/list', programApi.list);
+    router.get('/api/program/list', programApi.listPrograms);
 
-    // List all availalbe programs from a school by school id
-    router.get('/api/program/school/id/:schoolid', programApi.listBySchoolId);
+    // Pagination requests
+    router.get('/api/program/list/:start/:length/:order?', programApi.listPrograms);
 
-    // List all availalbe programs from a school by school name
-    router.get('/api/program/school/name/:schoolname', programApi.listBySchoolName);
+    // Fetch a particular one given ID
+    router.get('/api/program/id/:id', programApi.getProgramById);
+
+    // Fetch a particular program by name
+    router.get('/api/program/name/:name', programApi.getProgramByName);
+
+    // Add new
+    router.post('/api/program/create', programApi.createProgram);
+
+    // Delete existing (need apiKey)
+    router.delete('/api/program/delete', programApi.deleteProgram);
 };

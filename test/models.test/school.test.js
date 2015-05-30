@@ -15,29 +15,10 @@ describe('School model test', function () {
     let template = master.school.template;
     let school;
 
-    /**
-     * Validates the school against the template above
-     *
-     * @param   school  The school to validate
-     * @throws  AssertionError if not valid
-     */
-    let validateSchool = function (school, temp) {
-        assert(_.isObject(school), 'School is not an object');
-        assert.strictEqual(school.name, temp.name);
-        assert.strictEqual(school.campus, temp.campus);
-        assert.strictEqual(school.desc, temp.desc);
-        assert.strictEqual(school.email, temp.email);
-        assert.strictEqual(school.phone, temp.phone);
-        assert.strictEqual(school.logo, temp.logo);
-
-        assert.deepEqual(school.address, temp.address);
-        assert.deepEqual(school.links, temp.links);
-    };
-
     describe('School object instantiation test', function () {
         it('should create a populated School object', function *() {
             school = new School(template);
-            validateSchool(school, template);
+            master.school.assertEqual(school, template);
         });
     });
 
@@ -56,10 +37,10 @@ describe('School model test', function () {
             school.removeLink(toRemove.name);
 
             newTemp.links = newLinks;
-            validateSchool(school, newTemp);
+            master.school.assertEqual(school, newTemp);
 
             school.addLink(toRemove.name, toRemove.url);
-            validateSchool(school, template);
+            master.school.assertEqual(school, template);
         });
     });
 
@@ -76,7 +57,7 @@ describe('School model test', function () {
 
             it('should retrieve the inserted school properly', function *() {
                 let schoolFound = yield School.findById(school.id);
-                validateSchool(schoolFound, template);
+                master.school.assertEqual(schoolFound, template);
             });
 
             it('should update one field', function *() {
@@ -95,7 +76,7 @@ describe('School model test', function () {
                 // Attempt to grab the same ID, hopefully the value corresponds
                 // to waht we changed
                 let updatedSchool = yield School.findById(school.id);
-                validateSchool(updatedSchool, templateCopy);
+                master.school.assertEqual(updatedSchool, templateCopy);
             });
 
             it('should update multiple fields', function *() {
@@ -110,7 +91,7 @@ describe('School model test', function () {
                 assert(yield school.save(), 'failed to save data: DB connection lost?');
 
                 let updatedSchool = yield School.findById(school.id);
-                validateSchool(updatedSchool, templateCopy);
+                master.school.assertEqual(updatedSchool, templateCopy);
             });
         });
 

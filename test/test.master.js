@@ -54,9 +54,9 @@ module.exports.school = {
             name: 'Purdue University',
             campus: 'West Lafayette',
             desc: 'Better than IU in every aspect',
-            email: null,
+            email: 'null',
             phone: '+1 (765) 494-4600',
-            logo: null,
+            logo: '',
             address: _.cloneDeep(address),
             links: [
                 {
@@ -69,6 +69,25 @@ module.exports.school = {
                 }
             ]
         };
+    },
+
+    /**
+     * Validates the school against the template
+     *
+     * @param   school  The school to validate
+     * @throws  AssertionError if not valid
+     */
+    assertEqual: function (school, temp) {
+        assert(_.isObject(school), 'School is not an object');
+        assert.strictEqual(school.name, temp.name);
+        assert.strictEqual(school.campus, temp.campus);
+        assert.strictEqual(school.desc, temp.desc);
+        assert.strictEqual(school.email, temp.email);
+        assert.strictEqual(school.phone, temp.phone);
+        assert.strictEqual(school.logo, temp.logo);
+
+        assert.deepEqual(school.address, temp.address);
+        assert.deepEqual(school.links, temp.links);
     }
 };
 
@@ -82,7 +101,7 @@ module.exports.program = {
             degree: 'Master of Science',
             level: 'Graduate',
             desc: 'The Department of Computer Sciences is good.',
-            schoolId: null,
+            schoolId: '',
             department: 'Department of Computer Science',
             faculty: 'College of Science',
             areas: [
@@ -106,6 +125,26 @@ module.exports.program = {
                 address: _.cloneDeep(address)
             }
         };
+    },
+
+    /**
+     * Validates the program against the template
+     *
+     * @param   prog    The prog to validate
+     * @throws  AssertionError if not valid
+     */
+    assertEqual: function (prog, temp) {
+        assert(_.isObject(prog), 'Program is not a object');
+        assert.strictEqual(prog.name, temp.name);
+        assert.strictEqual(prog.degree, temp.degree);
+        assert.strictEqual(prog.level, temp.level);
+        assert.strictEqual(prog.desc, temp.desc);
+        assert.strictEqual(prog.schoolId, temp.schoolId);
+        assert.strictEqual(prog.department, temp.department);
+        assert.strictEqual(prog.faculty, temp.faculty);
+
+        assert.deepEqual(prog.areas, temp.areas);
+        assert.deepEqual(prog.contact, temp.contact);
     }
 };
 
@@ -118,5 +157,17 @@ module.exports.category = {
             name: 'Security',
             desc: 'Research of security'
         };
+    },
+    
+    /**
+     * Validates the category against the template
+     *
+     * @param   cat     The category objecto validate
+     * @throws  AssertionError if not valid
+     */
+    assertEqual: function (cat, temp) {
+        assert(_.isObject(cat), 'Category is not an object');
+        assert.strictEqual(cat.name, temp.name);
+        assert.strictEqual(cat.desc, temp.desc);
     }
 };

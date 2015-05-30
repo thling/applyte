@@ -17,6 +17,11 @@ module.exports = {
             mode: 'staging'
         },
 
+        // Test environment
+        test: {
+            mode: 'test'
+        },
+
         // These configurations will be used on production server
         production: {
             mode: 'production',

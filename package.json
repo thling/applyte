@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "start": "node --harmony app.js",
-    "test": "mocha --harmony $(find test -name '*.js')"
+    "test": "mocha --harmony -R nyan $(find test -name '*.js')"
   },
   "dependencies": {
-    "co-body": "^0.0.1",
+    "co-body": "0.0.1",
     "co-views": "^0.2.0",
     "koa": "^0.6.0",
     "koa-compress": "^1.0.6",

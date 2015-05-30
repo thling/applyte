@@ -23,30 +23,10 @@ describe('Program model tests', function () {
         yield school.delete();
     });
 
-    /**
-     * Validates the program against the template above
-     *
-     * @param   prog    The prog to validate
-     * @throws  AssertionError if not valid
-     */
-    let validateProgram = function (prog, temp) {
-        assert(_.isObject(prog), 'Program is not a object');
-        assert.strictEqual(prog.name, temp.name);
-        assert.strictEqual(prog.degree, temp.degree);
-        assert.strictEqual(prog.level, temp.level);
-        assert.strictEqual(prog.desc, temp.desc);
-        assert.strictEqual(prog.schoolId, temp.schoolId);
-        assert.strictEqual(prog.department, temp.department);
-        assert.strictEqual(prog.faculty, temp.faculty);
-
-        assert.deepEqual(prog.areas, temp.areas);
-        assert.deepEqual(prog.contact, temp.contact);
-    };
-
     describe('Program object instantiation test', function () {
         it('Should create a newly populated program object', function () {
             program = new Program(template);
-            validateProgram(program, template);
+            master.program.assertEqual(program, template);
         });
     });
 
@@ -66,10 +46,10 @@ describe('Program model tests', function () {
             newTemp.schoolId = template.schoolId;
 
             program.removeArea(toRemove.name);
-            validateProgram(program, newTemp);
+            master.program.assertEqual(program, newTemp);
 
             program.addArea(toRemove.name, toRemove.categories);
-            validateProgram(program, template);
+            master.program.assertEqual(program, template);
         });
     });
 
@@ -86,7 +66,7 @@ describe('Program model tests', function () {
 
             it('should retrieve the inserted program', function *() {
                 let foundProgram = yield Program.findById(program.id);
-                validateProgram(foundProgram, template);
+                master.program.assertEqual(foundProgram, template);
             });
 
             it('should be able to update one field', function *() {
@@ -98,7 +78,7 @@ describe('Program model tests', function () {
                 yield program.save();
 
                 let foundProgram = yield Program.findById(program.id);
-                validateProgram(foundProgram, newTemp);
+                master.program.assertEqual(foundProgram, newTemp);
             });
 
             it('should be able to bulk update muliple fields', function *() {
@@ -117,7 +97,7 @@ describe('Program model tests', function () {
                 yield program.save();
 
                 let foundProgram = yield Program.findById(program.id);
-                validateProgram(foundProgram, newTemp);
+                master.program.assertEqual(foundProgram, newTemp);
             });
         });
 
@@ -164,7 +144,6 @@ describe('Program model tests', function () {
                     areas: [
                         {
                             name: 'Database Security',
-                            // categories:['Security', 'Systems', 'Database']
                             categories: [security.name, systems.name, database.name]
                         }
                     ]
@@ -191,10 +170,6 @@ describe('Program model tests', function () {
                 }
 
                 for (let cat of [security, systems, database]) {
-                //     // yield r.table(Category.getTable())
-                //     //         .get(cat.id)
-                //     //         .delete()
-                //     //         .run();
                     yield cat.delete();
                 }
             });

@@ -211,7 +211,11 @@ Program.defineStatic('getProgramsRange', function *(start, length, desc) {
     return ret;
 });
 
-
+/**
+ * Returns a generator function for iterating through the program's areas
+ *
+ * @return  A generator function that iterates through this program's areas
+ */
 Program.define('areasIter', function () {
     let areas = this.areas;
     return function *() {
@@ -221,6 +225,14 @@ Program.define('areasIter', function () {
     };
 });
 
+/**
+ * Add an area to this program
+ *
+ * @param   name        The name of the new area
+ * @param   categories  The categories this area may fall into.
+ *                      Each category must already exist in the
+ *                      area_categories table in database (will be verified).
+ */
 Program.define('addArea', function (name, categories) {
     if (!_.isArray(this.areas)) {
         this.areas = [];
@@ -232,6 +244,11 @@ Program.define('addArea', function (name, categories) {
     });
 });
 
+/**
+ * Removes an area from the program
+ *
+ * @param   name    The name of the area to remove
+ */
 Program.define('removeArea', function (name) {
     _.remove(this.areas, function (obj) {
         return obj.name === name;

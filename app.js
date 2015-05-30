@@ -1,16 +1,17 @@
 'use strict';
 
-var compress = require('koa-compress');
-var json     = require('koa-json');
-var koa      = require('koa');
-var logger   = require('koa-logger');
-var path     = require('path');
-var serve    = require('koa-static');
-var config   = require('./config');
-var router   = require('./routes');
+let bodyParser = require('koa-bodyparser');
+let compress   = require('koa-compress');
+let json       = require('koa-json');
+let koa        = require('koa');
+let logger     = require('koa-logger');
+let path       = require('path');
+let serve      = require('koa-static');
+let config     = require('./config');
+let router     = require('./routes');
 
 // Initialize new Koa application
-var app = module.exports = koa();
+let app = module.exports = koa();
 
 // JSON prettifier
 if (config.jsonPrettify.prettify === true) {
@@ -23,7 +24,12 @@ if (config.jsonPrettify.prettify === true) {
 }
 
 // Logger
-app.use(logger());
+if (config.mode !== 'test') {
+    app.use(logger());
+}
+
+// Body parser for HTTP request parsing
+app.use(bodyParser());
 
 // Import routes
 app.use(router.routes());
