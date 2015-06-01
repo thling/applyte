@@ -14,6 +14,9 @@ let Category = thinky.createModel(TABLE, SCHEMA, {
     enforce_extra: 'strict'
 });
 
+// Create index if not existed
+Category.ensureIndex(NAME_INDEX);
+
 /**
  * Get the corrresponding category of the specified ID
  *

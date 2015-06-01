@@ -1,12 +1,12 @@
 'use strict';
 
-var r       = require('../models/r')();
+var r = require('../models/thinky')().r;
 
 var TABLE = 'programs';
 var LEVEL_INDEX = 'level';
 var NAME_INDEX = 'name';
 
-exports.up = function(next) {
+exports.up = function (next) {
     r.tableCreate(TABLE)
         .run()
     .then(function () {
@@ -21,7 +21,7 @@ exports.up = function(next) {
     });
 };
 
-exports.down = function(next) {
+exports.down = function (next) {
     r.tableDrop(TABLE)
         .run(next);
 };

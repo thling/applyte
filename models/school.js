@@ -15,6 +15,11 @@ let School = thinky.createModel(TABLE, SCHEMA, {
     enforce_extra: 'strict'
 });
 
+// Create index if not existed;
+School.ensureIndex(NAME_INDEX, function (doc) {
+    return doc('name').add(doc('campus'));
+});
+
 /**
  * Queries the database for matching ID
  *

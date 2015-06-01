@@ -10,7 +10,7 @@ module.exports = {
         rethink: {
             host: 'localhost',  // Hostname
             port: 28015,        // Port for DB connection
-            db: 'school_app'    // Default database name
+            db: 'applyte'    // Default database name
         },
 
         // Server port to listen to

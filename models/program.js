@@ -16,6 +16,10 @@ let Program = thinky.createModel(TABLE, SCHEMA, {
     enforce_extra: 'strict'
 });
 
+// Create indices if not existed
+Program.ensureIndex(LEVEL_INDEX);
+Program.ensureIndex(NAME_INDEX);
+
 /**
  * Queries the database for matching ID
  *

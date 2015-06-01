@@ -1,11 +1,11 @@
 'use strict';
 
-var r      = require('../models/r')();
+var r = require('../models/thinky')().r;
 
 var TABLE = 'schools';
 var NAME_INDEX = 'name_campus_index';
 
-exports.up = function(next) {
+exports.up = function (next) {
     r.tableCreate(TABLE)
         .run()
         .then(function () {
@@ -18,7 +18,7 @@ exports.up = function(next) {
         });
 };
 
-exports.down = function(next) {
+exports.down = function (next) {
     r.tableDrop(TABLE)
         .run(next);
 };

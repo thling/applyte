@@ -1,6 +1,6 @@
 'use strict';
 
-var r = require('../models/r')();
+var r = require('../models/thinky')().r;
 
 var TABLE = 'area_categories';
 var NAME_INDEX = 'name';
