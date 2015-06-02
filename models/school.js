@@ -21,7 +21,10 @@ School.ensureIndex(NAME_INDEX, function (doc) {
 });
 
 /**
- * Queries the database for matching ID
+ * Queries the database for matching ID. This will alleviate
+ * the impact of exception thrown by Thinky by returning null
+ * on not found; if you would like to handle exception, use
+ * School.get(id).
  *
  * @param   id  The id to search for
  * @return  Returns a new School object that is populated
@@ -162,7 +165,7 @@ School.defineStatic('getSchoolsRange', function *(start, length, desc) {
  * @return  Array of programs
  */
 School.define('getAllPrograms', function *() {
-    return yield this.getProgramsWith({ schoolId: this.id });
+    return yield Program.getAll(this.id, { index: 'schoolId' });
 });
 
 /**
@@ -243,7 +246,11 @@ School.define('update', function (properties) {
 
     // Make sure the address only contain the fields we want
     if (_.has(data, 'address')) {
-        this.address = _.pick(data.address, _.keys(SCHEMA.address));
+        _.assign(
+                this.address,
+                _.pick(data.address, _.keys(SCHEMA.address))
+        );
+
         data = _.omit(data, 'address');
     }
 

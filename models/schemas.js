@@ -64,7 +64,7 @@ module.exports = {
             address: address
         }
     },
-    // Category schema
+    // AreaCategory schema
     area_categories: {
         id: type.string(),
         name: type.string(),     // Primary key

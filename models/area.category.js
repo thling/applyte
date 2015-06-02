@@ -10,27 +10,30 @@ const TABLE = 'area_categories';
 const NAME_INDEX = 'name';
 const SCHEMA = schemas[TABLE];
 
-let Category = thinky.createModel(TABLE, SCHEMA, {
+let AreaCategory = thinky.createModel(TABLE, SCHEMA, {
     enforce_extra: 'strict'
 });
 
 // Create index if not existed
-Category.ensureIndex(NAME_INDEX);
+AreaCategory.ensureIndex(NAME_INDEX);
 
 /**
- * Get the corrresponding category of the specified ID
+ * Queries the database for matching ID. This will alleviate
+ * the impact of exception thrown by Thinky by returning null
+ * on not found; if you would like to handle exception, use
+ * AreaCategory.get(id)
  *
- * @param   id  The Id of the category to retireve
- * @return  The category object with the specified ID
+ * @param   id  The Id of the AreaCategory to retireve
+ * @return  The AreaCategory object with the specified ID
  */
-Category.defineStatic('findById', function *(id) {
+AreaCategory.defineStatic('findById', function *(id) {
     let result, ret = null;
 
     try {
-        result = yield Category.get(id);
+        result = yield AreaCategory.get(id);
 
         if (result) {
-            ret = new Category(result);
+            ret = new AreaCategory(result);
         }
     } catch (error) {
         console.error(error);
@@ -43,9 +46,9 @@ Category.defineStatic('findById', function *(id) {
  * Get the categories with the name
  *
  * @param   name    The name to search for
- * @return  A category object of the found category
+ * @return  A AreaCategory object of the found AreaCategory
  */
-Category.defineStatic('findByName', function *(name) {
+AreaCategory.defineStatic('findByName', function *(name) {
     let result, ret = null;
 
     try {
@@ -54,7 +57,7 @@ Category.defineStatic('findByName', function *(name) {
                 .run();
 
         if (result.length === 1) {
-            ret = new Category(result[0]);
+            ret = new AreaCategory(result[0]);
         }
     } catch (error) {
         console.error(error);
@@ -74,7 +77,7 @@ Category.defineStatic('findByName', function *(name) {
  *
  * @param   properties  The new property to assign to this object
  */
-Category.define('update', function (properties) {
+AreaCategory.define('update', function (properties) {
     // TODO: Add validation
 
     // Make sure we only retrieve what we want
@@ -82,4 +85,4 @@ Category.define('update', function (properties) {
     _.assign(this, data);
 });
 
-module.exports = Category;
+module.exports = AreaCategory;

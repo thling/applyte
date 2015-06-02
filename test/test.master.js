@@ -151,14 +151,14 @@ module.exports.program = {
 /**
  * For tests on category
  */
-module.exports.category = {
+module.exports.areaCategory = {
     get template() {
         return {
             name: 'Security',
             desc: 'Research of security'
         };
     },
-    
+
     /**
      * Validates the category against the template
      *
@@ -166,7 +166,7 @@ module.exports.category = {
      * @throws  AssertionError if not valid
      */
     assertEqual: function (cat, temp) {
-        assert(_.isObject(cat), 'Category is not an object');
+        assert(_.isObject(cat), 'AreaCategory is not an object');
         assert.strictEqual(cat.name, temp.name);
         assert.strictEqual(cat.desc, temp.desc);
     }

@@ -8,8 +8,6 @@ let School  = require('../../models/school');
 
 require('co-mocha');
 
-// const TABLE = School.getTableName();
-
 describe('School model test', function () {
     // The template for test-purpose school
     let template = master.school.template;
@@ -80,18 +78,25 @@ describe('School model test', function () {
             });
 
             it('should update multiple fields', function *() {
-                let templateCopy = master.school.template;
-                templateCopy.name = 'Purrrrdue University';
-                templateCopy.phone = '+1 (123) 456 7890';
-                templateCopy.address.address2 = 'New address 2';
-                templateCopy.address.country = 'Random country lol';
-                templateCopy.email = 'new@email.cc';
+                let temp = master.school.template;
+                // To test the partial update for address object
+                let tempAddress = temp.address;
 
-                school.update(templateCopy);
+                temp.name = 'Purrrrdue University';
+                temp.phone = '+1 (123) 456 7890';
+                temp.email = 'new@email.cc';
+                temp.address = {
+                    address2: 'New address 2',
+                    country: 'Random country lol'
+                };
+
+                school.update(temp);
                 assert(yield school.save(), 'failed to save data: DB connection lost?');
 
+                _.assign(temp.address, _.omit(tempAddress, _.keys(temp.address)));
+
                 let updatedSchool = yield School.findById(school.id);
-                master.school.assertEqual(updatedSchool, templateCopy);
+                master.school.assertEqual(updatedSchool, temp);
             });
         });
 

@@ -13,12 +13,15 @@ module.exports = function (router) {
     // Fetch a particular one given ID
     router.get('/api/program/id/:id', programApi.getProgramById);
 
-    // Fetch a particular program by name
+    // Fetch a particular program by name (may have multiple)
     router.get('/api/program/name/:name', programApi.getProgramByName);
 
-    // Add new
+    // Add new program, returns id
     router.post('/api/program/create', programApi.createProgram);
 
-    // Delete existing (need apiKey)
+    // Update existing program, returns changelog
+    router.put('/api/program/update', programApi.updateProgram);
+
+    // Delete existing (need admin), returns nothing
     router.delete('/api/program/delete', programApi.deleteProgram);
 };

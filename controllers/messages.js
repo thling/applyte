@@ -1,4 +1,11 @@
 'use strict';
+
+/**
+ * This file is a sample for those who are new to Koa + generator + routing
+ * world. This file is not a production file, and should not be in the
+ * production server.
+ */
+
 var views = require('co-views');
 var parse = require('co-body');
 var messages = [

@@ -1,12 +1,13 @@
 'use strict';
 
+let koa        = require('koa');
 let bodyParser = require('koa-bodyparser');
 let compress   = require('koa-compress');
+let helmet     = require('koa-helmet');
 let json       = require('koa-json');
-let koa        = require('koa');
 let logger     = require('koa-logger');
-let path       = require('path');
 let serve      = require('koa-static');
+let path       = require('path');
 let config     = require('./config');
 let router     = require('./routes');
 
@@ -22,6 +23,8 @@ if (config.jsonPrettify.prettify === true) {
         }
     ));
 }
+
+app.use(helmet.defaults());
 
 // Logger
 if (config.mode !== 'test') {

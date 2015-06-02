@@ -1,22 +1,23 @@
 'use strict';
 
-let _       = require('lodash');
+let _      = require('lodash');
+let School = require(basedir + 'models/school');
 let Program = require(basedir + 'models/program');
 
 /**
- * Lists all the programs we have
+ * Lists all the schools we have
  *
  * Method: GET
- * Base URL: /api/program/list/...
+ * Base URL: /api/school/list/...
  *
  * Supports pagination. The url should be:
- *      [host]/api/program/list/
- *      [host]/api/program/list/[start]/[length]
- *      [host]/api/program/list/[start]/[length]/[desc]
+ *      [host]/api/school/list/
+ *      [host]/api/school/list/[start]/[length]
+ *      [host]/api/school/list/[start]/[length]/[desc]
  *
- * where [start] is the starting index (starting from 1) of the program,
- *       [length] is the number of programs to fetch,
- *       [desc] is the order to sort (by name)
+ * where [start] is the starting index (starting from 1) of the school,
+ *       [length] is the number of school to fetch,
+ *       [desc] is the order to sort (by name then campus name)
  *              It is either "desc" for sorting descendingly or nothing.
  *              If nothing, default to sorting ascendingly.
  *
@@ -24,7 +25,7 @@ let Program = require(basedir + 'models/program');
  *          400: sets the resposne object to error text (displaying error)
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.listPrograms = function *() {
+module.exports.listSchools = function *() {
     try {
         if (this.params.start && this.params.length) {
             // Pagination requests
@@ -38,13 +39,13 @@ module.exports.listPrograms = function *() {
                 let order = (this.params.order === 'desc')? true : false;
 
                 // Obtain the result
-                let result = yield Program.getProgramsRange(start, length, order);
+                let result = yield School.getSchoolsRange(start, length, order);
 
                 this.status = 200;
                 this.body = result;
             }
         } else {
-            let result = yield Program.getAllPrograms();
+            let result = yield School.getAllSchools();
             this.body = result;
             this.status = 200;
         }
@@ -55,17 +56,17 @@ module.exports.listPrograms = function *() {
 };
 
 /**
- * Gets the program by ID
+ * Gets the school by ID
  *
  * Method: GET
- * Base URL: /api/program/id/[id]
+ * Base URL: /api/school/id/[id]
  *
  * @return  200: sets the response object to JSON representation of found
  *               Single object
  *          400: sets the resposne object to error text (displaying error)
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.getProgramById = function *() {
+module.exports.getSchoolById = function *() {
     let data = this.params;
 
     if (!data.id) {
@@ -73,9 +74,9 @@ module.exports.getProgramById = function *() {
         this.body = 'No ID to search for';
     } else {
         try {
-            let program = yield Program.get(data.id);
+            let school = yield School.get(data.id);
             this.status = 200;
-            this.body = program;
+            this.body = school;
         } catch (error) {
             console.error(error);
             this.status = 500;
@@ -84,17 +85,17 @@ module.exports.getProgramById = function *() {
 };
 
 /**
- * Gets the program by ID
+ * Gets the school by ID
  *
  * Method: GET
- * Base URL: /api/program/name/[name]
+ * Base URL: /api/school/name/[name]
  *
  * @return  200: sets the response object to JSON representation of found
  *               Array of object(s)
  *          400: sets the resposne object to error text (displaying error)
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.getProgramByName = function *() {
+module.exports.getSchoolByName = function *() {
     let data = this.params;
 
     if (!data.name) {
@@ -104,9 +105,9 @@ module.exports.getProgramByName = function *() {
         let name = decodeURI(data.name);
 
         try {
-            let program = yield Program.findByName(name);
+            let schools = yield School.findByName(name);
             this.status = 200;
-            this.body = program;
+            this.body = schools;
         } catch (error) {
             console.error(error);
             this.status = 500;
@@ -115,31 +116,61 @@ module.exports.getProgramByName = function *() {
 };
 
 /**
- * Creates a new program and returns a new ID for the program
+ * Gets all the program the school has
+ *
+ * Method: GET
+ * Base URL: /api/school/id/[id]/programs
+ *
+ * @return  200: sets the response object to JSON representation of found
+ *               Array of object(s)
+ *          400: sets the resposne object to error text (displaying error)
+ *          500: not returning anything in response body (hiding error)
+ */
+module.exports.getSchoolPrograms = function *() {
+    let data = this.params;
+    if (!data.id) {
+        this.status = 400;
+        this.body = 'No id to search for';
+    } else {
+        try {
+            let school = yield School.get(data.id);
+            let programs = yield school.getAllPrograms();
+
+            this.status =200;
+            this.body = programs;
+        } catch (error) {
+            console.error(error);
+            this.status = 500;
+        }
+    }
+};
+
+/**
+ * Creates a new school and returns a new ID for the school
  *
  * Method: POST
- * Base URL: /api/program/create
+ * Base URL: /api/school/create
  *
- * Accepts JSON object that complies with Program schema.
+ * Accepts JSON object that complies with School schema.
  *
  * @return  201: Successfully created
  *               An object with one property named "id"
  *          400: sets the resposne object to error text (displaying error)
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.createProgram = function *() {
+module.exports.createSchool = function *() {
     let data = this.request.body;
     if (data.id) {
         this.status = 400;
         this.body = 'Cannot create if ID is know or existed';
     } else {
-        // Create a new program and try to save it
-        let program = new Program(this.request.body);
+        // Create a new school and try to save it
+        let school = new School(this.request.body);
 
         try {
-            yield program.save();
+            yield school.save();
             this.status = 201;
-            this.body = { id: program.id };
+            this.body = { id: school.id };
         } catch (error) {
             // If save failed, return server error
             console.error(error);
@@ -149,23 +180,23 @@ module.exports.createProgram = function *() {
 };
 
 /**
- * Updates the program specified with id
+ * Updates the school specified with id
  *
  * Method: PUT
- * Base URL: /api/program/update
+ * Base URL: /api/school/update
  *
- * Accepts JSON object that complies with Program schema
+ * Accepts JSON object that complies with School schema
  *
  * @return  200: Successfully updated, and a changelog in the format of
                     {
-                        id: program_id,
+                        id: school_id,
                         new: { new values },
                         old: { old values }
                     }
  *          400: Bad request, e.g. no ID specified
  *          500: Either update error or specified ID not existed
  */
-module.exports.updateProgram = function *() {
+module.exports.updateSchool = function *() {
     let data = this.request.body;
 
     if (!data.id) {
@@ -175,21 +206,21 @@ module.exports.updateProgram = function *() {
         try {
             // Sanitize in case this is used as fabrication
             let newData = _.omit(data, 'id');
-            let program = yield Program.get(data.id);
-            let oldValue = _.pick(program, _.keys(newData));
+            let school = yield School.get(data.id);
+            let oldValue = _.pick(school, _.keys(newData));
 
             // Need to set as saved before updating
-            program.setSaved();
-            program.update(newData);
-            yield program.save();
+            school.setSaved();
+            school.update(newData);
+            yield school.save();
 
-            let newValue = _.pick(program, _.keys(newData));
+            let newValue = _.pick(school, _.keys(newData));
 
             this.status = 200;
             this.body = {
-                id: program.id,
-                new: newValue,
-                old: oldValue
+                id: school.id,
+                old: oldValue,
+                new: newValue
             };
         } catch (error) {
             console.error(error);
@@ -199,15 +230,15 @@ module.exports.updateProgram = function *() {
 };
 
 /**
- * Deletes a program given the ID
+ * Deletes a school given the ID
  *
  * Method: DELETE
- * Base URL: /api/program/delete
+ * Base URL: /api/school/delete
  *
  * Accepts JSON object is of the following format:
  *      {
  *          apiKey: key_string
- *          id: program_id
+ *          id: school_id
  *      }
  * (specification subject to changes)
  *
@@ -216,14 +247,13 @@ module.exports.updateProgram = function *() {
  *          403: sets the response object to "Forbidden"
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.deleteProgram = function *() {
+module.exports.deleteSchool = function *() {
     let data = this.request.body;
 
     // Implement apikey for critical things like this in the future
     // Since this is experimental, we'll make sure this is never possible
     // on production server
     if (!data.apiKey || process.env.NODE_ENV === 'production') {
-
         this.status = 403;
     } else {
         if (!data.id) {
@@ -233,14 +263,13 @@ module.exports.deleteProgram = function *() {
         } else {
 
             try {
-                let program = yield Program.findById(data.id);
+                let school = yield School.findById(data.id);
 
                 // Need to set saved before delete
-                program.setSaved();
-                yield program.delete();
+                school.setSaved();
+                yield school.delete();
 
                 this.status = 204;
-                this.body = 'deleted';
             } catch (error) {
                 this.status = 500;
                 console.error(error);

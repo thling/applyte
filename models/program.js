@@ -3,12 +3,14 @@
 let _       = require('lodash');
 let thinky  = require('./thinky')();
 let schemas = require('./schemas');
+// let School  = require('./school');
 
 let r = thinky.r;
 
 const TABLE  = 'programs';
 const LEVEL_INDEX = 'level';
 const NAME_INDEX = 'name';
+const SCHOOL_ID_INDEX = 'schoolId';
 const SCHEMA = schemas[TABLE];
 
 
@@ -19,9 +21,13 @@ let Program = thinky.createModel(TABLE, SCHEMA, {
 // Create indices if not existed
 Program.ensureIndex(LEVEL_INDEX);
 Program.ensureIndex(NAME_INDEX);
+Program.ensureIndex(SCHOOL_ID_INDEX);
 
 /**
- * Queries the database for matching ID
+ * Queries the database for matching ID. This will alleviate
+ * the impact of exception thrown by Thinky by returning null
+ * on not found; if you would like to handle exception, use
+ * Program.get(id).
  *
  * @param   id  The id to search for
  * @return  Returns a new program object that is populated

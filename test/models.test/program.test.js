@@ -1,11 +1,11 @@
 'use strict';
 
-let assert   = require('assert');
-let _        = require('lodash');
-let Category = require('../../models/category');
-let master   = require('../test.master');
-let Program  = require('../../models/program');
-let School   = require('../../models/school');
+let assert       = require('assert');
+let _            = require('lodash');
+let AreaCategory = require('../../models/area.category');
+let master       = require('../test.master');
+let Program      = require('../../models/program');
+let School       = require('../../models/school');
 
 require('co-mocha');
 
@@ -108,9 +108,9 @@ describe('Program model tests', function () {
                 management = new Program(master.program.template),
                 philosophy = new Program(master.program.template);
 
-            let security = new Category(master.category.template),
-                database = new Category(master.category.template),
-                systems = new Category(master.category.template);
+            let security = new AreaCategory(master.areaCategory.template),
+                database = new AreaCategory(master.areaCategory.template),
+                systems = new AreaCategory(master.areaCategory.template);
 
             let testPrograms = [compsci, mecheng, indseng, management, philosophy];
 
@@ -203,7 +203,7 @@ describe('Program model tests', function () {
                 master.listEquals(foundPrograms, [compsci, mecheng, management]);
             });
 
-            it('should be able to search by single category ("Database")', function *() {
+            it('should be able to search by single areaCategory ("Database")', function *() {
                 let foundPrograms = yield Program.findByAreaCategories('Database');
                 master.listEquals(foundPrograms, [compsci, mecheng, management, philosophy]);
             });
