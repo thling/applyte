@@ -2,13 +2,13 @@
 
 let _       = require('lodash');
 let Program = require('./program');
-let schemas = require('./schemas');
-let thinky  = require('./thinky')();
+let schemas = require('./utils/schemas');
+let thinky  = require('./utils/thinky')();
 
 let r = thinky.r;
 
-const TABLE = 'schools';
-const NAME_INDEX = 'name_campus_index';
+const TABLE = 'school';
+const NAME_INDEX = 'name_campus';
 const SCHEMA = schemas[TABLE];
 
 let School = thinky.createModel(TABLE, SCHEMA, {
@@ -222,7 +222,7 @@ School.define('addLink', function (linkName, linkUrl) {
  *
  * @param   linkName    The name of the link to remove
  */
-School.define('removeLink', function(linkName) {
+School.define('removeLink', function (linkName) {
     _.remove(this.links, function (obj) {
         return obj.name === linkName;
     });
@@ -242,7 +242,7 @@ School.define('update', function (properties) {
     // TODO: Add validation
 
     // Make sure we only retrieve what we want
-    let data = _.pick(properties, _.keys(SCHEMA));//thinky.getSchema(School));
+    let data = _.pick(properties, _.keys(SCHEMA));
 
     // Make sure the address only contain the fields we want
     if (_.has(data, 'address')) {

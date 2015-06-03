@@ -22,9 +22,9 @@ let request = function () {
     return superagent(app.listen());
 };
 
-describe('API Routing tests', function() {
-    describe('Outer API Routes', function() {
-        describe('GET /api', function() {
+describe('API Routing tests', function () {
+    describe('Outer API Routes', function () {
+        describe('GET /api', function () {
             it('should return 404', function (done) {
                 request()
                     .get('/api')

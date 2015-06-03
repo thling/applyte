@@ -29,7 +29,7 @@ let address = {
 
 module.exports = {
     // Schools schema
-    schools: {
+    school: {
         id: type.string(),      // Primary key
         name: type.string(),
         campus: type.string(),
@@ -38,13 +38,15 @@ module.exports = {
         phone: type.string(),
         logo: type.string(),
         address: address,
-        links: [{
-            name: type.string(),
-            url: type.string()
-        }]
+        links: [
+            {
+                name: type.string(),
+                url: type.string()
+            }
+        ]
     },
     // Programs schema
-    programs: {
+    program: {
         id: type.string(),
         name: type.string(),
         degree: type.string(),
@@ -53,10 +55,12 @@ module.exports = {
         schoolId: type.string(),
         department: type.string(),
         faculty: type.string(),     // Also known as 'College of *' in US
-        areas: [{
-            name: type.string(),
-            categories: [type.string()]
-        }],
+        areas: [
+            {
+                name: type.string(),
+                categories: [type.string()]
+            }
+        ],
         contact: {
             fax: type.string(),
             phone: type.string(),
@@ -65,7 +69,7 @@ module.exports = {
         }
     },
     // AreaCategory schema
-    area_categories: {
+    area_category: {
         id: type.string(),
         name: type.string(),     // Primary key
         desc: type.string()

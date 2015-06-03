@@ -1,18 +1,16 @@
 'use strict';
 
 let _       = require('lodash');
-let thinky  = require('./thinky')();
-let schemas = require('./schemas');
-// let School  = require('./school');
+let schemas = require('./utils/schemas');
+let thinky  = require('./utils/thinky')();
 
 let r = thinky.r;
 
-const TABLE  = 'programs';
+const TABLE  = 'program';
 const LEVEL_INDEX = 'level';
 const NAME_INDEX = 'name';
 const SCHOOL_ID_INDEX = 'schoolId';
 const SCHEMA = schemas[TABLE];
-
 
 let Program = thinky.createModel(TABLE, SCHEMA, {
     enforce_extra: 'strict'

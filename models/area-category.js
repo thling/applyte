@@ -1,12 +1,12 @@
 'use strict';
 
 let _       = require('lodash');
-let thinky  = require('./thinky')();
-let schemas = require('./schemas');
+let schemas = require('./utils/schemas');
+let thinky  = require('./utils/thinky')();
 
 let r = thinky.r;
 
-const TABLE = 'area_categories';
+const TABLE = 'area_category';
 const NAME_INDEX = 'name';
 const SCHEMA = schemas[TABLE];
 
@@ -65,7 +65,6 @@ AreaCategory.defineStatic('findByName', function *(name) {
 
     return ret;
 });
-
 
 /**
  * Update the entire object to match the properties.
