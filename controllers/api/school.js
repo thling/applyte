@@ -1,8 +1,7 @@
 'use strict';
 
-let _      = require('lodash');
-let School = require(basedir + 'models/school');
-let Program = require(basedir + 'models/program');
+let _       = require('lodash');
+let School  = require(basedir + 'models/school');
 
 /**
  * Lists all the schools we have
@@ -136,7 +135,7 @@ module.exports.getSchoolPrograms = function *() {
             let school = yield School.get(data.id);
             let programs = yield school.getAllPrograms();
 
-            this.status =200;
+            this.status = 200;
             this.body = programs;
         } catch (error) {
             console.error(error);

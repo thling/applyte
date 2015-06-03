@@ -1,9 +1,9 @@
 'use strict';
 
-let assert       = require('assert');
 let _            = require('lodash');
-let AreaCategory = require('../../models/area.category');
-let master       = require('../test.master');
+let assert       = require('assert');
+let AreaCategory = require('../../models/area-category');
+let master       = require('../test-master');
 let Program      = require('../../models/program');
 let School       = require('../../models/school');
 
@@ -213,7 +213,7 @@ describe('Program model tests', function () {
                 master.listEquals(foundPrograms, [management]);
             });
 
-            describe('Pagination test', function() {
+            describe('Pagination test', function () {
                 it('should return programs from 3rd to 5th position (MGMT, ME, PHIL)', function *() {
                     let foundPrograms = yield Program.getProgramsRange(2, 3);
                     master.listEquals(foundPrograms, [management, mecheng, philosophy]);

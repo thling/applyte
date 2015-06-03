@@ -1,9 +1,9 @@
 'use strict';
 
-var defaults = require('./config.defaults');
-var config   = require('./config');
-var path     = require('path');
 var _        = require('lodash');
+var path     = require('path');
+var config   = require('./config');
+var defaults = require('./config.defaults');
 
 // Decide which environment this app runs on
 var nodeEnv = process.env.NODE_ENV;

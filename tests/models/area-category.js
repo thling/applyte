@@ -1,9 +1,9 @@
 'use strict';
 
-let _        = require('lodash');
-let assert   = require('assert');
-let master   = require('../test.master');
-let AreaCategory = require('../../models/area.category');
+let _            = require('lodash');
+let assert       = require('assert');
+let AreaCategory = require('../../models/area-category');
+let master       = require('../test-master');
 
 require('co-mocha');
 

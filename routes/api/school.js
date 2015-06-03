@@ -1,9 +1,9 @@
 'use strict';
 
 // Routing for programs
-var schoolApi = require(basedir + 'controllers/api/api.school.controller');
+var schoolApi = require(basedir + 'controllers/api/school');
 
-module.exports = function(router) {
+module.exports = function (router) {
     // Gets the list of all schools
     router.get('/api/school/list', schoolApi.listSchools);
 

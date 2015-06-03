@@ -6,11 +6,11 @@
 // this line
 process.env.NODE_ENV = 'test';
 
-let assert     = require('assert');
 let _          = require('lodash');
+let assert     = require('assert');
 let superagent = require('supertest');
 let app        = require('../../app');
-let master     = require('../test.master');
+let master     = require('../test-master');
 let Program    = require('../../models/program');
 let School     = require('../../models/school');
 
@@ -27,7 +27,7 @@ let request = function () {
     return superagent(app.listen());
 };
 
-describe('School API Routes', function() {
+describe('School API Routes', function () {
     describe('Basic API access test', function () {
         let createdId, school, template = master.school.template;
 
@@ -43,7 +43,7 @@ describe('School API Routes', function() {
                 .send(template)
                 .expect('Content-Type', /json/)
                 .expect(201)
-                .end(function(err, res) {
+                .end(function (err, res) {
                     if (err) {
                         throw err;
                     } else {

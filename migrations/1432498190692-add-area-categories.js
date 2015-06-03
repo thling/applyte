@@ -1,8 +1,8 @@
 'use strict';
 
-var r = require('../models/thinky')().r;
+var r = require('../models/utils/thinky')().r;
 
-var TABLE = 'area_categories';
+var TABLE = 'area_category';
 var NAME_INDEX = 'name';
 
 exports.up = function (next) {

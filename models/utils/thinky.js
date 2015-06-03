@@ -1,7 +1,7 @@
 'use strict';
 
 var thinkyOrm = require('thinky');
-var config    = require('../config');
+var config    = require('../../config');
 
 var thinky;
 

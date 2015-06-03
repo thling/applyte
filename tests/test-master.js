@@ -1,7 +1,7 @@
 'use strict';
 
-let assert = require('assert');
 let _      = require('lodash');
+let assert = require('assert');
 
 /**
  * This file is strictly used as utilities for testing.

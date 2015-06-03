@@ -2,7 +2,7 @@
 
 let _       = require('lodash');
 let assert  = require('assert');
-let master  = require('../test.master');
+let master  = require('../test-master');
 let Program = require('../../models/program');
 let School  = require('../../models/school');
 
@@ -42,7 +42,7 @@ describe('School model test', function () {
         });
     });
 
-    describe('School model database test', function (){
+    describe('School model database test', function () {
         after('cleaning up created test school', function *() {
             yield school.delete();
         });
@@ -61,7 +61,7 @@ describe('School model test', function () {
             it('should update one field', function *() {
                 // Slightly modify the value
                 let templateCopy = master.school.template;
-                templateCopy.links.push ({
+                templateCopy.links.push({
                     name: 'Registrars',
                     url: 'http://registrasurl.com'
                 });
