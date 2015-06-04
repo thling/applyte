@@ -27,19 +27,15 @@ AreaCategory.ensureIndex(NAME_INDEX);
  * @return  The AreaCategory object with the specified ID
  */
 AreaCategory.defineStatic('findById', function *(id) {
-    let result, ret = null;
+    let result = null;
 
     try {
         result = yield AreaCategory.get(id);
-
-        if (result) {
-            ret = new AreaCategory(result);
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
 });
 
 /**
@@ -49,21 +45,59 @@ AreaCategory.defineStatic('findById', function *(id) {
  * @return  A AreaCategory object of the found AreaCategory
  */
 AreaCategory.defineStatic('findByName', function *(name) {
-    let result, ret = null;
+    let result = null;
 
     try {
-        result = yield r.table(TABLE)
-                .getAll(name, { index: NAME_INDEX })
+        result = yield AreaCategory
+                .filter(
+                    r.row('name').match('.*' + name + '.*')
+                )
                 .run();
 
-        if (result.length === 1) {
-            ret = new AreaCategory(result[0]);
+        if (!_.isEmpty(result)) {
+            result = result[0];
         }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
+});
+
+/**
+ * Get all the area categories
+ *
+ * @return  An array of AreaCategory objects
+ */
+AreaCategory.defineStatic('getAllAreaCategories', function *() {
+    let result = [];
+
+    try {
+        result = yield AreaCategory
+                .orderBy({ index: NAME_INDEX })
+                .run();
+
+    } catch (error) {
+        console.error(error);
+    }
+
+    return result;
+});
+
+AreaCategory.defineStatic('getAreaCategoriesRange', function *(start, length, desc) {
+    let result = [];
+    let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
+
+    try {
+        result = yield AreaCategory
+                .orderBy({ index: orderIndex })
+                .slice(start, start + length)
+                .run();
+    } catch (error) {
+        console.log(error);
+    }
+
+    return result;
 });
 
 /**

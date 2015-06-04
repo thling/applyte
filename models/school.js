@@ -31,7 +31,7 @@ School.ensureIndex(NAME_INDEX, function (doc) {
  *          of the data found; otherwise, null is returned
  */
 School.defineStatic('findById', function *(id) {
-    let result;
+    let result = null;
 
     try {
         result = yield School.get(id);
@@ -39,7 +39,7 @@ School.defineStatic('findById', function *(id) {
         console.error(error);
     }
 
-    return (result)? new School(result) : null;
+    return result;
 });
 
 /**
@@ -49,23 +49,19 @@ School.defineStatic('findById', function *(id) {
  * @return  An array of schools that has the specified string in the name
  */
 School.defineStatic('findByName', function *(name) {
-    let result, ret = [];
+    let result = [];
 
     try {
-        result = yield r.table(TABLE)
+        result = yield School
                 .filter(
                     r.row('name').match('.*' + name + '.*')
                 )
                 .run();
-
-        for (let res of result) {
-            ret.push(new School(res));
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
 });
 
 /**
@@ -85,23 +81,19 @@ School.defineStatic('findByName', function *(name) {
  * @return  An array of school objects satisfying the location constraints.
  */
 School.defineStatic('findByLocation', function *(location) {
-    let result, ret = [];
+    let result = [];
 
     try {
-        result = yield r.table(TABLE)
+        result = yield School
                 .filter({
                     address: location
                 })
                 .run();
-
-        for (let res of result) {
-            ret.push(new School(res));
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
 });
 
 /**
@@ -110,21 +102,17 @@ School.defineStatic('findByLocation', function *(location) {
  * @return  Array of school objects
  */
 School.defineStatic('getAllSchools', function *() {
-    let result, ret = [];
+    let result = [];
 
     try {
-        result = yield r.table(TABLE)
+        result = yield School
                 .orderBy({ index: NAME_INDEX })
                 .run();
-
-        for (let res of result) {
-            ret.push(new School(res));
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
 });
 
 /**
@@ -139,24 +127,20 @@ School.defineStatic('getAllSchools', function *() {
  * @return  An array of school objects that fall into the range
  */
 School.defineStatic('getSchoolsRange', function *(start, length, desc) {
-    let result, ret = [];
+    let result = [];
     let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
 
     try {
-        result = yield r.table(TABLE)
+        result = yield School
                 // Using our compound index on [name, campus]
                 .orderBy({ index: orderIndex })
                 .slice(start, start + length)
                 .run();
-
-        for (let res of result) {
-            ret.push(new School(res));
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
 });
 
 /**
@@ -165,7 +149,7 @@ School.defineStatic('getSchoolsRange', function *(start, length, desc) {
  * @return  Array of programs
  */
 School.define('getAllPrograms', function *() {
-    return yield Program.getAll(this.id, { index: 'schoolId' });
+    return yield Program.getProgramsBySchoolId(this.id);
 });
 
 /**
@@ -179,8 +163,8 @@ School.define('getProgramsWith', function *(condition) {
         throw 'Invalid condition specification; expected Object or Function';
     }
 
-    let result, ret = [];
-    let query = r.table(Program.getTableName());
+    let result = [];
+    let query = Program;
 
     // If condition is an object and does not filter by id yet,
     // or if condition is a function using ReQL, add new id filter
@@ -195,12 +179,7 @@ School.define('getProgramsWith', function *(condition) {
         console.error(error);
     }
 
-    // Create a new program for each of the result
-    for (let prog of result) {
-        ret.push(new Program(prog));
-    }
-
-    return ret;
+    return result;
 });
 
 /**
@@ -226,6 +205,20 @@ School.define('removeLink', function (linkName) {
     _.remove(this.links, function (obj) {
         return obj.name === linkName;
     });
+});
+
+/**
+ * Returns a generator function for the links array
+ *
+ * @return  A generator function for the links array
+ */
+School.define('linksIter', function () {
+    let links = this.links;
+    return function *() {
+        for (let link of links) {
+            yield link;
+        }
+    };
 });
 
 /**
@@ -255,20 +248,6 @@ School.define('update', function (properties) {
     }
 
     _.assign(this, data);
-});
-
-/**
- * Returns a generator function for the links array
- *
- * @return  A generator function for the links array
- */
-School.define('linksIter', function () {
-    let links = this.links;
-    return function *() {
-        for (let link of links) {
-            yield link;
-        }
-    };
 });
 
 module.exports = School;

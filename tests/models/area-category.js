@@ -19,11 +19,11 @@ describe('AreaCategory model test', function () {
     });
 
     describe('AreaCategory database test', function () {
-        after('cleaning up database', function *() {
-            yield areaCategory.delete();
-        });
-
         describe('Basic database test', function () {
+            after('cleaning up database', function *() {
+                yield areaCategory.delete();
+            });
+
             it('should be save to database and have an ID assigned to it', function *() {
                 assert(yield areaCategory.save(), 'failed to save data: DB connection lost?');
                 assert(!_.isUndefined(areaCategory.id) && !_.isNull(areaCategory.id));
@@ -48,25 +48,33 @@ describe('AreaCategory model test', function () {
         });
 
         describe('Complex database test', function () {
-            let database, systems, network;
+            let database, systems, network, security, literature;
+            let categories;
 
             before('adding more entries to database', function *() {
                 database = new AreaCategory(master.areaCategory.template);
-                database.name = 'Database';
-
                 systems = new AreaCategory(master.areaCategory.template);
-                systems.name = 'Systems';
-
                 network = new AreaCategory(master.areaCategory.template);
+                security = new AreaCategory(master.areaCategory.template);
+                literature = new AreaCategory(master.areaCategory.template);
+
+                database.name = 'Database';
+                systems.name = 'Systems';
                 network.name = 'Network';
+                security.name = 'Security';
+                literature.name = 'Literature';
 
                 yield database.save();
                 yield systems.save();
                 yield network.save();
+                yield security.save();
+                yield literature.save();
+
+                categories = [database, literature, network, security, systems];
             });
 
             after('cleaning up database', function *() {
-                for (let cat of [database, systems, network]) {
+                for (let cat of categories) {
                     yield cat.delete();
                 }
             });
@@ -74,6 +82,23 @@ describe('AreaCategory model test', function () {
             it('should be able to search by name', function *() {
                 let foundCategory = yield AreaCategory.findByName('Systems');
                 master.areaCategory.assertEqual(foundCategory, systems);
+            });
+
+            it('should list all area categories', function *() {
+                let foundCats = yield AreaCategory.getAllAreaCategories();
+                master.listEquals(foundCats, categories);
+            });
+
+            describe('Pagination test', function () {
+                it('should list 2nd to 4th categories (LIT, NETWK, SECRTY)', function *() {
+                    let foundCats = yield AreaCategory.getAreaCategoriesRange(1, 3);
+                    master.listEquals(foundCats, [literature, network, security]);
+                });
+
+                it('should list 3rd to 1st categories (NETWK, LIT, DB)', function *() {
+                    let foundCats = yield AreaCategory.getAreaCategoriesRange(2, 3, true);
+                    master.listEquals(foundCats, [network, literature, database]);
+                });
             });
         });
     });

@@ -33,7 +33,10 @@ module.exports.listPrograms = function *() {
 
             if (!_.isFinite(start) || !_.isFinite(length)) {
                 this.status = 400;
-                this.body = 'Invalid start/length';
+                this.body = {
+                    error: 'Invalid start/length',
+                    reqParams: this.params
+                };
             } else {
                 let order = (this.params.order === 'desc')? true : false;
 
@@ -70,7 +73,10 @@ module.exports.getProgramById = function *() {
 
     if (!data.id) {
         this.status = 400;
-        this.body = 'No ID to search for';
+        this.body = {
+            error: 'No ID to search for',
+            reqParams: this.params
+        };
     } else {
         try {
             let program = yield Program.get(data.id);
@@ -84,7 +90,7 @@ module.exports.getProgramById = function *() {
 };
 
 /**
- * Gets the program by ID
+ * Gets the program by name
  *
  * Method: GET
  * Base URL: /api/program/name/[name]
@@ -99,7 +105,10 @@ module.exports.getProgramByName = function *() {
 
     if (!data.name) {
         this.status = 400;
-        this.body = 'No name to search for';
+        this.body = {
+            error: 'No name to search for',
+            reqParams: this.params
+        };
     } else {
         let name = decodeURI(data.name);
 
@@ -131,7 +140,10 @@ module.exports.createProgram = function *() {
     let data = this.request.body;
     if (data.id) {
         this.status = 400;
-        this.body = 'Cannot create if ID is know or existed';
+        this.body = {
+            error: 'Cannot create if ID is know or existed',
+            reqParams: this.request.body
+        };
     } else {
         // Create a new program and try to save it
         let program = new Program(this.request.body);
@@ -139,7 +151,10 @@ module.exports.createProgram = function *() {
         try {
             yield program.save();
             this.status = 201;
-            this.body = { id: program.id };
+            this.body = {
+                success: 'created',
+                id: program.id
+            };
         } catch (error) {
             // If save failed, return server error
             console.error(error);
@@ -170,7 +185,10 @@ module.exports.updateProgram = function *() {
 
     if (!data.id) {
         this.status = 400;
-        this.body = 'Cannot update without known id';
+        this.body = {
+            error: 'Cannot update without known id',
+            reqParams: this.request.body
+        };
     } else {
         try {
             // Sanitize in case this is used as fabrication
@@ -223,15 +241,19 @@ module.exports.deleteProgram = function *() {
     // Since this is experimental, we'll make sure this is never possible
     // on production server
     if (!data.apiKey || process.env.NODE_ENV === 'production') {
-
         this.status = 403;
+        this.body = {
+            error: 'Permission denied'
+        };
     } else {
         if (!data.id) {
             // Bad request
             this.status = 400;
-            this.body = 'No ID to delete';
+            this.body = {
+                error: 'No ID to delete',
+                reqParams: this.request.body
+            };
         } else {
-
             try {
                 let program = yield Program.findById(data.id);
 
@@ -240,7 +262,10 @@ module.exports.deleteProgram = function *() {
                 yield program.delete();
 
                 this.status = 204;
-                this.body = 'deleted';
+                this.body = {
+                    success: 'deleted',
+                    id: data.id
+                };
             } catch (error) {
                 this.status = 500;
                 console.error(error);

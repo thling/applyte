@@ -6,12 +6,12 @@
 // this line
 process.env.NODE_ENV = 'test';
 
-let _          = require('lodash');
-let assert     = require('assert');
-let superagent = require('supertest');
-let app        = require('../../app');
-let master     = require('../test-master');
-let Program    = require('../../models/program');
+let _            = require('lodash');
+let assert       = require('assert');
+let superagent   = require('supertest');
+let app          = require('../../app');
+let AreaCategory = require('../../models/area-category');
+let master       = require('../test-master');
 
 require('co-mocha');
 
@@ -26,19 +26,19 @@ let request = function () {
     return superagent(app.listen());
 };
 
-describe('Program API Routes', function () {
+describe('AreaCategory API Routes', function () {
     describe('Basic API access test', function () {
-        let createdId, program, template = master.program.template;
+        let createdId, category, template = master.areaCategory.template;
 
         after('clean up database', function *() {
-            program = yield Program.findById(createdId);
-            program.setSaved();
-            yield program.delete();
+            category = yield AreaCategory.findById(createdId);
+            category.setSaved();
+            yield category.delete();
         });
 
-        it('should create a new program with /api/program/create', function (done) {
+        it('should create a new area category with /api/area-category/create', function (done) {
             request()
-                .post('/api/program/create')
+                .post('/api/area-category/create')
                 .send(template)
                 .expect('Content-Type', /json/)
                 .expect(201)
@@ -53,32 +53,32 @@ describe('Program API Routes', function () {
                 });
         });
 
-        it('should return the saved program with /api/program/id', function (done) {
+        it('should return the saved area category with /api/area-category/id', function (done) {
             request()
-                .get('/api/program/id/' + createdId)
+                .get('/api/area-category/id/' + createdId)
                 .expect(200)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
                     } else {
-                        master.program.assertEqual(res.body, template);
+                        master.areaCategory.assertEqual(res.body, template);
                     }
 
                     done();
                 });
         });
 
-        it('should return the same thing with /api/program/name', function (done) {
+        it('should return the same thing with /api/area-category/name', function (done) {
             let name = encodeURI(template.name);
 
             request()
-                .get('/api/program/name/' + name)
+                .get('/api/area-category/name/' + name)
                 .expect(200)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
                     } else {
-                        master.program.assertEqual(res.body[0], template);
+                        master.areaCategory.assertEqual(res.body, template);
                     }
 
                     done();
@@ -87,107 +87,105 @@ describe('Program API Routes', function () {
     });
 
     describe('Complex API access test', function () {
-        let compsci, mecheng, indseng, management, philosophy;
-        let programs;
+        let database, systems, network, security, literature;
+        let categories;
 
         before('setting up data', function *() {
-            compsci = new Program(master.program.template);
-            mecheng = new Program(master.program.template);
-            indseng = new Program(master.program.template);
-            management = new Program(master.program.template);
-            philosophy = new Program(master.program.template);
+            database = new AreaCategory(master.areaCategory.template);
+            systems = new AreaCategory(master.areaCategory.template);
+            network = new AreaCategory(master.areaCategory.template);
+            security = new AreaCategory(master.areaCategory.template);
+            literature = new AreaCategory(master.areaCategory.template);
 
-            compsci.name = 'Computer Science';
-            mecheng.name = 'Mechanical Engineering';
-            indseng.name = 'Industrial Engineering';
-            management.name = 'Management';
-            philosophy.name = 'Philosophy';
+            database.name = 'Database';
+            systems.name = 'Systems';
+            network.name = 'Network';
+            security.name = 'Security';
+            literature.name = 'Literature';
 
-            yield compsci.save();
-            yield mecheng.save();
-            yield indseng.save();
-            yield management.save();
-            yield philosophy.save();
+            yield database.save();
+            yield systems.save();
+            yield network.save();
+            yield security.save();
+            yield literature.save();
 
-            programs = [compsci, mecheng, indseng, management, philosophy];
+            categories = [database, literature, network, security, systems];
         });
 
         after('cleaning up data', function *() {
-            for (let prog of programs) {
-                yield prog.delete();
+            for (let cat of categories) {
+                yield cat.delete();
             }
         });
 
         it('should list everything', function (done) {
             request()
-                .get('/api/program/list')
+                .get('/api/area-category/list')
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
                     } else {
-                        master.listEquals(res.body, programs);
+                        master.listEquals(res.body, categories);
                     }
 
                     done();
                 });
         });
 
-        it('should list 3rd to 5th item in alphabetical order (MGMT, ME, PHIL)', function (done) {
+        it('should list 2nd to 4th item in alphabetical order (LIT, NETWK, SECRTY)', function (done) {
             request()
-                .get('/api/program/list/3/3')
+                .get('/api/area-category/list/2/3')
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
                     } else {
-                        master.listEquals(res.body, [management, mecheng, philosophy]);
+                        master.listEquals(res.body, [literature, network, security]);
                     }
 
                     done();
                 });
         });
 
-        it('should list 4th to 2nd item in alphabetical order (ME, MGMT, IE)', function (done) {
+        it('should list 3rd to 1st item in alphabetical order (NETWK, LIT, DB)', function (done) {
             request()
-                .get('/api/program/list/1/3/desc')
+                .get('/api/area-category/list/3/3/desc')
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
                     } else {
-                        master.listEquals(res.body, [philosophy, mecheng, management]);
+                        master.listEquals(res.body, [network, literature, database]);
                     }
 
                     done();
                 });
         });
 
-        it('should update the data with /api/program/update', function (done) {
-            let temp = master.program.template,
-                newData = _.pick(temp, ['id', 'name', 'areas']);
+        it('should update the data with /api/area-category/update', function (done) {
+            let temp = master.areaCategory.template,
+                newData = _.pick(temp, ['id', 'desc']);
 
-            newData.id = compsci.id;
-            newData.name = 'Test Science';
-            newData.areas.push({
-                    name: 'Systems Development',
-                    categories: ['Systems', 'Security']
-            });
+            newData.id = security.id;
+            newData.desc = 'The awesomeness of security '
+                    + 'unleashed to the maximum and will '
+                    + 'dominate the world with its awesomenss!';
 
             // Record the expected POST feedback
-            let oldValue = _.pick(compsci, _.keys(_.omit(newData, 'id')));
+            let oldValue = _.pick(security, _.keys(_.omit(newData, 'id')));
             let newValue = _.omit(newData, 'id');
             let changed = {
-                id: compsci.id,
+                id: security.id,
                 old: oldValue,
                 new: newValue
             };
 
             request()
-                .put('/api/program/update')
+                .put('/api/area-category/update')
                 .send(newData)
                 .expect(200)
                 .end(function (err, res) {
@@ -197,9 +195,9 @@ describe('Program API Routes', function () {
                         assert.deepEqual(res.body, changed);
                         _.assign(temp, newData);
 
-                        Program.get(compsci.id)
+                        AreaCategory.get(security.id)
                             .then(function (found) {
-                                master.program.assertEqual(found, temp);
+                                master.areaCategory.assertEqual(found, temp);
                             }).catch(function (error) {
                                 done(error);
                             });
@@ -209,17 +207,17 @@ describe('Program API Routes', function () {
                 });
         });
 
-        it('should not be able to delete a program without privilege', function (done) {
+        it('should not be able to delete an area category without privilege', function (done) {
             request()
-                .delete('/api/program/delete')
-                .send({ id: compsci.id })
+                .delete('/api/area-category/delete')
+                .send({ id: security.id })
                 .expect(403, done);
         });
 
-        it('should be able to delete a program with proper prvilege', function (done) {
+        it('should be able to delete an area category with proper prvilege', function (done) {
             request()
-                .delete('/api/program/delete')
-                .send({ id: compsci.id, apiKey: 'test' })
+                .delete('/api/area-category/delete')
+                .send({ id: security.id, apiKey: 'test' })
                 .expect(204, done);
         });
     });

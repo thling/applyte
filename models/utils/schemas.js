@@ -31,10 +31,10 @@ module.exports = {
     // Schools schema
     school: {
         id: type.string(),      // Primary key
-        name: type.string(),
-        campus: type.string(),
+        name: type.string().required(),
+        campus: type.string().default(null),
         desc: type.string(),
-        email: type.string(),
+        email: type.string().email(),
         phone: type.string(),
         logo: type.string(),
         address: address,
@@ -48,13 +48,13 @@ module.exports = {
     // Programs schema
     program: {
         id: type.string(),
-        name: type.string(),
-        degree: type.string(),
-        level: type.string(),
-        desc: type.string(),
+        name: type.string().required(),
+        degree: type.string().required(),
+        level: type.string().required(),
+        desc: type.string().required(),
         schoolId: type.string(),
-        department: type.string(),
-        faculty: type.string(),     // Also known as 'College of *' in US
+        department: type.string().required(),
+        faculty: type.string().required(),  // Also known as 'College of *' in US
         areas: [
             {
                 name: type.string(),
@@ -64,14 +64,14 @@ module.exports = {
         contact: {
             fax: type.string(),
             phone: type.string(),
-            email: type.string(),
+            email: type.string().email(),
             address: address
         }
     },
     // AreaCategory schema
     area_category: {
         id: type.string(),
-        name: type.string(),     // Primary key
+        name: type.string().required(),     // Primary key
         desc: type.string()
     }
 };

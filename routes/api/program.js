@@ -1,27 +1,28 @@
 'use strict';
 
 // Routing for programs
-var programApi = require(basedir + 'controllers/api/program');
+let programApi = require(basedir + 'controllers/api/program');
+let apiBase = '/api/program';
 
 module.exports = function (router) {
     // List all available programs
-    router.get('/api/program/list', programApi.listPrograms);
+    router.get(apiBase + '/list', programApi.listPrograms);
 
     // Pagination requests
-    router.get('/api/program/list/:start/:length/:order?', programApi.listPrograms);
+    router.get(apiBase + '/list/:start/:length/:order?', programApi.listPrograms);
 
     // Fetch a particular one given ID
-    router.get('/api/program/id/:id', programApi.getProgramById);
+    router.get(apiBase + '/id/:id', programApi.getProgramById);
 
-    // Fetch a particular program by name (may have multiple)
-    router.get('/api/program/name/:name', programApi.getProgramByName);
+    // Fetch a particular program by name (may return multiple)
+    router.get(apiBase + '/name/:name', programApi.getProgramByName);
 
     // Add new program, returns id
-    router.post('/api/program/create', programApi.createProgram);
+    router.post(apiBase + '/create', programApi.createProgram);
 
     // Update existing program, returns changelog
-    router.put('/api/program/update', programApi.updateProgram);
+    router.put(apiBase + '/update', programApi.updateProgram);
 
     // Delete existing (need admin), returns nothing
-    router.delete('/api/program/delete', programApi.deleteProgram);
+    router.delete(apiBase + '/delete', programApi.deleteProgram);
 };

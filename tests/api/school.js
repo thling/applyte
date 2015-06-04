@@ -89,7 +89,7 @@ describe('School API Routes', function () {
 
     describe('Complex API access test', function () {
         let compsci, mecheng, indseng, management, philosophy;
-        let purdueWL, purdueCal, uiuc, umich, bu, mit;
+        let purdueWL, purdueCal, uiuc, umich, bu, mit, emerson;
         let schools, programs;
 
         before('setting up data', function *() {
@@ -98,6 +98,7 @@ describe('School API Routes', function () {
             uiuc = new School(master.school.template);
             umich = new School(master.school.template);
             bu = new School(master.school.template);
+            emerson = new School(master.school.template);
             mit = new School(master.school.template);
 
             purdueCal.update({
@@ -125,8 +126,17 @@ describe('School API Routes', function () {
                 }
             });
 
-            bu.update( {
+            bu.update({
                 name: 'Boston University',
+                campus: 'Boston',
+                address: {
+                    city: 'Boston',
+                    state: 'Massachusetts'
+                }
+            });
+
+            emerson.update({
+                name: 'Emerson College',
                 campus: 'Boston',
                 address: {
                     city: 'Boston',
@@ -148,9 +158,10 @@ describe('School API Routes', function () {
             yield uiuc.save();
             yield umich.save();
             yield bu.save();
+            yield emerson.save();
             yield mit.save();
 
-            schools = [bu, mit, purdueCal, purdueWL, uiuc, umich];
+            schools = [bu, emerson, mit, purdueCal, purdueWL, uiuc, umich];
 
             compsci = new Program(master.program.template);
             mecheng = new Program(master.program.template);
@@ -159,14 +170,15 @@ describe('School API Routes', function () {
             philosophy = new Program(master.program.template);
 
             compsci.name = 'Computer Science';
-            compsci.schoolId = purdueWL.id;
             mecheng.name = 'Mechanical Engineering';
-            mecheng.schoolId = purdueWL.id;
             indseng.name = 'Industrial Engineering';
-            indseng.schoolId = purdueWL.id;
             management.name = 'Management';
-            management.schoolId = uiuc.id;
             philosophy.name = 'Philosophy';
+
+            compsci.schoolId = purdueWL.id;
+            mecheng.schoolId = purdueWL.id;
+            indseng.schoolId = purdueWL.id;
+            management.schoolId = uiuc.id;
             philosophy.schoolId = mit.id;
 
             yield compsci.save();
@@ -204,9 +216,9 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should list 3rd to 5th item in alphabetical order (PUWL, PUCal, UIUC)', function (done) {
+        it('should list 4th to 6th item in alphabetical order (PUWL, PUCal, UIUC)', function (done) {
             request()
-                .get('/api/school/list/3/3')
+                .get('/api/school/list/4/3')
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function (err, res) {
@@ -220,16 +232,92 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should list 4th to 2nd item in alphabetical order (PUWL, PUCal, MIT)', function (done) {
+        it('should list 4th to 2nd item in alphabetical order (PUCal, MIT, EMER)', function (done) {
             request()
-                .get('/api/school/list/3/3/desc')
+                .get('/api/school/list/4/3/desc')
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
                     } else {
-                        master.listEquals(res.body, [purdueWL, purdueCal, mit]);
+                        master.listEquals(res.body, [purdueCal, mit, emerson]);
+                    }
+
+                    done();
+                });
+        });
+
+        it('should find schools in United States', function (done) {
+            let country = encodeURI(bu.address.country);
+
+            request()
+                .get('/api/school/location/' + country)
+                .expect('Content-Type', /json/)
+                .expect(200)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        master.listEquals(res.body, schools);
+                    }
+
+                    done();
+                });
+        });
+
+        it('should find schools in Massachusetts, US', function (done) {
+            let country = encodeURI(bu.address.country);
+            let state = encodeURI(bu.address.state);
+
+            request()
+                .get('/api/school/location/' + country + '/' + state)
+                .expect('Content-Type', /json/)
+                .expect(200)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        master.listEquals(res.body, [bu, emerson, mit]);
+                    }
+
+                    done();
+                });
+        });
+
+        it('should find schools in state MA (country = \'null\')', function (done) {
+            let country = encodeURI('null');
+            let state = encodeURI(bu.address.state);
+
+            request()
+                .get('/api/school/location/' + country + '/' + state)
+                .expect('Content-Type', /json/)
+                .expect(200)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        master.listEquals(res.body, [bu, emerson, mit]);
+                    }
+
+                    done();
+                });
+        });
+
+        it('should find schools in Boston, MA, US', function (done) {
+            let country = encodeURI(bu.address.country);
+            let state = encodeURI(bu.address.state);
+            let city = encodeURI(bu.address.city);
+
+            request()
+                .get('/api/school/location/' + country + '/' + state + '/' + city)
+                .expect('Content-Type', /json/)
+                .expect(200)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        master.listEquals(res.body, [bu, emerson]);
                     }
 
                     done();

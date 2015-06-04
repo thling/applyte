@@ -3,7 +3,7 @@
 var _        = require('lodash');
 var path     = require('path');
 var config   = require('./config');
-var defaults = require('./config.defaults');
+var defaults = require('./config-defaults');
 
 // Decide which environment this app runs on
 var nodeEnv = process.env.NODE_ENV;

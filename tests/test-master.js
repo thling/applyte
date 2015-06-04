@@ -54,7 +54,7 @@ module.exports.school = {
             name: 'Purdue University',
             campus: 'West Lafayette',
             desc: 'Better than IU in every aspect',
-            email: 'null',
+            email: 'test@email.com',
             phone: '+1 (765) 494-4600',
             logo: '',
             address: _.cloneDeep(address),

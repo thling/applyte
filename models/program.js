@@ -32,7 +32,7 @@ Program.ensureIndex(SCHOOL_ID_INDEX);
  *          of the data found; otherwise, null is returned
  */
 Program.defineStatic('findById', function *(id) {
-    let result;
+    let result = null;
 
     try {
         result = yield Program.get(id);
@@ -40,7 +40,7 @@ Program.defineStatic('findById', function *(id) {
         console.error(error);
     }
 
-    return (result)? new Program(result) : null;
+    return result;
 });
 
 /**
@@ -50,24 +50,20 @@ Program.defineStatic('findById', function *(id) {
  * @return  An array of programs that has the specified string in the name
  */
 Program.defineStatic('findByName', function *(name) {
-    let result, ret = [];
+    let result = [];
 
     try {
-        result = yield r.table(TABLE)
+        result = yield Program
                 .filter(function (prog) {
                     // Return those with matching names
                     return prog('name').match('.*' + name + '.*');
                 })
                 .run();
-
-        for (let prog of result) {
-            ret.push(new Program(prog));
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
 });
 
 /**
@@ -77,10 +73,10 @@ Program.defineStatic('findByName', function *(name) {
  * @return  An array of programs with area names of the specified string
  */
 Program.defineStatic('findByAreaName', function *(areaName) {
-    let result, ret = [];
+    let result = [];
 
     try {
-        result = yield r.table(TABLE)
+        result = yield Program
                 .filter(function (obj) {
                     return obj('areas').contains(
                         // We need to use contains because areas is an array,
@@ -91,16 +87,11 @@ Program.defineStatic('findByAreaName', function *(areaName) {
                     );
                 })
                 .run();
-
-        // Create an array for return
-        for (let res of result) {
-            ret.push(new Program(res));
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
 });
 
 /**
@@ -117,9 +108,10 @@ Program.defineStatic('findByAreaCategories', function *(categories) {
         categories = [categories];
     }
 
-    let result, ret = [];
+    let result = [];
+
     try {
-        result = yield r.table(TABLE)
+        result = yield Program
                 .filter(function (prog) {
                     // Return all programs whose categories field has what we want
                     return prog('areas')('categories').contains(function (cat) {
@@ -129,40 +121,31 @@ Program.defineStatic('findByAreaCategories', function *(categories) {
                     });
                 })
                 .run();
-
-        for (let res of result) {
-            ret.push(new Program(res));
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
 });
 
 /**
  * Return all programs of the specified level
  *
- * @param   level   The leve of the programs to fund
+ * @param   level   The leve of the programs to find
  * @return  Array of programs of the level
  */
 Program.defineStatic('findByLevel', function *(level) {
-    let result, ret = [];
+    let result = [];
 
     try {
-        result = yield r.table(TABLE)
+        result = yield Program
                 .getAll(level, { index: LEVEL_INDEX })
                 .run();
     } catch (error) {
         console.error(error);
     }
 
-    // Create a array of Programs
-    for (let res of result) {
-        ret.push(new Program(res));
-    }
-
-    return ret;
+    return result;
 });
 
 /**
@@ -171,21 +154,30 @@ Program.defineStatic('findByLevel', function *(level) {
  * @return  Array of program objects
  */
 Program.defineStatic('getAllPrograms', function *() {
-    let result, ret = [];
+    let result = [];
 
     try {
-        result = yield r.table(TABLE)
+        result = yield Program
                 .orderBy({ index: NAME_INDEX })
                 .run();
-
-        for (let res of result) {
-            ret.push(new Program(res));
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
+});
+
+Program.defineStatic('getProgramsBySchoolId', function *(schoolId) {
+    let result = [];
+    try {
+        result = yield Program
+                .getAll(schoolId, { index: SCHOOL_ID_INDEX })
+                .run();
+    } catch (error) {
+        console.log(error);
+    }
+
+    return result;
 });
 
 /**
@@ -200,23 +192,19 @@ Program.defineStatic('getAllPrograms', function *() {
  * @return  An array of program objects that fall into the range
  */
 Program.defineStatic('getProgramsRange', function *(start, length, desc) {
-    let result, ret = [];
+    let result = [];
     let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
 
     try {
-        result = yield r.table(TABLE)
+        result = yield Program
                 .orderBy({ index: orderIndex })
                 .slice(start, start + length)
                 .run();
-
-        for (let res of result) {
-            ret.push(new Program(res));
-        }
     } catch (error) {
         console.error(error);
     }
 
-    return ret;
+    return result;
 });
 
 /**

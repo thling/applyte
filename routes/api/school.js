@@ -1,30 +1,37 @@
 'use strict';
 
 // Routing for programs
-var schoolApi = require(basedir + 'controllers/api/school');
+let schoolApi = require(basedir + 'controllers/api/school');
+let apiBase = '/api/school';
 
 module.exports = function (router) {
     // Gets the list of all schools
-    router.get('/api/school/list', schoolApi.listSchools);
+    router.get(apiBase + '/list', schoolApi.listSchools);
 
     // Gets the list of schools, paginated to start and length (optionall ordering)
-    router.get('/api/school/list/:start/:length/:order?', schoolApi.listSchools);
+    router.get(apiBase + '/list/:start/:length/:order?', schoolApi.listSchools);
 
     // Gets the school by school id
-    router.get('/api/school/id/:id', schoolApi.getSchoolById);
+    router.get(apiBase + '/id/:id', schoolApi.getSchoolById);
 
-    // Gets the school by school name (many have multiple)
-    router.get('/api/school/name/:name', schoolApi.getSchoolByName);
+    // Gets the school by school name (many return multiple)
+    router.get(apiBase + '/name/:name', schoolApi.getSchoolsByName);
+
+    // Gets the school by location of school
+    router.get(
+            apiBase + '/location/:country?/:state?/:city?/',
+            schoolApi.getSchoolsByLocation
+    );
 
     // Gets all the programs the school with specified id has
-    router.get('/api/school/id/:id/programs', schoolApi.getSchoolPrograms);
+    router.get(apiBase + '/id/:id/programs', schoolApi.getSchoolPrograms);
 
     // Creates a new school, returns an ID
-    router.post('/api/school/create', schoolApi.createSchool);
+    router.post(apiBase + '/create', schoolApi.createSchool);
 
     // Updates a school, returns changelog
-    router.put('/api/school/update', schoolApi.updateSchool);
+    router.put(apiBase + '/update', schoolApi.updateSchool);
 
     // Deletes a school (needs admin), returns nothing
-    router.delete('/api/school/delete', schoolApi.deleteSchool);
+    router.delete(apiBase + '/delete', schoolApi.deleteSchool);
 };

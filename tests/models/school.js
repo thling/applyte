@@ -25,6 +25,7 @@ describe('School model test', function () {
             let links = school.linksIter();
             for (let link of links()) {
                 assert.notStrictEqual(template.links.indexOf(link), -1);
+                break;
             }
         });
 

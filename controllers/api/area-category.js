@@ -1,22 +1,22 @@
 'use strict';
 
-let _       = require('lodash');
-let School  = require(basedir + 'models/school');
+let _            = require('lodash');
+let AreaCategory = require(basedir + 'models/area-category');
 
 /**
- * Lists all the schools we have
+ * Lists all the programs we have
  *
  * Method: GET
- * Base URL: /api/school/list/...
+ * Base URL: /api/area-category/list/...
  *
  * Supports pagination. The url should be:
- *      [host]/api/school/list/
- *      [host]/api/school/list/[start]/[length]
- *      [host]/api/school/list/[start]/[length]/[desc]
+ *      [host]/api/area-category/list/
+ *      [host]/api/area-category/list/[start]/[length]
+ *      [host]/api/area-category/list/[start]/[length]/[desc]
  *
- * where [start] is the starting index (starting from 1) of the school,
- *       [length] is the number of school to fetch,
- *       [desc] is the order to sort (by name then campus name)
+ * where [start] is the starting index (starting from 1) of the area category,
+ *       [length] is the number of area category to fetch,
+ *       [desc] is the order to sort (by name)
  *              It is either "desc" for sorting descendingly or nothing.
  *              If nothing, default to sorting ascendingly.
  *
@@ -24,7 +24,7 @@ let School  = require(basedir + 'models/school');
  *          400: sets the resposne object to error text (displaying error)
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.listSchools = function *() {
+module.exports.listAreaCategories = function *() {
     try {
         if (this.params.start && this.params.length) {
             // Pagination requests
@@ -41,15 +41,16 @@ module.exports.listSchools = function *() {
                 let order = (this.params.order === 'desc')? true : false;
 
                 // Obtain the result
-                let result = yield School.getSchoolsRange(start, length, order);
+                let result = yield AreaCategory
+                        .getAreaCategoriesRange(start, length, order);
 
                 this.status = 200;
                 this.body = result;
             }
         } else {
-            let result = yield School.getAllSchools();
-            this.status = 200;
+            let result = yield AreaCategory.getAllAreaCategories();
             this.body = result;
+            this.status = 200;
         }
     } catch (error) {
         console.error(error);
@@ -58,17 +59,17 @@ module.exports.listSchools = function *() {
 };
 
 /**
- * Gets the school by ID
+ * Gets the area category by ID
  *
  * Method: GET
- * Base URL: /api/school/id/[id]
+ * Base URL: /api/area-category/id/[id]
  *
  * @return  200: sets the response object to JSON representation of found
  *               Single object
  *          400: sets the resposne object to error text (displaying error)
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.getSchoolById = function *() {
+module.exports.getAreaCategoryById = function *() {
     let data = this.params;
 
     if (!data.id) {
@@ -79,9 +80,9 @@ module.exports.getSchoolById = function *() {
         };
     } else {
         try {
-            let school = yield School.get(data.id);
+            let category = yield AreaCategory.get(data.id);
             this.status = 200;
-            this.body = school;
+            this.body = category;
         } catch (error) {
             console.error(error);
             this.status = 500;
@@ -90,17 +91,17 @@ module.exports.getSchoolById = function *() {
 };
 
 /**
- * Gets the school by name
+ * Gets the area category by name
  *
  * Method: GET
- * Base URL: /api/school/name/[name]
+ * Base URL: /api/area-category/name/[name]
  *
  * @return  200: sets the response object to JSON representation of found
  *               Array of object(s)
  *          400: sets the resposne object to error text (displaying error)
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.getSchoolsByName = function *() {
+module.exports.getAreaCategoryByName = function *() {
     let data = this.params;
 
     if (!data.name) {
@@ -113,9 +114,9 @@ module.exports.getSchoolsByName = function *() {
         let name = decodeURI(data.name);
 
         try {
-            let schools = yield School.findByName(name);
+            let category = yield AreaCategory.findByName(name);
             this.status = 200;
-            this.body = schools;
+            this.body = category;
         } catch (error) {
             console.error(error);
             this.status = 500;
@@ -124,108 +125,33 @@ module.exports.getSchoolsByName = function *() {
 };
 
 /**
- * Gets the school by location
- *
- * Method: GET
- * Base URL: /api/school/location/[country]/[state]/[city]
- *      Properties must be specified in the order of country-state-city
- *      Any subsets of preceding properties are accepted
- *
- * @return  200: sets the response object to JSON representation of found
- *               Array of object(s)
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
- */
-module.exports.getSchoolsByLocation = function *() {
-    let data = _.omit(
-        _.pick(this.params, ['city', 'state', 'country']),
-        function (data) {
-            return (!data || data === 'null');
-        }
-    );
-
-    if (!data || _.isEmpty(data)) {
-        this.status = 400;
-        this.body = {
-            error: 'Invalid location request',
-            reqParams: this.params
-        };
-    } else {
-        try {
-            let schools = yield School.findByLocation(data);
-            this.status = 200;
-            this.body = schools;
-        } catch (error) {
-            console.error(error);
-            this.status = 500;
-        }
-    }
-};
-
-/**
- * Gets all the program the school has
- *
- * Method: GET
- * Base URL: /api/school/id/[id]/programs
- *
- * @return  200: sets the response object to JSON representation of found
- *               Array of object(s)
- *          400: sets the resposne object to error text (displaying error)
- *          500: not returning anything in response body (hiding error)
- */
-module.exports.getSchoolPrograms = function *() {
-    let data = this.params;
-    if (!data.id) {
-        this.status = 400;
-        this.body = {
-            error: 'No id to search for',
-            reqParams: this.params
-        };
-    } else {
-        try {
-            let school = yield School.get(data.id);
-            let programs = yield school.getAllPrograms();
-
-            this.status = 200;
-            this.body = programs;
-        } catch (error) {
-            console.error(error);
-            this.status = 500;
-        }
-    }
-};
-
-/**
- * Creates a new school and returns a new ID for the school
+ * Creates a new area category and returns a new ID for it
  *
  * Method: POST
- * Base URL: /api/school/create
+ * Base URL: /api/area-category/create
  *
- * Accepts JSON object that complies with School schema.
+ * Accepts JSON object that complies with AreaCategory schema.
  *
  * @return  201: Successfully created
- *               An object with a property named "id"
+ *               An object with one property named "id"
  *          400: sets the resposne object to error text (displaying error)
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.createSchool = function *() {
+module.exports.createAreaCategory = function *() {
     let data = this.request.body;
     if (data.id) {
         this.status = 400;
-        this.body = {
-            error: 'ID specified',
-            reqParams: this.request.body
-        };
+        this.body = 'Cannot create if ID is know or existed';
     } else {
-        // Create a new school and try to save it
-        let school = new School(this.request.body);
+        // Create a new program and try to save it
+        let category = new AreaCategory(this.request.body);
 
         try {
-            yield school.save();
+            yield category.save();
             this.status = 201;
             this.body = {
                 success: 'created',
-                id: school.id
+                id: category.id
             };
         } catch (error) {
             // If save failed, return server error
@@ -236,23 +162,23 @@ module.exports.createSchool = function *() {
 };
 
 /**
- * Updates the school specified with id
+ * Updates the area category specified with id
  *
  * Method: PUT
- * Base URL: /api/school/update
+ * Base URL: /api/area-category/update
  *
- * Accepts JSON object that complies with School schema
+ * Accepts JSON object that complies with AreaCategory schema
  *
  * @return  200: Successfully updated, and a changelog in the format of
                     {
-                        id: school_id,
+                        id: area_category_id,
                         new: { new values },
                         old: { old values }
                     }
  *          400: Bad request, e.g. no ID specified
  *          500: Either update error or specified ID not existed
  */
-module.exports.updateSchool = function *() {
+module.exports.updateAreaCategory = function *() {
     let data = this.request.body;
 
     if (!data.id) {
@@ -265,21 +191,21 @@ module.exports.updateSchool = function *() {
         try {
             // Sanitize in case this is used as fabrication
             let newData = _.omit(data, 'id');
-            let school = yield School.get(data.id);
-            let oldValue = _.pick(school, _.keys(newData));
+            let category = yield AreaCategory.get(data.id);
+            let oldValue = _.pick(category, _.keys(newData));
 
             // Need to set as saved before updating
-            school.setSaved();
-            school.update(newData);
-            yield school.save();
+            category.setSaved();
+            category.update(newData);
+            yield category.save();
 
-            let newValue = _.pick(school, _.keys(newData));
+            let newValue = _.pick(category, _.keys(newData));
 
             this.status = 200;
             this.body = {
-                id: school.id,
-                old: oldValue,
-                new: newValue
+                id: category.id,
+                new: newValue,
+                old: oldValue
             };
         } catch (error) {
             console.error(error);
@@ -289,15 +215,15 @@ module.exports.updateSchool = function *() {
 };
 
 /**
- * Deletes a school given the ID
+ * Deletes a area category given the ID
  *
  * Method: DELETE
- * Base URL: /api/school/delete
+ * Base URL: /api/area-category/delete
  *
  * Accepts JSON object is of the following format:
  *      {
  *          apiKey: key_string
- *          id: school_id
+ *          id: area_category_id
  *      }
  * (specification subject to changes)
  *
@@ -306,7 +232,7 @@ module.exports.updateSchool = function *() {
  *          403: sets the response object to "Forbidden"
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.deleteSchool = function *() {
+module.exports.deleteAreaCategory = function *() {
     let data = this.request.body;
 
     // Implement apikey for critical things like this in the future
@@ -327,11 +253,11 @@ module.exports.deleteSchool = function *() {
             };
         } else {
             try {
-                let school = yield School.findById(data.id);
+                let category = yield AreaCategory.findById(data.id);
 
                 // Need to set saved before delete
-                school.setSaved();
-                yield school.delete();
+                category.setSaved();
+                yield category.delete();
 
                 this.status = 204;
                 this.body = {
@@ -339,8 +265,8 @@ module.exports.deleteSchool = function *() {
                     id: data.id
                 };
             } catch (error) {
-                console.error(error);
                 this.status = 500;
+                console.error(error);
             }
         }
     }
