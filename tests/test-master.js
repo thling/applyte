@@ -35,7 +35,7 @@ module.exports.listEquals = function (items, tests, print) {
                     console.log(item);
                     console.log(test);
                 }
-                assert.deepEqual(test, item);
+                assert.deepEqual(item, test);
                 count -= 1;
                 break;
             }

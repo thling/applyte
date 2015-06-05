@@ -8,7 +8,7 @@ let thinky  = require('./utils/thinky')();
 let r = thinky.r;
 
 const TABLE = 'school';
-const NAME_INDEX = 'name_campus';
+const NAME_CAMPUS_INDEX = 'name_campus';
 const SCHEMA = schemas[TABLE];
 
 let School = thinky.createModel(TABLE, SCHEMA, {
@@ -16,7 +16,7 @@ let School = thinky.createModel(TABLE, SCHEMA, {
 });
 
 // Create index if not existed;
-School.ensureIndex(NAME_INDEX, function (doc) {
+School.ensureIndex(NAME_CAMPUS_INDEX, function (doc) {
     return doc('name').add(doc('campus'));
 });
 
@@ -57,6 +57,32 @@ School.defineStatic('findByName', function *(name) {
                     r.row('name').match('.*' + name + '.*')
                 )
                 .run();
+    } catch (error) {
+        console.error(error);
+    }
+
+    return result;
+});
+
+/**
+ * Get the school by name + campus. This makes up an unique identifier,
+ * so only 1 school object will be returned.
+ *
+ * @param   name    The name of the school
+ * @param   campus  The campus name under the school
+ * @return  A school object
+ */
+School.defineStatic('findByNameCampus', function *(name, campus) {
+    let result = null;
+
+    try {
+        result = yield School
+                .getAll([name, campus], { index: NAME_CAMPUS_INDEX })
+                .run();
+
+        if (result.length === 1) {
+            result = result[0];
+        }
     } catch (error) {
         console.error(error);
     }
@@ -106,7 +132,7 @@ School.defineStatic('getAllSchools', function *() {
 
     try {
         result = yield School
-                .orderBy({ index: NAME_INDEX })
+                .orderBy({ index: NAME_CAMPUS_INDEX })
                 .run();
     } catch (error) {
         console.error(error);
@@ -128,7 +154,7 @@ School.defineStatic('getAllSchools', function *() {
  */
 School.defineStatic('getSchoolsRange', function *(start, length, desc) {
     let result = [];
-    let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
+    let orderIndex = (desc)? r.desc(NAME_CAMPUS_INDEX) : NAME_CAMPUS_INDEX;
 
     try {
         result = yield School
@@ -141,6 +167,15 @@ School.defineStatic('getSchoolsRange', function *(start, length, desc) {
     }
 
     return result;
+});
+
+/**
+ * Gets the school's full name - its name + its campus name
+ *
+ * @return  The name + campus identifier for ths school
+ */
+School.define('getFullName', function () {
+    return this.name + ' ' + this.campus;
 });
 
 /**

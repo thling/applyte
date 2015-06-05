@@ -124,6 +124,41 @@ module.exports.getSchoolsByName = function *() {
 };
 
 /**
+ * Gets the school by name and campus
+ *
+ * Method: GET
+ * Base URL: /api/school/name/[name]/[campus]
+ *
+ * @return  200: sets the response object to JSON representation of found
+ *               Single object
+ *          400: sets the resposne object to error text (displaying error)
+ *          500: sets the response object to error text (hiding error)
+ */
+module.exports.getSchoolByNameCampus = function *() {
+    let data = this.params;
+
+    if (!data.name || !data.campus) {
+        this.status = 400;
+        this.body = {
+            error: 'No name or campus to search for',
+            reqParams: this.params
+        };
+    } else {
+        let name = decodeURI(data.name);
+        let campus = decodeURI(data.campus);
+
+        try {
+            let school = yield School.findByNameCampus(name, campus);
+            this.status = 200;
+            this.body = school;
+        } catch (error) {
+            console.error(error);
+            this.status = 500;
+        }
+    }
+};
+
+/**
  * Gets the school by location
  *
  * Method: GET
@@ -166,7 +201,10 @@ module.exports.getSchoolsByLocation = function *() {
  * Gets all the program the school has
  *
  * Method: GET
- * Base URL: /api/school/id/[id]/programs
+ * Base URL: /api/school/[criteria]/programs
+ * Criterias can be:
+ *      /id/[id] - Seach by school id
+ *      /name/[name]/[campus] - Search by school's unique name (name + campus)
  *
  * @return  200: sets the response object to JSON representation of found
  *               Array of object(s)
@@ -175,15 +213,25 @@ module.exports.getSchoolsByLocation = function *() {
  */
 module.exports.getSchoolPrograms = function *() {
     let data = this.params;
-    if (!data.id) {
+    if (!data.id && (!data.name || !data.campus)) {
         this.status = 400;
         this.body = {
-            error: 'No id to search for',
+            error: 'No id or name to search for',
             reqParams: this.params
         };
     } else {
         try {
-            let school = yield School.get(data.id);
+            let school;
+            
+            if (data.id) {
+                school = yield School.get(data.id);
+            } else {
+                school = yield School.findByNameCampus(
+                    decodeURI(data.name),
+                    decodeURI(data.campus)
+                );
+            }
+
             let programs = yield school.getAllPrograms();
 
             this.status = 200;

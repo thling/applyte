@@ -40,8 +40,8 @@ describe('Program API Routes', function () {
             request()
                 .post('/api/program/create')
                 .send(template)
-                .expect('Content-Type', /json/)
                 .expect(201)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -57,6 +57,7 @@ describe('Program API Routes', function () {
             request()
                 .get('/api/program/id/' + createdId)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -74,6 +75,7 @@ describe('Program API Routes', function () {
             request()
                 .get('/api/program/name/' + name)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -103,6 +105,9 @@ describe('Program API Routes', function () {
             management.name = 'Management';
             philosophy.name = 'Philosophy';
 
+            indseng.removeArea('Databases');
+            philosophy.removeArea('Information Security and Assurance');
+
             yield compsci.save();
             yield mecheng.save();
             yield indseng.save();
@@ -121,8 +126,8 @@ describe('Program API Routes', function () {
         it('should list everything', function (done) {
             request()
                 .get('/api/program/list')
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -134,27 +139,52 @@ describe('Program API Routes', function () {
                 });
         });
 
-        it('should list 3rd to 5th item in alphabetical order (MGMT, ME, PHIL)', function (done) {
-            request()
-                .get('/api/program/list/3/3')
-                .expect('Content-Type', /json/)
-                .expect(200)
-                .end(function (err, res) {
-                    if (err) {
-                        throw err;
-                    } else {
-                        master.listEquals(res.body, [management, mecheng, philosophy]);
-                    }
+        it('should find programs that have areas in both [Database, Systems] categories',
+                function (done) {
+                    let categories = encodeURI('Database||Systems');
+                    request()
+                        .get('/api/program/categories/' + categories)
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(
+                                        res.body,
+                                        [compsci, mecheng, management, philosophy]
+                                );
+                            }
 
-                    done();
-                });
-        });
+                            done();
+                        });
+                }
+        );
+
+        it('should list 3rd to 5th item in alphabetical order (MGMT, ME, PHIL)',
+                function (done) {
+                    request()
+                        .get('/api/program/list/3/3')
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(res.body, [management, mecheng, philosophy]);
+                            }
+
+                            done();
+                        });
+                }
+        );
 
         it('should list 4th to 2nd item in alphabetical order (ME, MGMT, IE)', function (done) {
             request()
                 .get('/api/program/list/1/3/desc')
                 .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -190,6 +220,7 @@ describe('Program API Routes', function () {
                 .put('/api/program/update')
                 .send(newData)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;

@@ -100,7 +100,7 @@ module.exports.getProgramById = function *() {
  *          400: sets the resposne object to error text (displaying error)
  *          500: sets the response object to error text (hiding error)
  */
-module.exports.getProgramByName = function *() {
+module.exports.getProgramsByName = function *() {
     let data = this.params;
 
     if (!data.name) {
@@ -113,9 +113,44 @@ module.exports.getProgramByName = function *() {
         let name = decodeURI(data.name);
 
         try {
-            let program = yield Program.findByName(name);
+            let programs = yield Program.findByName(name);
             this.status = 200;
-            this.body = program;
+            this.body = programs;
+        } catch (error) {
+            console.error(error);
+            this.status = 500;
+        }
+    }
+};
+
+/**
+ * Gets programs with areas that fall into the specified categories
+ *
+ * Method: GET
+ * Base URL: /api/program/categories/[categories]
+ *      Can specify multiple categories by using delimiter ||
+ *
+ * @return  200: sets the response object to JSON representation of found
+ *               Array of object(s)
+ *          400: sets the resposne object to error text (displaying error)
+ *          500: sets the response object to error text (hiding error)
+ */
+module.exports.getProgramsByAreaCategories = function *() {
+    let data = this.params;
+
+    if (!data.categories) {
+        this.status = 400;
+        this.body = {
+            error: 'No category specified',
+            reqParams: this.params
+        };
+    } else {
+        let categories = decodeURI(data.categories).split('||');
+
+        try {
+            let programs = yield Program.findByAreaCategories(categories);
+            this.status = 200;
+            this.body = programs;
         } catch (error) {
             console.error(error);
             this.status = 500;

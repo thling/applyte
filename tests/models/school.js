@@ -14,9 +14,14 @@ describe('School model test', function () {
     let school;
 
     describe('School object instantiation test', function () {
-        it('should create a populated School object', function *() {
+        it('should create a populated School object', function () {
             school = new School(template);
             master.school.assertEqual(school, template);
+        });
+
+        it('should return a properly generated full name', function () {
+            let name = school.getFullName();
+            assert.strictEqual(name, school.name + ' ' + school.campus);
         });
     });
 

@@ -167,6 +167,52 @@ Program.defineStatic('getAllPrograms', function *() {
     return result;
 });
 
+/**
+ * Returns all programs and their corresponding school object
+ * embedded.
+ *
+ * @return  An array of objects like Program, with objects like School
+ *          embedded into the 'school' property, e.g.
+ *              returnedProgram = {
+ *                  id: ...,
+ *                  name: 'Computer Science',
+ *                  areas: [ ... ],
+ *                  ...
+ *                  school: {
+ *                      id: ...,
+ *                      name: 'Purdue University',
+ *                      campus: 'West Lafayette',
+ *                      ...
+ *                  }
+ *              }
+ *
+ *          Note that schoolId will be removed.
+ */
+Program.defineStatic('getAllProgramsWithSchool', function *() {
+    let result = [];
+
+    try {
+        result = yield r.table(TABLE)
+                .merge(function (prog) {
+                        return {
+                            school: r.table('school').get(prog('schoolId'))
+                        };
+                })
+                .without('schoolId')
+                .run();
+    } catch (error) {
+        console.error(error);
+    }
+
+    return result;
+});
+
+/**
+ * Returns all programs belong to the school specified by schoolId.
+ *
+ * @param   schoolId    The id of the school
+ * @return  All programs under teh school specified by the schoolId
+ */
 Program.defineStatic('getProgramsBySchoolId', function *(schoolId) {
     let result = [];
     try {

@@ -41,8 +41,8 @@ describe('School API Routes', function () {
             request()
                 .post('/api/school/create')
                 .send(template)
-                .expect('Content-Type', /json/)
                 .expect(201)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -58,6 +58,7 @@ describe('School API Routes', function () {
             request()
                 .get('/api/school/id/' + createdId)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -75,6 +76,7 @@ describe('School API Routes', function () {
             request()
                 .get('/api/school/name/' + name)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -200,11 +202,30 @@ describe('School API Routes', function () {
             }
         });
 
+        it('should return the school with /api/school/name/campus', function (done) {
+            let name = encodeURI(purdueWL.name);
+            let campus = encodeURI(purdueWL.campus);
+
+            request()
+                .get('/api/school/name/' + name + '/' + campus)
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        master.school.assertEqual(res.body, purdueWL);
+                    }
+
+                    done();
+                });
+        });
+
         it('should list everything', function (done) {
             request()
                 .get('/api/school/list')
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -219,8 +240,8 @@ describe('School API Routes', function () {
         it('should list 4th to 6th item in alphabetical order (PUWL, PUCal, UIUC)', function (done) {
             request()
                 .get('/api/school/list/4/3')
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -235,8 +256,8 @@ describe('School API Routes', function () {
         it('should list 4th to 2nd item in alphabetical order (PUCal, MIT, EMER)', function (done) {
             request()
                 .get('/api/school/list/4/3/desc')
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -253,8 +274,8 @@ describe('School API Routes', function () {
 
             request()
                 .get('/api/school/location/' + country)
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -272,8 +293,8 @@ describe('School API Routes', function () {
 
             request()
                 .get('/api/school/location/' + country + '/' + state)
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -291,8 +312,8 @@ describe('School API Routes', function () {
 
             request()
                 .get('/api/school/location/' + country + '/' + state)
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -311,8 +332,8 @@ describe('School API Routes', function () {
 
             request()
                 .get('/api/school/location/' + country + '/' + state + '/' + city)
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -324,9 +345,27 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should return all programs Purdue has', function (done) {
+        it('should return all programs Purdue has (by ID)', function (done) {
             request()
                 .get('/api/school/id/' + purdueWL.id + '/programs')
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        master.listEquals(res.body, [compsci, mecheng, indseng]);
+                    }
+
+                    done();
+                });
+        });
+
+        it('should return all programs Purdue has (by name + campus)', function (done) {
+            let name = encodeURI(purdueWL.name);
+            let campus = encodeURI(purdueWL.campus);
+            request()
+                .get('/api/school/name/' + name + '/' + campus + '/programs')
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .end(function (err, res) {
@@ -338,7 +377,7 @@ describe('School API Routes', function () {
 
                     done();
                 });
-        }) ;
+        });
 
         it('should update the data with /api/school/update', function (done) {
             let temp = master.school.template,
@@ -361,6 +400,7 @@ describe('School API Routes', function () {
                 .put('/api/school/update')
                 .send(newData)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;

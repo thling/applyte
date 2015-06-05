@@ -40,8 +40,8 @@ describe('AreaCategory API Routes', function () {
             request()
                 .post('/api/area-category/create')
                 .send(template)
-                .expect('Content-Type', /json/)
                 .expect(201)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -57,6 +57,7 @@ describe('AreaCategory API Routes', function () {
             request()
                 .get('/api/area-category/id/' + createdId)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -74,6 +75,7 @@ describe('AreaCategory API Routes', function () {
             request()
                 .get('/api/area-category/name/' + name)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -121,8 +123,8 @@ describe('AreaCategory API Routes', function () {
         it('should list everything', function (done) {
             request()
                 .get('/api/area-category/list')
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -137,8 +139,8 @@ describe('AreaCategory API Routes', function () {
         it('should list 2nd to 4th item in alphabetical order (LIT, NETWK, SECRTY)', function (done) {
             request()
                 .get('/api/area-category/list/2/3')
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -153,8 +155,8 @@ describe('AreaCategory API Routes', function () {
         it('should list 3rd to 1st item in alphabetical order (NETWK, LIT, DB)', function (done) {
             request()
                 .get('/api/area-category/list/3/3/desc')
-                .expect('Content-Type', /json/)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -188,6 +190,7 @@ describe('AreaCategory API Routes', function () {
                 .put('/api/area-category/update')
                 .send(newData)
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;

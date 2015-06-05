@@ -102,6 +102,8 @@ describe('Program model tests', function () {
         });
 
         describe('Complex database test', function () {
+            let purdueWL, umich, mit;
+
             let compsci = new Program(master.program.template),
                 mecheng = new Program(master.program.template),
                 indseng = new Program(master.program.template),
@@ -115,6 +117,34 @@ describe('Program model tests', function () {
             let testPrograms = [compsci, mecheng, indseng, management, philosophy];
 
             before('Adding multiple programs', function *() {
+                // Setup schools
+                purdueWL = new School(master.school.template);
+                umich = new School(master.school.template);
+                mit = new School(master.school.template);
+
+                umich.update({
+                    name: 'University of Michigan',
+                    campus: 'Ann Arbor',
+                    address: {
+                        city: 'Ann Arbor',
+                        state: 'Michigan'
+                    }
+                });
+
+                mit.update({
+                    name: 'Massachusetts Institute of Technology',
+                    campus: 'Cambridge',
+                    address: {
+                        city: 'Cambridge',
+                        state: 'Massachusetts'
+                    }
+                });
+
+                yield purdueWL.save();
+                yield umich.save();
+                yield mit.save();
+
+                // Setup area categories
                 security.name = 'Security';
                 database.name = 'Database';
                 systems.name = 'Systems';
@@ -123,16 +153,21 @@ describe('Program model tests', function () {
                 yield database.save();
                 yield systems.save();
 
+                // Setup programs
+                compsci.schoolId = purdueWL.id;
+
                 mecheng.update({
                     name: 'Mechanical Engineering',
                     degree: 'Bachelor of Science',
-                    level: 'Undergraduate'
+                    level: 'Undergraduate',
+                    schoolId: purdueWL.id
                 });
 
                 indseng.update({
                     name: 'Industrial Engineering',
                     degree: 'Bachelor of Science',
-                    level: 'Undergraduate'
+                    level: 'Undergraduate',
+                    schoolId: purdueWL.id
                 });
 
                 indseng.removeArea('Databases');
@@ -146,12 +181,14 @@ describe('Program model tests', function () {
                             name: 'Database Security',
                             categories: [security.name, systems.name, database.name]
                         }
-                    ]
+                    ],
+                    schoolId: umich.id
                 });
 
                 philosophy.update({
                     name: 'Philosophy',
-                    degree: 'Master of Arts'
+                    degree: 'Master of Arts',
+                    schoolId: umich.id
                 });
 
                 philosophy.removeArea('Information Security and Assurance');
@@ -172,6 +209,10 @@ describe('Program model tests', function () {
                 for (let cat of [security, systems, database]) {
                     yield cat.delete();
                 }
+
+                for (let school of [purdueWL, umich, mit]) {
+                    yield school.delete();
+                }
             });
 
             // Might want to delete in the future
@@ -180,6 +221,33 @@ describe('Program model tests', function () {
                 master.listEquals(
                         foundPrograms,
                         [compsci, mecheng, indseng, management, philosophy]
+                );
+            });
+
+            it('should return all programs with its school', function *() {
+                let tempCompsci = _.omit(_.cloneDeep(compsci), 'schoolId');
+                let tempMecheng = _.omit(_.cloneDeep(mecheng), 'schoolId');
+                let tempIndseng = _.omit(_.cloneDeep(indseng), 'schoolId');
+                let tempManagement = _.omit(_.cloneDeep(management), 'schoolId');
+                let tempPhilosophy = _.omit(_.cloneDeep(philosophy), 'schoolId');
+                
+                tempCompsci.school = purdueWL;
+                tempMecheng.school = purdueWL;
+                tempIndseng.school = purdueWL;
+                tempManagement.school = umich;
+                tempPhilosophy.school = umich;
+
+                let foundPrograms = yield Program.getAllProgramsWithSchool();
+
+                master.listEquals(
+                        foundPrograms,
+                        [
+                            tempCompsci,
+                            tempMecheng,
+                            tempIndseng,
+                            tempManagement,
+                            tempPhilosophy
+                        ]
                 );
             });
 
