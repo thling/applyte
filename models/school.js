@@ -1,7 +1,7 @@
 'use strict';
 
 let _       = require('lodash');
-let Program = require('./program');
+// let Program = require('./program');
 let schemas = require('./utils/schemas');
 let thinky  = require('./utils/thinky')();
 
@@ -179,45 +179,6 @@ School.define('getFullName', function () {
 });
 
 /**
- * Get all the programs that belong to this school
- *
- * @return  Array of programs
- */
-School.define('getAllPrograms', function *() {
-    return yield Program.getProgramsBySchoolId(this.id);
-});
-
-/**
- * Return all programs that satisfy the condition.
- *
- * @param   condition   JSON object or function using ReQL
- * @return  Array of programs that satisfy the specified condition
- */
-School.define('getProgramsWith', function *(condition) {
-    if (!_.isObject(condition) && !_.isFunction(condition)) {
-        throw 'Invalid condition specification; expected Object or Function';
-    }
-
-    let result = [];
-    let query = Program;
-
-    // If condition is an object and does not filter by id yet,
-    // or if condition is a function using ReQL, add new id filter
-    if ((_.isObject(condition) && !_.has(condition, 'schoolId'))
-            || _.isFunction(condition)) {
-        query = query.filter({ schoolId: this.id });
-    }
-
-    try {
-        result = yield query.filter(condition).run();
-    } catch (error) {
-        console.error(error);
-    }
-
-    return result;
-});
-
-/**
  * Add a new link to this school. If the link already existsed,
  * it will be overwritten.
  *
@@ -274,10 +235,8 @@ School.define('update', function (properties) {
 
     // Make sure the address only contain the fields we want
     if (_.has(data, 'address')) {
-        _.assign(
-                this.address,
-                _.pick(data.address, _.keys(SCHEMA.address))
-        );
+        let newAddress = _.pick(data.address, _.keys(SCHEMA.address));
+        _.assign(this.address, newAddress);
 
         data = _.omit(data, 'address');
     }

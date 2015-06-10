@@ -4,25 +4,27 @@ let _            = require('lodash');
 let AreaCategory = require(basedir + 'models/area-category');
 
 /**
- * Lists all the programs we have
+ * @api {get} /api/area-category/list   Lists all area categories
+ * @apiName     getAllAreaCategories
+ * @apiGroup    AreaCategory
+ * @apiVersion  0.0.1
+
+ * @apiUse  successAreaCategoryArray
+ * @apiUse  errors
+ */
+
+/**
+ * @api {get}   /api/area-category/list/:start/:length  List all area categories (paginated)
+ * @apiName     getAreaCategoriesByRange
+ * @apiGroup    AreaCategory
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/area-category/list/...
+ * @apiParam    {Number}        start       Index to start listing from.
+ * @apiParam    {Number}        length      Number of item to list from <code>start</code>
+ * @apiParam    {String="desc"} [order]     Whether to order descendingly
  *
- * Supports pagination. The url should be:
- *      [host]/api/area-category/list/
- *      [host]/api/area-category/list/[start]/[length]
- *      [host]/api/area-category/list/[start]/[length]/[desc]
- *
- * where [start] is the starting index (starting from 1) of the area category,
- *       [length] is the number of area category to fetch,
- *       [desc] is the order to sort (by name)
- *              It is either "desc" for sorting descendingly or nothing.
- *              If nothing, default to sorting ascendingly.
- *
- * @return  200: sets the response object to JSON representation of found
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse  successAreaCategoryArray
+ * @apiUse  errors
  */
 module.exports.listAreaCategories = function *() {
     try {
@@ -59,15 +61,17 @@ module.exports.listAreaCategories = function *() {
 };
 
 /**
- * Gets the area category by ID
+ * @api {get} /api/area-category/id/:id     Get area category by ID
+ * @apiName     getAreaCategoryById
+ * @apiGroup    AreaCategory
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/area-category/id/[id]
+ * @apiParam    {String} id     The ID of the area category
  *
- * @return  200: sets the response object to JSON representation of found
- *               Single object
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse      successAreaCategory
+ *
+ * @apiError    (404)   {json}  NotFound    The specified ID does not exist
+ * @apiUse      errors
  */
 module.exports.getAreaCategoryById = function *() {
     let data = this.params;
@@ -80,9 +84,17 @@ module.exports.getAreaCategoryById = function *() {
         };
     } else {
         try {
-            let category = yield AreaCategory.get(data.id);
-            this.status = 200;
-            this.body = category;
+            let category = yield AreaCategory.findById(data.id);
+            if (category) {
+                this.status = 200;
+                this.body = category;
+            } else {
+                this.status = 404;
+                this.body = {
+                    error: 'Object not found',
+                    reqParams: this.params
+                };
+            }
         } catch (error) {
             console.error(error);
             this.status = 500;
@@ -91,15 +103,17 @@ module.exports.getAreaCategoryById = function *() {
 };
 
 /**
- * Gets the area category by name
+ * @api {get} /api/area-category/name/:name     Find area categories by name
+ * @apiName     getAreaCategoryByName
+ * @apiGroup    AreaCategory
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/area-category/name/[name]
+ * @apiParam    {String}    name    The name to search with.
+ *                                  This parameter must be encoded
+ *                                  with <code>encodeURI()</code>.
  *
- * @return  200: sets the response object to JSON representation of found
- *               Array of object(s)
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse  successAreaCategoryArray
+ * @apiUse  errors
  */
 module.exports.getAreaCategoryByName = function *() {
     let data = this.params;
@@ -125,17 +139,20 @@ module.exports.getAreaCategoryByName = function *() {
 };
 
 /**
- * Creates a new area category and returns a new ID for it
+ * @api {post}  /api/area-category/create   Create a new area category
+ * @apiName     createAreaCategory
+ * @apiGroup    AreaCategory
+ * @apiVersion  0.0.1
  *
- * Method: POST
- * Base URL: /api/area-category/create
+ * @apiDescription  Creates a new area category and returns the ID of the
+ *                  newly created object. The optional parameters may be
+ *                  tightened in the future release.
  *
- * Accepts JSON object that complies with AreaCategory schema.
+ * @apiUse      paramAreaCategory
  *
- * @return  201: Successfully created
- *               An object with one property named "id"
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiSuccess  (201)   {String}    success     "created"
+ * @apiSuccess  (201)   {String}    id          The ID of the newly created object
+ * @apiUse      errors
  */
 module.exports.createAreaCategory = function *() {
     let data = this.request.body;
@@ -162,21 +179,40 @@ module.exports.createAreaCategory = function *() {
 };
 
 /**
- * Updates the area category specified with id
+ * @api {put}   /api/area-category/update   Updates an existing area category
+ * @apiName     updateAreaCategory
+ * @apiGroup    AreaCategory
+ * @apiVersion  0.0.1
  *
- * Method: PUT
- * Base URL: /api/area-category/update
+ * @apiDescription  Updates the AreaCategory object in the database with
+ *                  the specified change. Invalid keys will be ignored and
+ *                  objects will be replaced as is. On success, the ID of the
+ *                  updated object and the changes (new value and old value)
+ *                  will be returned.
  *
- * Accepts JSON object that complies with AreaCategory schema
+ * @apiParam    {string}    id  ID of the object to be updated
+ * @apiUse      paramAreaCategoryOptional
  *
- * @return  200: Successfully updated, and a changelog in the format of
-                    {
-                        id: area_category_id,
-                        new: { new values },
-                        old: { old values }
-                    }
- *          400: Bad request, e.g. no ID specified
- *          500: Either update error or specified ID not existed
+ * @apiSuccess  (200)   {String}    id      The ID of the updated object
+ * @apiSuccess  (200)   {Object}    new     The new values
+ * @apiSuccess  (200)   {Mixed}     new.UPDATED_PROPERTIES
+ *                                          New values of the updated properties only
+ * @apiSuccess  (200)   {Object}    old     The old values
+ * @apiSuccess  (200)   {Mixed}     old.CHANGED_PROPERTIES
+ *                                          Old values of the updated properties only
+ * @apiUse      errors
+ *
+ * @apiSuccessExample   {json}  Response Example (Success)
+ *          HTTP/1.1 200 OK
+ *          {
+ *              id: '103fa394-caca-4c1d-9374-f64d41dd52f6'
+ *              new: {
+ *                  name: 'Cloud Computing'
+ *              },
+ *              old: {
+ *                  name: 'Cloud Server'
+ *              }
+ *          }
  */
 module.exports.updateAreaCategory = function *() {
     let data = this.request.body;
@@ -215,22 +251,24 @@ module.exports.updateAreaCategory = function *() {
 };
 
 /**
- * Deletes a area category given the ID
+ * @api {delete}    /api/area-category/delete   Deletes an existing area category
+ * @apiName     deleteAreaCategory
+ * @apiGroup    AreaCategory
+ * @apiVersion  0.0.1
  *
- * Method: DELETE
- * Base URL: /api/area-category/delete
+ * @apiDescription  Deletes an AreaCategory with specified ID. During testing,
+ *                  any <code>access-token</code> will work; in production,
+ *                  this API will reject anything as it is still in test.
  *
- * Accepts JSON object is of the following format:
- *      {
- *          apiKey: key_string
- *          id: area_category_id
- *      }
- * (specification subject to changes)
+ * @apiHeader   {String}    acccess-token   The access token to execute
+ *                                          delete action on the database
  *
- * @return  204: Successfully deleted
- *          400: sets the resposne object to error text (displaying error)
- *          403: sets the response object to "Forbidden"
- *          500: sets the response object to error text (hiding error)
+ * @apiParam    {String}    id  The ID of the object to delete
+ *
+ * @apiSuccess  (204)   {String}    success     "deleted"
+ * @apiSuccess  (204)   {String}    id          The ID of the deleted object
+ * @apiError    (403)   {String}    error       "Permission denied"
+ * @apiUse      errors
  */
 module.exports.deleteAreaCategory = function *() {
     let data = this.request.body;

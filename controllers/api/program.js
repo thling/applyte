@@ -4,25 +4,27 @@ let _       = require('lodash');
 let Program = require(basedir + 'models/program');
 
 /**
- * Lists all the programs we have
+ * @api {get}   /api/program/list   List all programs
+ * @apiName     getAllPrograms
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/program/list/...
+ * @apiUse  successProgramArray
+ * @apiUse  errors
+ */
+
+/**
+ * @api {get}   /api/program/list/:start/:length  List all programs (paginated)
+ * @apiName     getProgramsByRange
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
  *
- * Supports pagination. The url should be:
- *      [host]/api/program/list/
- *      [host]/api/program/list/[start]/[length]
- *      [host]/api/program/list/[start]/[length]/[desc]
+ * @apiParam    {Number}        start       The index fo the program to begin listing from
+ * @apiParam    {Number}        length      The number of programs to fetch from <code>start</code>
+ * @apiParam    {String="desc"} [order]     Whether to fetch in descending order
  *
- * where [start] is the starting index (starting from 1) of the program,
- *       [length] is the number of programs to fetch,
- *       [desc] is the order to sort (by name)
- *              It is either "desc" for sorting descendingly or nothing.
- *              If nothing, default to sorting ascendingly.
- *
- * @return  200: sets the response object to JSON representation of found
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse  successProgramArray
+ * @apiUse  errors
  */
 module.exports.listPrograms = function *() {
     try {
@@ -58,15 +60,17 @@ module.exports.listPrograms = function *() {
 };
 
 /**
- * Gets the program by ID
+ * @api {get}   /api/program/id/:id      Get program by ID
+ * @apiName     getProgramById
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/program/id/[id]
+ * @apiParam    {String}    id  The ID of the program to retrieve
  *
- * @return  200: sets the response object to JSON representation of found
- *               Single object
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse      successProgram
+ *
+ * @apiError    (404)   {json}  NotFound    The specified ID does not exist
+ * @apiUse      errors
  */
 module.exports.getProgramById = function *() {
     let data = this.params;
@@ -79,9 +83,17 @@ module.exports.getProgramById = function *() {
         };
     } else {
         try {
-            let program = yield Program.get(data.id);
-            this.status = 200;
-            this.body = program;
+            let program = yield Program.findById(data.id);
+            if (program) {
+                this.status = 200;
+                this.body = program;
+            } else {
+                this.status = 404;
+                this.body = {
+                    error: 'Object not found',
+                    reqParams: this.params
+                };
+            }
         } catch (error) {
             console.error(error);
             this.status = 500;
@@ -90,15 +102,17 @@ module.exports.getProgramById = function *() {
 };
 
 /**
- * Gets the program by name
+ * @api {get}   /api/program/name/:name     Get programs by name
+ * @apiName     getProgramsByName
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/program/name/[name]
+ * @apiParam    {String}    name    The name to search with.
+ *                                  This parameter must be encoded
+ *                                  with <code>encodeURI</code>.
  *
- * @return  200: sets the response object to JSON representation of found
- *               Array of object(s)
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse      successProgramArray
+ * @apiUse      errors
  */
 module.exports.getProgramsByName = function *() {
     let data = this.params;
@@ -124,16 +138,93 @@ module.exports.getProgramsByName = function *() {
 };
 
 /**
- * Gets programs with areas that fall into the specified categories
+ * @api {get}   /api/program/level/:level   Get programs by level
+ * @apiName     getProgramsByLevel
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/program/categories/[categories]
- *      Can specify multiple categories by using delimiter ||
+ * @apiParam    {String="Undergraduate","Graduate"} level
+ *              The level to search for. This parameter must be encoded
+ *              with <code>encodeURI</code>.
  *
- * @return  200: sets the response object to JSON representation of found
- *               Array of object(s)
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse      successProgramArray
+ * @apiUse      errors
+ */
+module.exports.getProgramsByLevel = function *() {
+    let data = this.params;
+
+    if (!data.level) {
+        this.status = 400;
+        this.body = {
+            error: 'No level to search for',
+            reqParams: this.params
+        };
+    } else {
+        let level = decodeURI(data.level);
+
+        try {
+            let programs = yield Program.findByLevel(level);
+            this.status = 200;
+            this.body = programs;
+        } catch (error) {
+            console.log(error);
+            this.status = 500;
+        }
+    }
+};
+
+/**
+ * @api {get}   /api/program/area/:areaName     Get programs by area name
+ * @apiName     getProgramsByAreaName
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
+ *
+ * @apiParam    {String}    areaName
+ *              The area to search for. This parameter must be encoded
+ *              with <code>encodeURI</code>.
+ *
+ * @apiUse      successProgramArray
+ * @apiUse      errors
+ */
+module.exports.getProgramByAreaName = function *() {
+    let data = this.params;
+
+    if (!data.area) {
+        this.status = 400;
+        this.body = {
+            error: 'No area specified',
+            reqParams: this.params
+        };
+    } else {
+        let areaName = decodeURI(data.area);
+        try {
+            let programs = yield Program.findByAreaName(areaName);
+            this.status = 200;
+            this.body = programs;
+        } catch (error) {
+            console.error(error);
+            this.status = 500;
+        }
+    }
+};
+
+/**
+ * @api {get}   /api/program/categories/:categories     Get programs by categories
+ * @apiName     getProgramsByCategories
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
+ *
+ * @apiParam    {String}    categories  The categories to search for. Multiple
+ *                                      categories should be separated with
+ *                                      delimiter <code>||</code>. The final
+ *                                      query string must also be encoded with
+ *                                      <code>encodeURI()</code>
+ *
+ * @apiUse      successProgramArray
+ * @apiUse      errors
+ *
+ * @apiParamExample {URL}   Request Example:
+ *      https://applyte.io/api/program/categories/Database%7C%7CSecurity
  */
 module.exports.getProgramsByAreaCategories = function *() {
     let data = this.params;
@@ -159,17 +250,21 @@ module.exports.getProgramsByAreaCategories = function *() {
 };
 
 /**
- * Creates a new program and returns a new ID for the program
+ * @api {post}  /api/program/create     Create a new program
+ * @apiName     createProgram
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
  *
- * Method: POST
- * Base URL: /api/program/create
+ * @apiDescription  Creates a new program and returns the ID of the
+ *                  newly created object. The optional parameters may be
+ *                  tightened in the future release.
  *
- * Accepts JSON object that complies with Program schema.
+ * @apiUse      paramProgram
  *
- * @return  201: Successfully created
- *               An object with one property named "id"
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiSuccess  (201) {String}  success     "created"
+ * @apiSuccess  (201) {String}  id          The ID of the newly created object
+ *
+ * @apiUse      errors
  */
 module.exports.createProgram = function *() {
     let data = this.request.body;
@@ -199,21 +294,56 @@ module.exports.createProgram = function *() {
 };
 
 /**
- * Updates the program specified with id
+ * @api {put}   /api/program/update     Updates an existing program
+ * @apiName     updateProgram
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
  *
- * Method: PUT
- * Base URL: /api/program/update
+ * @apiDescription  Updates the Program object in the database with
+ *                  the specified change. Invalid keys will be ignored and
+ *                  objects will be replaced as is. On success, the ID of the
+ *                  updated object and the changes (new value and old value)
+ *                  will be returned.
  *
- * Accepts JSON object that complies with Program schema
+ * @apiParam    {String}    id  The ID of the program to update
+ * @apiUse      paramProgram
  *
- * @return  200: Successfully updated, and a changelog in the format of
-                    {
-                        id: program_id,
-                        new: { new values },
-                        old: { old values }
-                    }
- *          400: Bad request, e.g. no ID specified
- *          500: Either update error or specified ID not existed
+ * @apiSuccess  (200)   {String}    id      The ID of the updated object
+ * @apiSuccess  (200)   {Object}    new     The new values
+ * @apiSuccess  (200)   {Mixed}     new.UPDATED_PROPERTIES
+ *                                          New values of the updated properties only
+ * @apiSuccess  (200)   {Object}    old     The old values
+ * @apiSuccess  (200)   {Mixed}     old.CHANGED_PROPERTIES
+ *                                          Old values of the updated properties only
+ * @apiUse      errors
+ *
+ * @apiSuccessExample   {json}  Response Example (Success):
+ *          HTTP/1.1 200 OK
+ *          {
+ *              id: '103fa394-caca-4c1d-9374-f64d41dd52f6'
+ *              new: {
+ *                  name: 'Computer Science',
+ *                  areas: [
+ *                      {
+ *                          name: 'Distributed Systems',
+ *                          categories: ['Cloud Computing', 'Systems']
+ *                      },
+ *                      {
+ *                          name: 'Information Security',
+ *                          categories: ['Security']
+ *                      }
+ *                  ]
+ *              },
+ *              old: {
+ *                  name: 'Computer and Information Technology',
+ *                  areas: [
+ *                      {
+ *                          name: 'Databases'
+ *                          categories: ['Databases', 'Systems']
+ *                      }
+ *                  ]
+ *              }
+ *          }
  */
 module.exports.updateProgram = function *() {
     let data = this.request.body;
@@ -252,22 +382,24 @@ module.exports.updateProgram = function *() {
 };
 
 /**
- * Deletes a program given the ID
+ * @api {delete}    /api/program/delete     Deletes an existing program
+ * @apiName     deleteProgram
+ * @apiGroup    Program
+ * @apiVersion  0.0.1
  *
- * Method: DELETE
- * Base URL: /api/program/delete
+ * @apiDescription  Deletes an Program with specified ID. During testing,
+ *                  any <code>access-token</code> will work; in production,
+ *                  this API will reject anything as it is still in test.
  *
- * Accepts JSON object is of the following format:
- *      {
- *          apiKey: key_string
- *          id: program_id
- *      }
- * (specification subject to changes)
+ * @apiHeader   {String}    acccess-token   The access token to execute
+ *                                          delete action on the database
  *
- * @return  204: Successfully deleted
- *          400: sets the resposne object to error text (displaying error)
- *          403: sets the response object to "Forbidden"
- *          500: sets the response object to error text (hiding error)
+ * @apiParam    {String}    id  The ID of the object to delete
+ *
+ * @apiSuccess  (204)   {String}    success     "deleted"
+ * @apiSuccess  (204)   {String}    id          The ID of the deleted object
+ * @apiError    (403)   {String}    error       "Permission denied"
+ * @apiUse      errors
  */
 module.exports.deleteProgram = function *() {
     let data = this.request.body;

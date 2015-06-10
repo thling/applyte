@@ -1,28 +1,31 @@
 'use strict';
 
 let _       = require('lodash');
+let Program = require(basedir + 'models/program');
 let School  = require(basedir + 'models/school');
 
 /**
- * Lists all the schools we have
+ * @api {get}   /api/school/list    List all schools
+ * @apiName     getAllSchools
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/school/list/...
+ * @apiUse  successSchoolArray
+ * @apiUse  errors
+ */
+
+/**
+ * @api {get}   /api/school/list/:start/:length     List all schools (paginated)
+ * @apiName     getSchoolByRange
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Supports pagination. The url should be:
- *      [host]/api/school/list/
- *      [host]/api/school/list/[start]/[length]
- *      [host]/api/school/list/[start]/[length]/[desc]
+ * @apiParam    {Number}        start       The index fo the school to begin listing from
+ * @apiParam    {Number}        length      The number of schools to fetch from <code>start</code>
+ * @apiParam    {String="desc"} [order]     Whether to fetch in descending order
  *
- * where [start] is the starting index (starting from 1) of the school,
- *       [length] is the number of school to fetch,
- *       [desc] is the order to sort (by name then campus name)
- *              It is either "desc" for sorting descendingly or nothing.
- *              If nothing, default to sorting ascendingly.
- *
- * @return  200: sets the response object to JSON representation of found
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse  successSchoolArray
+ * @apiUse  errors
  */
 module.exports.listSchools = function *() {
     try {
@@ -58,15 +61,17 @@ module.exports.listSchools = function *() {
 };
 
 /**
- * Gets the school by ID
+ * @api {get}   /api/school/id/:id  Get school by ID
+ * @apiName     getSchoolById
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/school/id/[id]
+ * @apiParam    {String}    id  The ID of the school to retrieve
  *
- * @return  200: sets the response object to JSON representation of found
- *               Single object
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse      successSchool
+ *
+ * @apiError    (404)   {json}  NotFound    The specified ID does not exist
+ * @apiUse      errors
  */
 module.exports.getSchoolById = function *() {
     let data = this.params;
@@ -79,9 +84,17 @@ module.exports.getSchoolById = function *() {
         };
     } else {
         try {
-            let school = yield School.get(data.id);
-            this.status = 200;
-            this.body = school;
+            let school = yield School.findById(data.id);
+            if (school) {
+                this.status = 200;
+                this.body = school;
+            } else {
+                this.status = 404;
+                this.body = {
+                    error: 'Object not found',
+                    reqParams: this.params
+                };
+            }
         } catch (error) {
             console.error(error);
             this.status = 500;
@@ -90,15 +103,17 @@ module.exports.getSchoolById = function *() {
 };
 
 /**
- * Gets the school by name
+ * @api {get}   /api/school/name/:name  Get school by name
+ * @apiName     getSchoolsByName
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/school/name/[name]
+ * @apiParam    {String}    name    The name to search with.
+ *                                  This parameter must be encoded
+ *                                  with <code>encodeURI</code>.
  *
- * @return  200: sets the response object to JSON representation of found
- *               Array of object(s)
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiUse      successSchoolArray
+ * @apiUse      errors
  */
 module.exports.getSchoolsByName = function *() {
     let data = this.params;
@@ -124,15 +139,25 @@ module.exports.getSchoolsByName = function *() {
 };
 
 /**
- * Gets the school by name and campus
+ * @api {get}   /api/school/name/:name/:campus  Get school by name and campus
+ * @apiName     getSchoolByNameCampus
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/school/name/[name]/[campus]
+ * @apiDescription  This API will return single object as <code>name</code>
+ *                  and <code>campus</code> can uniquely identify a school.
  *
- * @return  200: sets the response object to JSON representation of found
- *               Single object
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiParam    {String}    name    The name to search with.
+ *                                  This parameter must be encoded
+ *                                  with <code>encodeURI</code>.
+ * @apiParam    {String}    campus  The campus to search with.
+ *                                  This parameter must be encoded
+ *                                  with <code>encodeURI</code>.
+ *
+ * @apiUse      successSchool
+ *
+ * @apiError    (404)   {json}  NotFound    The specified name and campus do not exist
+ * @apiUse      errors
  */
 module.exports.getSchoolByNameCampus = function *() {
     let data = this.params;
@@ -149,8 +174,17 @@ module.exports.getSchoolByNameCampus = function *() {
 
         try {
             let school = yield School.findByNameCampus(name, campus);
-            this.status = 200;
-            this.body = school;
+
+            if (school) {
+                this.status = 200;
+                this.body = school;
+            } else {
+                this.status = 404;
+                this.body = {
+                    error: 'Object not found',
+                    reqParams: this.params
+                };
+            }
         } catch (error) {
             console.error(error);
             this.status = 500;
@@ -159,17 +193,33 @@ module.exports.getSchoolByNameCampus = function *() {
 };
 
 /**
- * Gets the school by location
+ * @api {get}   /api/school/location/:country/:state/:city  Get schools by location
+ * @apiName     getSchoolsByLocation
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/school/location/[country]/[state]/[city]
- *      Properties must be specified in the order of country-state-city
- *      Any subsets of preceding properties are accepted
+ * @apiDescription  Find schools by specified country, state, or city. Any subset
+ *                  of preceding elements are permetted (e.g. <code>[country, state]
+ *                  </code> is permitted but not <code>[state, city]</code>).
+ *                  Location must be specified in that order.
  *
- * @return  200: sets the response object to JSON representation of found
- *               Array of object(s)
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiParam    {String}    [country]   The country to search with.
+ *                                      This parameter must be encoded
+ *                                      with <code>encodeURI</code>.
+ * @apiParam    {String}    [state]     The state to search with.
+ *                                      This parameter must be encoded
+ *                                      with <code>encodeURI</code>.
+ * @apiParam    {String}    [city]      The city to search with.
+ *                                      This parameter must be encoded
+ *                                      with <code>encodeURI</code>.
+ *
+ * @apiUse      successSchoolArray
+ * @apiUse      errors
+ *
+ * @apiParamExample {URL}   Request Example:
+ *      https://applyte.io/api/school/location/Canada
+ *      https://applyte.io/api/school/location/Canada/Ontario
+ *      https://applyte.io/api/school/location/Canada/Ontario/University%20of%20Waterloo
  */
 module.exports.getSchoolsByLocation = function *() {
     let data = _.omit(
@@ -198,18 +248,15 @@ module.exports.getSchoolsByLocation = function *() {
 };
 
 /**
- * Gets all the program the school has
+ * @api {get}   /api/school/:id/programs    Get all the program the school has
+ * @apiName     getProgramsBySchoolId
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Method: GET
- * Base URL: /api/school/[criteria]/programs
- * Criterias can be:
- *      /id/[id] - Seach by school id
- *      /name/[name]/[campus] - Search by school's unique name (name + campus)
+ * @apiParam    {String}    id  The ID of the school to get all its programs
  *
- * @return  200: sets the response object to JSON representation of found
- *               Array of object(s)
- *          400: sets the resposne object to error text (displaying error)
- *          500: not returning anything in response body (hiding error)
+ * @apiUse      successProgramArray
+ * @apiUse      errors
  */
 module.exports.getSchoolPrograms = function *() {
     let data = this.params;
@@ -222,7 +269,7 @@ module.exports.getSchoolPrograms = function *() {
     } else {
         try {
             let school;
-            
+
             if (data.id) {
                 school = yield School.get(data.id);
             } else {
@@ -232,7 +279,7 @@ module.exports.getSchoolPrograms = function *() {
                 );
             }
 
-            let programs = yield school.getAllPrograms();
+            let programs = yield Program.getProgramsBySchoolId(school.id);
 
             this.status = 200;
             this.body = programs;
@@ -244,17 +291,21 @@ module.exports.getSchoolPrograms = function *() {
 };
 
 /**
- * Creates a new school and returns a new ID for the school
+ * @api {post}  /api/school/create  Create a new school
+ * @apiName     createSchool
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Method: POST
- * Base URL: /api/school/create
+ * @apiDescription  Creates a new school and returns the ID of the
+ *                  newly created object. The optional parameters may be
+ *                  tightened in the future release.
  *
- * Accepts JSON object that complies with School schema.
+ * @apiUse      paramSchool
  *
- * @return  201: Successfully created
- *               An object with a property named "id"
- *          400: sets the resposne object to error text (displaying error)
- *          500: sets the response object to error text (hiding error)
+ * @apiSuccess  (201) {String}  success     "created"
+ * @apiSuccess  (201) {String}  id          The ID of the newly created object
+ *
+ * @apiUse      errors
  */
 module.exports.createSchool = function *() {
     let data = this.request.body;
@@ -284,21 +335,52 @@ module.exports.createSchool = function *() {
 };
 
 /**
- * Updates the school specified with id
+ * @api {put} /api/school/update     Updates an existing school
+ * @apiName     updateSchool
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Method: PUT
- * Base URL: /api/school/update
+ * @apiDescription  Updates the School object in the database with
+ *                  the specified change. Invalid keys will be ignored and
+ *                  objects will be replaced as is. On success, the ID of the
+ *                  updated object and the changes (new value and old value)
+ *                  will be returned.
  *
- * Accepts JSON object that complies with School schema
+ * @apiParam    {String}    id  The ID of the school to update
+ * @apiUse      paramSchool
  *
- * @return  200: Successfully updated, and a changelog in the format of
-                    {
-                        id: school_id,
-                        new: { new values },
-                        old: { old values }
-                    }
- *          400: Bad request, e.g. no ID specified
- *          500: Either update error or specified ID not existed
+ * @apiSuccess  (200)   {String}    id      The ID of the updated object
+ * @apiSuccess  (200)   {Object}    new     The new values
+ * @apiSuccess  (200)   {Mixed}     new.UPDATED_PROPERTIES
+ *                                          New values of the updated properties only
+ * @apiSuccess  (200)   {Object}    old     The old values
+ * @apiSuccess  (200)   {Mixed}     old.CHANGED_PROPERTIES
+ *                                          Old values of the updated properties only
+ * @apiUse      errors
+ *
+ * @apiSuccessExample   {json}  Response Example (Success)
+ *          HTTP/1.1 200 OK
+ *          {
+ *              id: '103fa394-caca-4c1d-9374-f64d41dd52f6'
+ *              new: {
+ *                  name: 'Purdue University',
+ *                  campus: 'West Lafayette',
+ *                  address: {
+ *                      address1: 'Just want to update this only'
+ *                  }
+ *              },
+ *              old: {
+ *                  name: 'Purdue Universities',
+ *                  campus: 'Calumet',
+ *                  address: {
+ *                      address1: '610 Purdue Mall',
+ *                      city: 'West Lafayette',
+ *                      state: 'Indiana',
+ *                      postalCode: '47907',
+ *                      country: 'United States of America'
+ *                  }
+ *              }
+ *          }
  */
 module.exports.updateSchool = function *() {
     let data = this.request.body;
@@ -337,22 +419,24 @@ module.exports.updateSchool = function *() {
 };
 
 /**
- * Deletes a school given the ID
+ * @api {delete} /api/school/delete    Delete an existing school
+ * @apiName     deleteSchool
+ * @apiGroup    School
+ * @apiVersion  0.0.1
  *
- * Method: DELETE
- * Base URL: /api/school/delete
+ * @apiDescription  Deletes an School with specified ID. During testing,
+ *                  any <code>access-token</code> will work; in production,
+ *                  this API will reject anything as it is still in test.
  *
- * Accepts JSON object is of the following format:
- *      {
- *          apiKey: key_string
- *          id: school_id
- *      }
- * (specification subject to changes)
+ * @apiHeader   {String}    acccess-token   The access token to execute
+ *                                          delete action on the database
  *
- * @return  204: Successfully deleted
- *          400: sets the resposne object to error text (displaying error)
- *          403: sets the response object to "Forbidden"
- *          500: sets the response object to error text (hiding error)
+ * @apiParam    {String}    id  The ID of the object to delete
+ *
+ * @apiSuccess  (204)   {String}    success     "deleted"
+ * @apiSuccess  (204)   {String}    id          The ID of the deleted object
+ * @apiError    (403)   {String}    error       "Permission denied"
+ * @apiUse      errors
  */
 module.exports.deleteSchool = function *() {
     let data = this.request.body;

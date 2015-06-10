@@ -17,6 +17,12 @@ module.exports = function (router) {
     // Fetch a particular program by name (may return multiple)
     router.get(apiBase + '/name/:name', programApi.getProgramsByName);
 
+    // Fetch all programs by level
+    router.get(apiBase + '/level/:level', programApi.getProgramsByLevel);
+
+    // Find all programs with certain area
+    router.get(apiBase + '/area/:area', programApi.getProgramByAreaName);
+
     // Gets all programs with areas that fall into the specified categories
     router.get(
             apiBase + '/categories/:categories',

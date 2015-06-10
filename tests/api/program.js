@@ -105,6 +105,9 @@ describe('Program API Routes', function () {
             management.name = 'Management';
             philosophy.name = 'Philosophy';
 
+            management.level = 'Undergraduate';
+            mecheng.level = 'Undergraduate';
+
             indseng.removeArea('Databases');
             philosophy.removeArea('Information Security and Assurance');
 
@@ -133,6 +136,44 @@ describe('Program API Routes', function () {
                         throw err;
                     } else {
                         master.listEquals(res.body, programs);
+                    }
+
+                    done();
+                });
+        });
+
+        it('should find programs from undergrad degree', function (done) {
+            let level = encodeURI('Undergraduate');
+
+            request()
+                .get('/api/program/level/' + level)
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        master.listEquals(res.body, [mecheng, management]);
+                    }
+
+                    done();
+                });
+        });
+
+        it('should find programs with \'Database\' area', function (done) {
+            let area = encodeURI('Database');
+            request()
+                .get('/api/program/area/' + area)
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        master.listEquals(
+                                res.body,
+                                [compsci, mecheng, management, philosophy]
+                        );
                     }
 
                     done();

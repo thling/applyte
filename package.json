@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node --harmony app.js",
-    "test": "mocha --harmony -R nyan $(find tests -name '*.js')"
+    "test": "mocha --harmony -R nyan $(find tests -name '*.js')",
+    "build": "node --harmony $(which gulp)"
   },
   "dependencies": {
     "co-body": "*",
@@ -25,6 +26,8 @@
   "devDependencies": {
     "assert": "*",
     "co-mocha": "*",
+    "gulp": "^3.9.0",
+    "gulp-apidoc": "^0.1.4",
     "mocha": "*",
     "supertest": "*"
   }

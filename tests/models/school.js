@@ -228,21 +228,6 @@ describe('School model test', function () {
                 );
             });
 
-            it('should return all programs it has', function *() {
-                let programs = yield school.getAllPrograms();
-                master.listEquals(programs, testPrograms);
-            });
-
-            it('should return all programs with undergraduate degree of science', function *() {
-                let programs = yield school.getProgramsWith(function (prog) {
-                    return prog('degree').match('.*Science').and(
-                            prog('level').match('Undergraduate'));
-                });
-
-                let tests = [program2, program3];
-                master.listEquals(programs, tests);
-            });
-
             it('should be return Purdue University', function *() {
                 let foundSchools = yield School.findByName('Purdue');
                 master.listEquals(foundSchools, [purdue, purdueCal]);

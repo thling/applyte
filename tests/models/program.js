@@ -230,7 +230,7 @@ describe('Program model tests', function () {
                 let tempIndseng = _.omit(_.cloneDeep(indseng), 'schoolId');
                 let tempManagement = _.omit(_.cloneDeep(management), 'schoolId');
                 let tempPhilosophy = _.omit(_.cloneDeep(philosophy), 'schoolId');
-                
+
                 tempCompsci.school = purdueWL;
                 tempMecheng.school = purdueWL;
                 tempIndseng.school = purdueWL;

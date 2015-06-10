@@ -2,6 +2,7 @@
 
 let _       = require('lodash');
 let schemas = require('./utils/schemas');
+let School  = require('./school');
 let thinky  = require('./utils/thinky')();
 
 let r = thinky.r;
@@ -20,6 +21,9 @@ let Program = thinky.createModel(TABLE, SCHEMA, {
 Program.ensureIndex(LEVEL_INDEX);
 Program.ensureIndex(NAME_INDEX);
 Program.ensureIndex(SCHOOL_ID_INDEX);
+
+// Enforce relationship
+Program.belongsTo(School, 'school', 'schoolId', 'id');
 
 /**
  * Queries the database for matching ID. This will alleviate
@@ -192,14 +196,7 @@ Program.defineStatic('getAllProgramsWithSchool', function *() {
     let result = [];
 
     try {
-        result = yield r.table(TABLE)
-                .merge(function (prog) {
-                        return {
-                            school: r.table('school').get(prog('schoolId'))
-                        };
-                })
-                .without('schoolId')
-                .run();
+        result = yield Program.getJoin().without('schoolId');
     } catch (error) {
         console.error(error);
     }
@@ -310,13 +307,20 @@ Program.define('update', function (properties) {
     let data = _.pick(properties, _.keys(SCHEMA));
 
     // Make sure the address only contain the fields we want
-    if (_.has(data.contact)) {
+    if (_.has(data, 'contact')) {
         data.contact = _.pick(data.contact, _.keys(SCHEMA.contact));
-        if (_.has(data.contact.address)) {
+
+        if (_.has(data, 'contact.address')) {
             data.contact.address = _.pick(
                     data.contact.address,
                     _.keys(SCHEMA.contact.address)
             );
+        }
+    }
+
+    if (_.has(data, 'areas')) {
+        for (let area of data.areas) {
+            area = _.pick(area, _.keys(SCHEMA.areas[0]));
         }
     }
 
