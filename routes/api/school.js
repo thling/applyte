@@ -9,7 +9,7 @@ module.exports = function (router) {
     router.get(apiBase + '/list', schoolApi.listSchools);
 
     // Gets the list of schools, paginated to start and length (optional ordering)
-    router.get(apiBase + '/list/:start/:length/:order?', schoolApi.listSchools);
+    router.get(apiBase + '/list/:start/:length/:order?', schoolApi.listSchoolsByRange);
 
     // Gets the school by school id
     router.get(apiBase + '/id/:id', schoolApi.getSchoolById);

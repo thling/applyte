@@ -9,7 +9,10 @@ module.exports = function (router) {
     router.get(apiBase + '/list', areaCategoryApi.listAreaCategories);
 
     // Gets the list of area categories, paginated to start and length (optionall ordering)
-    router.get(apiBase + '/list/:start/:length/:order?', areaCategoryApi.listAreaCategories);
+    router.get(
+            apiBase + '/list/:start/:length/:order?',
+            areaCategoryApi.listAreaCategoriesByRange
+    );
 
     // Gets the school by area categories id
     router.get(apiBase + '/id/:id', areaCategoryApi.getAreaCategoryById);

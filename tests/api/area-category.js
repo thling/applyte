@@ -220,6 +220,7 @@ describe('AreaCategory API Routes', function () {
         it('should be able to delete an area category with proper prvilege', function (done) {
             request()
                 .delete('/api/area-category/delete')
+                .set('access_token', 'anythingfortest')
                 .send({ id: security.id, apiKey: 'test' })
                 .expect(204, done);
         });

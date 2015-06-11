@@ -13,6 +13,17 @@ let School  = require(basedir + 'models/school');
  * @apiUse  successSchoolArray
  * @apiUse  errors
  */
+ module.exports.listSchools = function *() {
+     try {
+         let schools = yield School.getAllSchools();
+         this.status = 200;
+         this.body = schools;
+     } catch (error) {
+         console.log(error);
+         this.status = 500;
+         this.body = { message: this.message };
+     }
+ };
 
 /**
  * @api {get}   /api/school/list/:start/:length     List all schools (paginated)
@@ -27,36 +38,32 @@ let School  = require(basedir + 'models/school');
  * @apiUse  successSchoolArray
  * @apiUse  errors
  */
-module.exports.listSchools = function *() {
-    try {
-        if (this.params.start && this.params.length) {
-            // Pagination requests
-            let start = parseInt(this.params.start) - 1;
-            let length = parseInt(this.params.length);
+module.exports.listSchoolsByRange = function *() {
+    let data = this.params;
 
-            if (!_.isFinite(start) || !_.isFinite(length)) {
-                this.status = 400;
-                this.body = {
-                    error: 'Invalid start/length',
-                    reqParams: this.params
-                };
-            } else {
-                let order = (this.params.order === 'desc')? true : false;
+    if (!data.start || !data.length) {
+        this.status = 400;
+        this.body = { message: 'Missing parameters: start or length' };
+    } else {
+        let start = parseInt(data.start) - 1;
+        let length = parseInt(data.length);
 
-                // Obtain the result
-                let result = yield School.getSchoolsRange(start, length, order);
-
-                this.status = 200;
-                this.body = result;
-            }
+        if (!_.isFinite(start) || !_.isFinite(length)) {
+            this.status = 422;
+            this.body = { message: 'Invalid start or length value' };
         } else {
-            let result = yield School.getAllSchools();
-            this.status = 200;
-            this.body = result;
+            let order = (this.params.order === 'desc')? true : false;
+
+            try {
+                let schools = yield School.getSchoolsRange(start, length, order);
+                this.status = 200;
+                this.body = schools;
+            } catch (error) {
+                console.error(error);
+                this.status = 500;
+                this.body = { message: this.message };
+            }
         }
-    } catch (error) {
-        console.error(error);
-        this.status = 500;
     }
 };
 
@@ -77,11 +84,7 @@ module.exports.getSchoolById = function *() {
     let data = this.params;
 
     if (!data.id) {
-        this.status = 400;
-        this.body = {
-            error: 'No ID to search for',
-            reqParams: this.params
-        };
+        http.badRequest(this, 400, 'Missing parameters: id');
     } else {
         try {
             let school = yield School.findById(data.id);
@@ -90,14 +93,12 @@ module.exports.getSchoolById = function *() {
                 this.body = school;
             } else {
                 this.status = 404;
-                this.body = {
-                    error: 'Object not found',
-                    reqParams: this.params
-                };
+                this.body = { message: this.message };
             }
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -120,10 +121,7 @@ module.exports.getSchoolsByName = function *() {
 
     if (!data.name) {
         this.status = 400;
-        this.body = {
-            error: 'No name to search for',
-            reqParams: this.params
-        };
+        this.body = { message: 'Missing parameters: name' };
     } else {
         let name = decodeURI(data.name);
 
@@ -134,6 +132,7 @@ module.exports.getSchoolsByName = function *() {
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -164,10 +163,7 @@ module.exports.getSchoolByNameCampus = function *() {
 
     if (!data.name || !data.campus) {
         this.status = 400;
-        this.body = {
-            error: 'No name or campus to search for',
-            reqParams: this.params
-        };
+        this.body = { message: 'Missing parameters: name or campus' };
     } else {
         let name = decodeURI(data.name);
         let campus = decodeURI(data.campus);
@@ -180,14 +176,12 @@ module.exports.getSchoolByNameCampus = function *() {
                 this.body = school;
             } else {
                 this.status = 404;
-                this.body = {
-                    error: 'Object not found',
-                    reqParams: this.params
-                };
+                this.body = { message: this.message };
             }
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -231,10 +225,7 @@ module.exports.getSchoolsByLocation = function *() {
 
     if (!data || _.isEmpty(data)) {
         this.status = 400;
-        this.body = {
-            error: 'Invalid location request',
-            reqParams: this.params
-        };
+        this.body = { message: 'Missing parameters: one or more of city, state, and country' };
     } else {
         try {
             let schools = yield School.findByLocation(data);
@@ -243,6 +234,7 @@ module.exports.getSchoolsByLocation = function *() {
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -262,10 +254,7 @@ module.exports.getSchoolPrograms = function *() {
     let data = this.params;
     if (!data.id && (!data.name || !data.campus)) {
         this.status = 400;
-        this.body = {
-            error: 'No id or name to search for',
-            reqParams: this.params
-        };
+        this.body = { message: 'Missing parameters: id or (name and campus)' };
     } else {
         try {
             let school;
@@ -286,6 +275,7 @@ module.exports.getSchoolPrograms = function *() {
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -311,10 +301,7 @@ module.exports.createSchool = function *() {
     let data = this.request.body;
     if (data.id) {
         this.status = 400;
-        this.body = {
-            error: 'ID specified',
-            reqParams: this.request.body
-        };
+        this.body = { message: 'Request will not be idempotent' };
     } else {
         // Create a new school and try to save it
         let school = new School(this.request.body);
@@ -323,13 +310,14 @@ module.exports.createSchool = function *() {
             yield school.save();
             this.status = 201;
             this.body = {
-                success: 'created',
+                message: this.message,
                 id: school.id
             };
         } catch (error) {
             // If save failed, return server error
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -387,10 +375,7 @@ module.exports.updateSchool = function *() {
 
     if (!data.id) {
         this.status = 400;
-        this.body = {
-            error: 'Cannot update without id',
-            reqParams: this.request.body
-        };
+        this.body = { message: 'Missing parameters: id' };
     } else {
         try {
             // Sanitize in case this is used as fabrication
@@ -414,6 +399,7 @@ module.exports.updateSchool = function *() {
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -440,23 +426,19 @@ module.exports.updateSchool = function *() {
  */
 module.exports.deleteSchool = function *() {
     let data = this.request.body;
+    let header = this.request.headers;
 
     // Implement apikey for critical things like this in the future
     // Since this is experimental, we'll make sure this is never possible
     // on production server
-    if (!data.apiKey || process.env.NODE_ENV === 'production') {
+    if (!header.access_token || process.env.NODE_ENV === 'production') {
         this.status = 403;
-        this.body = {
-            error: 'Permission denied'
-        };
+        this.body = { message: this.message };
     } else {
         if (!data.id) {
             // Bad request
             this.status = 400;
-            this.body = {
-                error: 'No ID to delete',
-                reqParams: this.request.body
-            };
+            this.body = { message: 'Missing parameters: id' };
         } else {
             try {
                 let school = yield School.findById(data.id);
@@ -467,12 +449,13 @@ module.exports.deleteSchool = function *() {
 
                 this.status = 204;
                 this.body = {
-                    success: 'deleted',
+                    message: this.message,
                     id: data.id
                 };
             } catch (error) {
                 console.error(error);
                 this.status = 500;
+                this.body = { message: this.message };
             }
         }
     }

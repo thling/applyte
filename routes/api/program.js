@@ -9,7 +9,7 @@ module.exports = function (router) {
     router.get(apiBase + '/list', programApi.listPrograms);
 
     // Pagination requests
-    router.get(apiBase + '/list/:start/:length/:order?', programApi.listPrograms);
+    router.get(apiBase + '/list/:start/:length/:order?', programApi.listProgramsByRange);
 
     // Fetch a particular one given ID
     router.get(apiBase + '/id/:id', programApi.getProgramById);

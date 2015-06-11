@@ -12,6 +12,17 @@ let Program = require(basedir + 'models/program');
  * @apiUse  successProgramArray
  * @apiUse  errors
  */
+module.exports.listPrograms = function *() {
+    try {
+        let programs = yield Program.getAllPrograms();
+        this.status = 200;
+        this.body = programs;
+    } catch (error) {
+        console.log(error);
+        this.status = 500;
+        this.body = { message: this.message };
+    }
+};
 
 /**
  * @api {get}   /api/program/list/:start/:length  List all programs (paginated)
@@ -26,36 +37,33 @@ let Program = require(basedir + 'models/program');
  * @apiUse  successProgramArray
  * @apiUse  errors
  */
-module.exports.listPrograms = function *() {
-    try {
-        if (this.params.start && this.params.length) {
-            // Pagination requests
-            let start = parseInt(this.params.start) - 1;
-            let length = parseInt(this.params.length);
+module.exports.listProgramsByRange = function *() {
+    let data = this.params;
 
-            if (!_.isFinite(start) || !_.isFinite(length)) {
-                this.status = 400;
-                this.body = {
-                    error: 'Invalid start/length',
-                    reqParams: this.params
-                };
-            } else {
-                let order = (this.params.order === 'desc')? true : false;
+    if (!data.start || !data.length) {
+        this.status = 400;
+        this.body = { message: 'Missing parameters: start or length'};
+    } else {
+        // Pagination requests
+        let start = parseInt(data.start) - 1;
+        let length = parseInt(data.length);
 
-                // Obtain the result
-                let result = yield Program.getProgramsRange(start, length, order);
-
-                this.status = 200;
-                this.body = result;
-            }
+        if (!_.isFinite(start) || !_.isFinite(length)) {
+            this.status = 400;
+            this.body = { message: 'Invalid start or length value' };
         } else {
-            let result = yield Program.getAllPrograms();
-            this.body = result;
-            this.status = 200;
+            let order = (this.params.order === 'desc')? true : false;
+
+            try {
+                let programs = yield Program.getProgramsRange(start, length, order);
+                this.status = 200;
+                this.body = programs;
+            } catch (error) {
+                console.error(error);
+                this.status = 500;
+                this.body = { message: this.message };
+            }
         }
-    } catch (error) {
-        console.error(error);
-        this.status = 500;
     }
 };
 
@@ -77,10 +85,7 @@ module.exports.getProgramById = function *() {
 
     if (!data.id) {
         this.status = 400;
-        this.body = {
-            error: 'No ID to search for',
-            reqParams: this.params
-        };
+        this.body = { message: 'Missing parameters: id' };
     } else {
         try {
             let program = yield Program.findById(data.id);
@@ -89,14 +94,12 @@ module.exports.getProgramById = function *() {
                 this.body = program;
             } else {
                 this.status = 404;
-                this.body = {
-                    error: 'Object not found',
-                    reqParams: this.params
-                };
+                this.body = { message: this.message };
             }
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -119,10 +122,7 @@ module.exports.getProgramsByName = function *() {
 
     if (!data.name) {
         this.status = 400;
-        this.body = {
-            error: 'No name to search for',
-            reqParams: this.params
-        };
+        this.body = { message: 'Missing parameters: name' };
     } else {
         let name = decodeURI(data.name);
 
@@ -133,6 +133,7 @@ module.exports.getProgramsByName = function *() {
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -155,10 +156,7 @@ module.exports.getProgramsByLevel = function *() {
 
     if (!data.level) {
         this.status = 400;
-        this.body = {
-            error: 'No level to search for',
-            reqParams: this.params
-        };
+        this.body = { message: 'Missing parameters: level' };
     } else {
         let level = decodeURI(data.level);
 
@@ -169,6 +167,7 @@ module.exports.getProgramsByLevel = function *() {
         } catch (error) {
             console.log(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -191,12 +190,10 @@ module.exports.getProgramByAreaName = function *() {
 
     if (!data.area) {
         this.status = 400;
-        this.body = {
-            error: 'No area specified',
-            reqParams: this.params
-        };
+        this.body = { message: 'Missing parameters: area' };
     } else {
         let areaName = decodeURI(data.area);
+
         try {
             let programs = yield Program.findByAreaName(areaName);
             this.status = 200;
@@ -204,6 +201,7 @@ module.exports.getProgramByAreaName = function *() {
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -231,10 +229,7 @@ module.exports.getProgramsByAreaCategories = function *() {
 
     if (!data.categories) {
         this.status = 400;
-        this.body = {
-            error: 'No category specified',
-            reqParams: this.params
-        };
+        this.body = { message: 'Missing parameters: categories' };
     } else {
         let categories = decodeURI(data.categories).split('||');
 
@@ -245,6 +240,7 @@ module.exports.getProgramsByAreaCategories = function *() {
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -268,12 +264,10 @@ module.exports.getProgramsByAreaCategories = function *() {
  */
 module.exports.createProgram = function *() {
     let data = this.request.body;
+
     if (data.id) {
         this.status = 400;
-        this.body = {
-            error: 'Cannot create if ID is know or existed',
-            reqParams: this.request.body
-        };
+        this.body = { message: 'Request will not be idempotent' };
     } else {
         // Create a new program and try to save it
         let program = new Program(this.request.body);
@@ -282,13 +276,14 @@ module.exports.createProgram = function *() {
             yield program.save();
             this.status = 201;
             this.body = {
-                success: 'created',
+                message: this.message,
                 id: program.id
             };
         } catch (error) {
             // If save failed, return server error
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -350,10 +345,7 @@ module.exports.updateProgram = function *() {
 
     if (!data.id) {
         this.status = 400;
-        this.body = {
-            error: 'Cannot update without known id',
-            reqParams: this.request.body
-        };
+        this.body = { message: 'Missing parameters: id' };
     } else {
         try {
             // Sanitize in case this is used as fabrication
@@ -377,6 +369,7 @@ module.exports.updateProgram = function *() {
         } catch (error) {
             console.error(error);
             this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
@@ -403,23 +396,19 @@ module.exports.updateProgram = function *() {
  */
 module.exports.deleteProgram = function *() {
     let data = this.request.body;
+    let header = this.request.headers;
 
     // Implement apikey for critical things like this in the future
     // Since this is experimental, we'll make sure this is never possible
     // on production server
-    if (!data.apiKey || process.env.NODE_ENV === 'production') {
+    if (!header.access_token || process.env.NODE_ENV === 'production') {
         this.status = 403;
-        this.body = {
-            error: 'Permission denied'
-        };
+        this.body = { message: this.message };
     } else {
         if (!data.id) {
             // Bad request
             this.status = 400;
-            this.body = {
-                error: 'No ID to delete',
-                reqParams: this.request.body
-            };
+            this.body = { message: 'Missing parameters: id' };
         } else {
             try {
                 let program = yield Program.findById(data.id);
@@ -430,12 +419,13 @@ module.exports.deleteProgram = function *() {
 
                 this.status = 204;
                 this.body = {
-                    success: 'deleted',
+                    message: this.message,
                     id: data.id
                 };
             } catch (error) {
-                this.status = 500;
                 console.error(error);
+                this.status = 500;
+                this.body = { message: this.message };
             }
         }
     }

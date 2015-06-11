@@ -430,6 +430,7 @@ describe('School API Routes', function () {
         it('should be able to delete a school with proper prvilege', function (done) {
             request()
                 .delete('/api/school/delete')
+                .set('access_token', 'anythingfortest')
                 .send({ id: purdueWL.id, apiKey: 'test' })
                 .expect(204, done);
         });

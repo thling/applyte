@@ -1,7 +1,6 @@
 'use strict';
 
 let _       = require('lodash');
-// let Program = require('./program');
 let schemas = require('./utils/schemas');
 let thinky  = require('./utils/thinky')();
 

@@ -291,6 +291,7 @@ describe('Program API Routes', function () {
         it('should be able to delete a program with proper prvilege', function (done) {
             request()
                 .delete('/api/program/delete')
+                .set('access_token', 'anythingfortest')
                 .send({ id: compsci.id, apiKey: 'test' })
                 .expect(204, done);
         });
