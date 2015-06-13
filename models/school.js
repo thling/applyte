@@ -151,9 +151,10 @@ School.defineStatic('getAllSchools', function *() {
  * @param   desc    True to sort descendingly; false to sort ascendingly
  * @return  An array of school objects that fall into the range
  */
-School.defineStatic('getSchoolsRange', function *(start, length, desc) {
+School.defineStatic('getSchoolsByRange', function *(start, length, order) {
     let result = [];
-    let orderIndex = (desc)? r.desc(NAME_CAMPUS_INDEX) : NAME_CAMPUS_INDEX;
+    let orderIndex = (order && order === 'desc')?
+            r.desc(NAME_CAMPUS_INDEX) : NAME_CAMPUS_INDEX;
 
     try {
         result = yield School
@@ -161,6 +162,65 @@ School.defineStatic('getSchoolsRange', function *(start, length, desc) {
                 .orderBy({ index: orderIndex })
                 .slice(start, start + length)
                 .run();
+    } catch (error) {
+        console.error(error);
+    }
+
+    return result;
+});
+
+/**
+ * Mega query composer for complex data filtering. Supports pagination.
+ *
+ * @param   query   The query boject
+ * @return  An array of found matching data in
+ *          standard object, NOT School model object
+ */
+School.defineStatic('query', function *(query) {
+    let q = r.table(TABLE);
+    let pagination = query.pagination;
+    let tempQuery = _.pick(query, _.keys(SCHEMA));
+
+    // Determine the desired sorting index
+    let useIndex, queryChained = false;
+    switch (pagination.sort) {
+        default:
+            useIndex = (pagination.order === 'desc')?
+                    r.desc(NAME_CAMPUS_INDEX) : NAME_CAMPUS_INDEX;
+
+            if (tempQuery.name && tempQuery.campus) {
+                q = q.getAll(
+                    [tempQuery.name, tempQuery.campus],
+                    {index: useIndex}
+                );
+
+                queryChained = true;
+                tempQuery = _.omit(tempQuery, ['name', 'campus']);
+            }
+    }
+
+    // If getAll has been chained, don't use orderBy
+    if (!queryChained) {
+        q = q.orderBy({ index: useIndex });
+    }
+
+    // Filter using the information we have
+    if (tempQuery.length !== 0) {
+        q = q.filter(tempQuery);
+    }
+
+    // Paginate
+    q = q.slice(pagination.start, pagination.start + pagination.limit);
+
+    if (query.fields) {
+        // Remove unwanted fields
+        q = q.pluck(_.intersection(query.fields, _.keys(SCHEMA)));
+    }
+
+    // Actually execute query
+    let result = [];
+    try {
+        result = yield q.run();
     } catch (error) {
         console.error(error);
     }

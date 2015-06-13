@@ -5,72 +5,174 @@ let Program = require(basedir + 'models/program');
 let School  = require(basedir + 'models/school');
 
 /**
- * @api {get}   /api/school/list    List all schools
- * @apiName     getAllSchools
- * @apiGroup    School
- * @apiVersion  0.0.1
+ * Format and check the pagination specifications in a query.
  *
- * @apiUse  successSchoolArray
- * @apiUse  errors
+ * @param   ctx     The request object
  */
- module.exports.listSchools = function *() {
-     try {
-         let schools = yield School.getAllSchools();
-         this.status = 200;
-         this.body = schools;
-     } catch (error) {
-         console.log(error);
-         this.status = 500;
-         this.body = { message: this.message };
-     }
- };
+let paginationCheck = function (ctx) {
+    let pagination = {};
+
+    if (ctx.query.start && ctx.query.start < 1) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid start: ' + ctx.query.start };
+    } else {
+        pagination.start = (parseInt(ctx.query.start) || 1) - 1;
+    }
+
+    if (ctx.query.limit && (ctx.query.limit < 1 || ctx.query.limit > 100)) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid limit: ' + ctx.query.limit };
+    } else {
+        pagination.limit = parseInt(ctx.query.limit) || 10;
+    }
+
+    if (ctx.query.sort && !(_.includes(['name'], ctx.query.sort))) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid sort: ' + ctx.query.sort };
+    } else {
+        pagination.sort = ctx.query.order || 'name';
+    }
+
+    if (ctx.query.order && !(_.includes(['asc', 'desc'], ctx.query.order))) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid order: ' + ctx.query.order };
+    } else {
+        pagination.order = ctx.query.order || 'asc';
+    }
+
+    ctx.query.pagination = pagination;
+};
 
 /**
- * @api {get}   /api/school/list/:start/:length     List all schools (paginated)
- * @apiName     getSchoolByRange
- * @apiGroup    School
- * @apiVersion  0.0.1
+ * Format and check the name and campus filters in a query.
  *
- * @apiParam    {Number}        start       The index fo the school to begin listing from
- * @apiParam    {Number}        length      The number of schools to fetch from <code>start</code>
- * @apiParam    {String="desc"} [order]     Whether to fetch in descending order
- *
- * @apiUse  successSchoolArray
- * @apiUse  errors
+ * @param   ctx     The request object
  */
-module.exports.listSchoolsByRange = function *() {
-    let data = this.params;
-
-    if (!data.start || !data.length) {
-        this.status = 400;
-        this.body = { message: 'Missing parameters: start or length' };
-    } else {
-        let start = parseInt(data.start) - 1;
-        let length = parseInt(data.length);
-
-        if (!_.isFinite(start) || !_.isFinite(length)) {
-            this.status = 422;
-            this.body = { message: 'Invalid start or length value' };
-        } else {
-            let order = (this.params.order === 'desc')? true : false;
-
-            try {
-                let schools = yield School.getSchoolsRange(start, length, order);
-                this.status = 200;
-                this.body = schools;
-            } catch (error) {
-                console.error(error);
-                this.status = 500;
-                this.body = { message: this.message };
-            }
-        }
+let nameCampusCheck = function (ctx) {
+    if (ctx.query.campus && !ctx.query.name) {
+        ctx.status = 422;
+        ctx.body = { message: '\'name\' is required when specifying campus' };
     }
 };
 
 /**
- * @api {get}   /api/school/id/:id  Get school by ID
+ * Format and check the location filters in a query.
+ *
+ * @param   ctx     The request object
+ */
+let locationCheck = function (ctx) {
+    let address = {};
+
+    if (ctx.query.city) {
+        address.city = ctx.query.city;
+    }
+
+    if (ctx.query.state) {
+        address.state = ctx.query.state;
+    }
+
+    if (ctx.query.country) {
+        address.country = ctx.query.country;
+    }
+
+    if (!_.isEmpty(address)) {
+        ctx.query.address = address;
+    }
+};
+
+/**
+ * Format and check the fields to be returned in a query.
+ *
+ * @param   ctx     The request object
+ */
+let fieldsCheck = function (ctx) {
+    if (ctx.query.fields) {
+        ctx.query.fields = ctx.query.fields.split('||');
+    }
+};
+
+/**
+ * @api {get}   /api/schools    Query with complex conditions
+ * @apiName     query
+ * @apiGroup    Schools
+ * @apiVersion  0.0.1
+ *
+ * @apiDescription  The mega query function that allows query strings,
+ *                  filtering, sorting by field, sorting order, fields
+ *                  selections, and possibly more in the future.
+ *
+ * @apiParam    {String}    [name]      The name to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [campus]    The campus to search for. Require name
+ *                                      if this is specified. Must be encoded
+ *                                      with <code>encodeURI</code>
+ *
+ * @apiParam    {String}    [country]   The country to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [state]     The state/province to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [city]      The city to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ *
+ * @apiParam    {String}    [fields]    The fields to select from. Fields must
+ *                                      be one of the fields of the school schema,
+ *                                      separated by <code>||</code> and then
+ *                                      encoded with <code>encodeURI</code> entirely
+ *
+ * @apiParam    {Number}        [start=1]   The starting index
+ * @apiParam    {Number{1-100}} [limit=10]  Number of items per page
+ * @apiParam    {String=name} [sort=name]   The sorting attribute
+ * @apiParam    {String=asc,desc}   [order=asc]
+ *                                          The order to sort
+ *
+ * @apiParamExample {URL}  Request Examples
+ *      <!-- Get 1st to 10th schools -->
+ *      https://applyte.io/api/schools
+ *
+ *      <!-- Get 33rd to 35th schools -->
+ *      https://applyte.io/api/schools?start=33&length=33
+ *
+ *      <!-- Get 2nd to 8th schools, sorting descendingly by name -->
+ *      https://applyte.io/api/schools?start=2&length=7&sort=name&order=desc
+ *
+ *      <!-- Get fields [id, name, campus] of the schools that are located in Boston, MA, US,
+ *              limit 1, start at 2, and sorted descendingly -->
+ *      https://applyte.io/api/schools?fields=id||name||campus
+ *              &country=United%20States%20of%20America&state=Massachusetts&city=Boston
+ *              &limit=1&start=2&order=desc
+ *
+ * @apiUse  successSchoolArray
+ * @apiUse  errors
+ */
+module.exports.getSchools = function *() {
+    // Parse pagination parameters
+    paginationCheck(this);
+    nameCampusCheck(this);
+    locationCheck(this);
+    fieldsCheck(this);
+
+    if (!this.body) {
+        try {
+            let schools = yield School.query(this.query);
+
+            this.status = 200;
+            this.body = schools;
+            this.set({
+                // TODO: Implement header navigation
+                'link': ''
+            });
+        } catch (error) {
+            console.log(error);
+            this.status = 500;
+            this.body = { message: this.message };
+        }
+    }
+ };
+
+/**
+ * @api {get}   /api/schools/:id  Get school by ID
  * @apiName     getSchoolById
- * @apiGroup    School
+ * @apiGroup    Schools
  * @apiVersion  0.0.1
  *
  * @apiParam    {String}    id  The ID of the school to retrieve
@@ -84,7 +186,8 @@ module.exports.getSchoolById = function *() {
     let data = this.params;
 
     if (!data.id) {
-        http.badRequest(this, 400, 'Missing parameters: id');
+        this.status = 400;
+        this.body = { message: 'Missing parameters: id' };
     } else {
         try {
             let school = yield School.findById(data.id);
@@ -104,43 +207,9 @@ module.exports.getSchoolById = function *() {
 };
 
 /**
- * @api {get}   /api/school/name/:name  Get school by name
- * @apiName     getSchoolsByName
- * @apiGroup    School
- * @apiVersion  0.0.1
- *
- * @apiParam    {String}    name    The name to search with.
- *                                  This parameter must be encoded
- *                                  with <code>encodeURI</code>.
- *
- * @apiUse      successSchoolArray
- * @apiUse      errors
- */
-module.exports.getSchoolsByName = function *() {
-    let data = this.params;
-
-    if (!data.name) {
-        this.status = 400;
-        this.body = { message: 'Missing parameters: name' };
-    } else {
-        let name = decodeURI(data.name);
-
-        try {
-            let schools = yield School.findByName(name);
-            this.status = 200;
-            this.body = schools;
-        } catch (error) {
-            console.error(error);
-            this.status = 500;
-            this.body = { message: this.message };
-        }
-    }
-};
-
-/**
- * @api {get}   /api/school/name/:name/:campus  Get school by name and campus
+ * @api {get}   /api/schools/:name/:campus  Get school by name and campus
  * @apiName     getSchoolByNameCampus
- * @apiGroup    School
+ * @apiGroup    Schools
  * @apiVersion  0.0.1
  *
  * @apiDescription  This API will return single object as <code>name</code>
@@ -160,7 +229,6 @@ module.exports.getSchoolsByName = function *() {
  */
 module.exports.getSchoolByNameCampus = function *() {
     let data = this.params;
-
     if (!data.name || !data.campus) {
         this.status = 400;
         this.body = { message: 'Missing parameters: name or campus' };
@@ -187,9 +255,9 @@ module.exports.getSchoolByNameCampus = function *() {
 };
 
 /**
- * @api {get}   /api/school/location/:country/:state/:city  Get schools by location
+ * @api {get}   /api/schools/location/:country/:state/:city  Get schools by location
  * @apiName     getSchoolsByLocation
- * @apiGroup    School
+ * @apiGroup    Schools
  * @apiVersion  0.0.1
  *
  * @apiDescription  Find schools by specified country, state, or city. Any subset
@@ -211,9 +279,9 @@ module.exports.getSchoolByNameCampus = function *() {
  * @apiUse      errors
  *
  * @apiParamExample {URL}   Request Example:
- *      https://applyte.io/api/school/location/Canada
- *      https://applyte.io/api/school/location/Canada/Ontario
- *      https://applyte.io/api/school/location/Canada/Ontario/University%20of%20Waterloo
+ *      https://applyte.io/api/schools/location/Canada
+ *      https://applyte.io/api/schools/location/Canada/Ontario
+ *      https://applyte.io/api/schools/location/Canada/Ontario/University%20of%20Waterloo
  */
 module.exports.getSchoolsByLocation = function *() {
     let data = _.omit(
@@ -240,12 +308,29 @@ module.exports.getSchoolsByLocation = function *() {
 };
 
 /**
- * @api {get}   /api/school/:id/programs    Get all the program the school has
+ * @api {get}   /api/schools/:id/programs    Get all the program the school has
  * @apiName     getProgramsBySchoolId
- * @apiGroup    School
+ * @apiGroup    Schools
  * @apiVersion  0.0.1
  *
  * @apiParam    {String}    id  The ID of the school to get all its programs
+ *
+ * @apiUse      successProgramArray
+ * @apiUse      errors
+ */
+
+/**
+ * @api {get}   /api/school/:name/:campus/programs    Get all the program the school has
+ * @apiName     getProgramsBySchooNameCampus
+ * @apiGroup    Schools
+ * @apiVersion  0.0.1
+ *
+ * @apiParam    {String}    name    The name of the school to search with.
+ *                                  This parameter must be encoded
+ *                                  with <code>encodeURI</code>.
+ * @apiParam    {String}    campus  The campus of the school to search with.
+ *                                  This parameter must be encoded
+ *                                  with <code>encodeURI</code>.
  *
  * @apiUse      successProgramArray
  * @apiUse      errors
@@ -281,9 +366,9 @@ module.exports.getSchoolPrograms = function *() {
 };
 
 /**
- * @api {post}  /api/school/create  Create a new school
+ * @api {post}  /api/schools  Create a new school
  * @apiName     createSchool
- * @apiGroup    School
+ * @apiGroup    Schools
  * @apiVersion  0.0.1
  *
  * @apiDescription  Creates a new school and returns the ID of the
@@ -323,9 +408,9 @@ module.exports.createSchool = function *() {
 };
 
 /**
- * @api {put} /api/school/update     Updates an existing school
+ * @api {put} /api/schools     Updates an existing school
  * @apiName     updateSchool
- * @apiGroup    School
+ * @apiGroup    Schools
  * @apiVersion  0.0.1
  *
  * @apiDescription  Updates the School object in the database with
@@ -405,9 +490,9 @@ module.exports.updateSchool = function *() {
 };
 
 /**
- * @api {delete} /api/school/delete    Delete an existing school
+ * @api {delete} /api/schools    Delete an existing school
  * @apiName     deleteSchool
- * @apiGroup    School
+ * @apiGroup    Schools
  * @apiVersion  0.0.1
  *
  * @apiDescription  Deletes an School with specified ID. During testing,

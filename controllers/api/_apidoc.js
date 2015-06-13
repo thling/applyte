@@ -10,7 +10,6 @@
 /**
  * @apiDefine errors
  * @apiError    (400)   {String} error      Error message
- * @apiError    (400)   {Object} reqParams  The parameters received
  * @apiError    (500)   {String} error      Error message (if applicable)
  */
 

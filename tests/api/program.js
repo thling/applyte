@@ -12,6 +12,7 @@ let superagent = require('supertest');
 let app        = require('../../app');
 let master     = require('../test-master');
 let Program    = require('../../models/program');
+let School     = require('../../models/school');
 
 require('co-mocha');
 
@@ -36,9 +37,9 @@ describe('Program API Routes', function () {
             yield program.delete();
         });
 
-        it('should create a new program with /api/program/create', function (done) {
+        it('should create a new program with POST request to /api/programs', function (done) {
             request()
-                .post('/api/program/create')
+                .post('/api/programs')
                 .send(template)
                 .expect(201)
                 .expect('Content-Type', /json/)
@@ -53,9 +54,9 @@ describe('Program API Routes', function () {
                 });
         });
 
-        it('should return the saved program with /api/program/id', function (done) {
+        it('should return the saved program with /api/programs/id', function (done) {
             request()
-                .get('/api/program/id/' + createdId)
+                .get('/api/programs/' + createdId)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -69,11 +70,11 @@ describe('Program API Routes', function () {
                 });
         });
 
-        it('should return the same thing with /api/program/name', function (done) {
+        it('should return the same thing with /api/programs?name', function (done) {
             let name = encodeURI(template.name);
 
             request()
-                .get('/api/program/name/' + name)
+                .get('/api/programs?name=' + name)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -90,9 +91,13 @@ describe('Program API Routes', function () {
 
     describe('Complex API access test', function () {
         let compsci, mecheng, indseng, management, philosophy;
+        let purdue;
         let programs;
 
         before('setting up data', function *() {
+            purdue = new School(master.school.template);
+            yield purdue.save();
+
             compsci = new Program(master.program.template);
             mecheng = new Program(master.program.template);
             indseng = new Program(master.program.template);
@@ -105,10 +110,20 @@ describe('Program API Routes', function () {
             management.name = 'Management';
             philosophy.name = 'Philosophy';
 
+            compsci.schoolId = purdue.id;
+            mecheng.schoolId = purdue.id;
+            indseng.schoolId = purdue.id;
+            management.schoolId = purdue.id;
+            philosophy.schoolId = purdue.id;
+
             management.level = 'Undergraduate';
+            management.degree = 'Bachelor of Business Administration';
+            management.faculty = 'School of Engineering';
             mecheng.level = 'Undergraduate';
+            mecheng.faculty = 'School of Engineering';
 
             indseng.removeArea('Databases');
+            philosophy.removeArea('Databases');
             philosophy.removeArea('Information Security and Assurance');
 
             yield compsci.save();
@@ -124,11 +139,13 @@ describe('Program API Routes', function () {
             for (let prog of programs) {
                 yield prog.delete();
             }
+
+            yield purdue.delete();
         });
 
         it('should list everything', function (done) {
             request()
-                .get('/api/program/list')
+                .get('/api/programs')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -142,11 +159,32 @@ describe('Program API Routes', function () {
                 });
         });
 
+        it('should list every program with the school they belong to', function (done) {
+            request()
+                .get('/api/programs?school=true')
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        let temp = _.cloneDeep(programs);
+                        for (let tmp of temp) {
+                            tmp.school = purdue;
+                        }
+
+                        master.listEquals(res.body, temp);
+                    }
+
+                    done();
+                });
+        });
+
         it('should find programs from undergrad degree', function (done) {
             let level = encodeURI('Undergraduate');
 
             request()
-                .get('/api/program/level/' + level)
+                .get('/api/programs/level/' + level)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -163,7 +201,7 @@ describe('Program API Routes', function () {
         it('should find programs with \'Database\' area', function (done) {
             let area = encodeURI('Database');
             request()
-                .get('/api/program/area/' + area)
+                .get('/api/programs/area/' + area)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -172,7 +210,7 @@ describe('Program API Routes', function () {
                     } else {
                         master.listEquals(
                                 res.body,
-                                [compsci, mecheng, management, philosophy]
+                                [compsci, mecheng, management]
                         );
                     }
 
@@ -184,7 +222,7 @@ describe('Program API Routes', function () {
                 function (done) {
                     let categories = encodeURI('Database||Systems');
                     request()
-                        .get('/api/program/categories/' + categories)
+                        .get('/api/programs/categories/' + categories)
                         .expect(200)
                         .expect('Content-Type', /json/)
                         .end(function (err, res) {
@@ -193,8 +231,28 @@ describe('Program API Routes', function () {
                             } else {
                                 master.listEquals(
                                         res.body,
-                                        [compsci, mecheng, management, philosophy]
+                                        [compsci, mecheng, management]
                                 );
+                            }
+
+                            done();
+                        });
+                }
+        );
+
+        it('should list programs that have \'Databases\' '
+                + 'or \'Information Security and Assurance areas\'',
+                function (done) {
+                    let areas = encodeURI('Databases||Information Security and Assurance');
+                    request()
+                        .get('/api/programs?areas=' + areas)
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(res.body, [compsci, indseng, mecheng, management]);
                             }
 
                             done();
@@ -205,7 +263,7 @@ describe('Program API Routes', function () {
         it('should list 3rd to 5th item in alphabetical order (MGMT, ME, PHIL)',
                 function (done) {
                     request()
-                        .get('/api/program/list/3/3')
+                        .get('/api/programs?start=3&limit=3')
                         .expect(200)
                         .expect('Content-Type', /json/)
                         .end(function (err, res) {
@@ -222,8 +280,7 @@ describe('Program API Routes', function () {
 
         it('should list 4th to 2nd item in alphabetical order (ME, MGMT, IE)', function (done) {
             request()
-                .get('/api/program/list/1/3/desc')
-                .expect('Content-Type', /json/)
+                .get('/api/programs?start=1&limit=3&order=desc')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -237,9 +294,45 @@ describe('Program API Routes', function () {
                 });
         });
 
-        it('should update the data with /api/program/update', function (done) {
+        it('should get the 2nd program with \'Database\' area that is Undergraduate '
+                + 'level and whose faculty is School of Engineering, sorted desc, '
+                + 'select only \'name\' and \'schoolId\', include actual school data',
+                function (done) {
+                    let fields = ['name', 'schoolId'];
+                    let queryFields = encodeURI(fields.join('||'));
+                    let areas = encodeURI('Databases');
+                    let level = encodeURI('Undergraduate');
+                    let faculty = encodeURI('School of Engineering');
+
+                    request()
+                        .get('/api/programs?start=2'
+                                + '&fields=' + queryFields
+                                + '&areas='+areas
+                                + '&level=' + level
+                                + '&faculty=' + faculty
+                                + '&order=desc'
+                                + '&school=true')
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                let tmp = _.pick(management, fields);
+                                tmp.school = purdue;
+                                master.listEquals(res.body, [tmp]);
+                            }
+
+                            done();
+                        });
+                }
+        );
+
+        it('should update the data with PUT request to /api/programs', function (done) {
             let temp = master.program.template,
                 newData = _.pick(temp, ['id', 'name', 'areas']);
+
+            temp.schoolId = purdue.id;
 
             newData.id = compsci.id;
             newData.name = 'Test Science';
@@ -258,7 +351,7 @@ describe('Program API Routes', function () {
             };
 
             request()
-                .put('/api/program/update')
+                .put('/api/programs')
                 .send(newData)
                 .expect(200)
                 .expect('Content-Type', /json/)
@@ -283,14 +376,14 @@ describe('Program API Routes', function () {
 
         it('should not be able to delete a program without privilege', function (done) {
             request()
-                .delete('/api/program/delete')
+                .delete('/api/programs')
                 .send({ id: compsci.id })
                 .expect(403, done);
         });
 
         it('should be able to delete a program with proper prvilege', function (done) {
             request()
-                .delete('/api/program/delete')
+                .delete('/api/programs')
                 .set('access_token', 'anythingfortest')
                 .send({ id: compsci.id, apiKey: 'test' })
                 .expect(204, done);

@@ -240,12 +240,12 @@ describe('School model test', function () {
 
             describe('Pagination test', function () {
                 it('should return schools from 2nd to 4th position', function *() {
-                    let foundSchools = yield School.getSchoolsRange(1, 3);
+                    let foundSchools = yield School.getSchoolsByRange(1, 3);
                     master.listEquals(foundSchools, [mit, purdueCal, purdue]);
                 });
 
                 it('should return schools from 6nd to 4th position', function *() {
-                    let foundSchools = yield School.getSchoolsRange(4, 3, true);
+                    let foundSchools = yield School.getSchoolsByRange(4, 3, 'desc');
                     master.listEquals(foundSchools, [purdueCal, mit, bu]);
                 });
             });

@@ -101,6 +101,47 @@ AreaCategory.defineStatic('getAreaCategoriesRange', function *(start, length, de
 });
 
 /**
+ * Mega query composer for complex data filtering. Supports pagination.
+ *
+ * @param   query   The query boject
+ * @return  An array of found matching data in
+ *          standard object, NOT AreaCategory model object
+ */
+AreaCategory.defineStatic('query', function *(query) {
+    let q = r.table(TABLE);
+    let pagination = query.pagination;
+    let tempQuery = _.pick(query, _.keys(SCHEMA));
+
+    // Determine the desired sorting index
+    let useIndex = (pagination.order === 'desc')? r.desc(NAME_INDEX) : NAME_INDEX;
+    if (tempQuery.name) {
+        q = q.getAll(tempQuery.name, { index: useIndex });
+        tempQuery = _.omit(tempQuery, 'name');
+    } else {
+        q = q.orderBy({ index: useIndex });
+    }
+
+    // Paginate
+    q = q.slice(pagination.start, pagination.start + pagination.limit);
+
+    if (query.fields) {
+        // Remove unwanted fields
+        query.fields = _.intersection(query.fields, _.keys(SCHEMA));
+        q = q.pluck(query.fields);
+    }
+
+    // Actually execute query
+    let result = [];
+    try {
+        result = yield q.run();
+    } catch (error) {
+        console.error(error);
+    }
+
+    return result;
+});
+
+/**
  * Update the entire object to match the properties.
  * The properties configuration will be validated, and
  * unwanted properties will be discarded.

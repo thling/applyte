@@ -37,9 +37,9 @@ describe('School API Routes', function () {
             yield school.delete();
         });
 
-        it('should create a new School with /api/school/create', function (done) {
+        it('should create a new School with POST request to /api/schools', function (done) {
             request()
-                .post('/api/school/create')
+                .post('/api/schools')
                 .send(template)
                 .expect(201)
                 .expect('Content-Type', /json/)
@@ -54,9 +54,9 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should return the saved School with /api/school/id', function (done) {
+        it('should return the saved School with /api/schools/id', function (done) {
             request()
-                .get('/api/school/id/' + createdId)
+                .get('/api/schools/' + createdId)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -70,11 +70,11 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should return the same thing with /api/school/name', function (done) {
+        it('should return the same thing with /api/schools?name', function (done) {
             let name = encodeURI(template.name);
 
             request()
-                .get('/api/school/name/' + name)
+                .get('/api/schools?name=' + name)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -202,12 +202,12 @@ describe('School API Routes', function () {
             }
         });
 
-        it('should return the school with /api/school/name/campus', function (done) {
+        it('should return the school with /api/schools/name/campus', function (done) {
             let name = encodeURI(purdueWL.name);
             let campus = encodeURI(purdueWL.campus);
 
             request()
-                .get('/api/school/name/' + name + '/' + campus)
+                .get('/api/schools/' + name + '/' + campus)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -223,7 +223,7 @@ describe('School API Routes', function () {
 
         it('should list everything', function (done) {
             request()
-                .get('/api/school/list')
+                .get('/api/schools')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -239,7 +239,7 @@ describe('School API Routes', function () {
 
         it('should list 4th to 6th item in alphabetical order (PUWL, PUCal, UIUC)', function (done) {
             request()
-                .get('/api/school/list/4/3')
+                .get('/api/schools?start=4&limit=3')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -255,7 +255,7 @@ describe('School API Routes', function () {
 
         it('should list 4th to 2nd item in alphabetical order (PUCal, MIT, EMER)', function (done) {
             request()
-                .get('/api/school/list/4/3/desc')
+                .get('/api/schools?start=4&limit=3&order=desc')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -273,7 +273,7 @@ describe('School API Routes', function () {
             let country = encodeURI(bu.address.country);
 
             request()
-                .get('/api/school/location/' + country)
+                .get('/api/schools?country=' + country)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -292,7 +292,7 @@ describe('School API Routes', function () {
             let state = encodeURI(bu.address.state);
 
             request()
-                .get('/api/school/location/' + country + '/' + state)
+                .get('/api/schools?country=' + country + '&state=' + state)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -306,12 +306,11 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should find schools in state MA (country = \'null\')', function (done) {
-            let country = encodeURI('null');
+        it('should find schools in state MA', function (done) {
             let state = encodeURI(bu.address.state);
 
             request()
-                .get('/api/school/location/' + country + '/' + state)
+                .get('/api/schools?state=' + state)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -325,13 +324,33 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should find schools in Boston, MA, US', function (done) {
+        it('should find schools in Boston, MA, US (?country=*&state=*&city=*)', function (done) {
             let country = encodeURI(bu.address.country);
             let state = encodeURI(bu.address.state);
             let city = encodeURI(bu.address.city);
 
             request()
-                .get('/api/school/location/' + country + '/' + state + '/' + city)
+                .get('/api/schools?country=' + country + '&state=' + state + '&city=' + city)
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        master.listEquals(res.body, [bu, emerson]);
+                    }
+
+                    done();
+                });
+        });
+
+        it('should find schools in Boston, MA, US (/country/state/city)', function (done) {
+            let country = encodeURI(bu.address.country);
+            let state = encodeURI(bu.address.state);
+            let city = encodeURI(bu.address.city);
+
+            request()
+                .get('/api/schools/location/' + country + '/' + state + '/' + city)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -347,7 +366,7 @@ describe('School API Routes', function () {
 
         it('should return all programs Purdue has (by ID)', function (done) {
             request()
-                .get('/api/school/id/' + purdueWL.id + '/programs')
+                .get('/api/schools/' + purdueWL.id + '/programs')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -365,9 +384,9 @@ describe('School API Routes', function () {
             let name = encodeURI(purdueWL.name);
             let campus = encodeURI(purdueWL.campus);
             request()
-                .get('/api/school/name/' + name + '/' + campus + '/programs')
-                .expect('Content-Type', /json/)
+                .get('/api/schools/' + name + '/' + campus + '/programs')
                 .expect(200)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -379,7 +398,39 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should update the data with /api/school/update', function (done) {
+        it('should return fields [id, name, campus] of the schools that are located '
+                + 'in Boston, MA, US, limit 1, start at 2, and sorted descendingly',
+                function (done) {
+                    let fields = ['id', 'name', 'campus'];
+                    let queryFields = encodeURI(fields.join('||'));
+                    let country = encodeURI('United States of America');
+                    let state = encodeURI('Massachusetts');
+                    let city = encodeURI('Boston');
+
+                    request()
+                        .get('/api/schools?fields=' + queryFields
+                                + '&country=' + country
+                                + '&state=' + state
+                                + '&city=' + city
+                                + '&limit=1'
+                                + '&start=2'
+                                + '&order=desc')
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                let tempBu = _.pick(bu, fields);
+                                master.listEquals(res.body, [tempBu]);
+                            }
+
+                            done();
+                        });
+                }
+        );
+
+        it('should update the data with PUT request to /api/schools', function (done) {
             let temp = master.school.template,
                 newData = _.pick(temp, ['id', 'name', 'campus']);
 
@@ -397,7 +448,7 @@ describe('School API Routes', function () {
             };
 
             request()
-                .put('/api/school/update')
+                .put('/api/schools')
                 .send(newData)
                 .expect(200)
                 .expect('Content-Type', /json/)
@@ -422,14 +473,14 @@ describe('School API Routes', function () {
 
         it('should not be able to delete a school without privilege', function (done) {
             request()
-                .delete('/api/school/delete')
+                .delete('/api/schools')
                 .send({ id: purdueWL.id })
                 .expect(403, done);
         });
 
         it('should be able to delete a school with proper prvilege', function (done) {
             request()
-                .delete('/api/school/delete')
+                .delete('/api/schools')
                 .set('access_token', 'anythingfortest')
                 .send({ id: purdueWL.id, apiKey: 'test' })
                 .expect(204, done);

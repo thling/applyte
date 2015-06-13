@@ -4,72 +4,121 @@ let _            = require('lodash');
 let AreaCategory = require(basedir + 'models/area-category');
 
 /**
- * @api {get} /api/area-category/list   Lists all area categories
- * @apiName     getAllAreaCategories
- * @apiGroup    AreaCategory
- * @apiVersion  0.0.1
-
- * @apiUse  successAreaCategoryArray
- * @apiUse  errors
+ * Format and check the pagination specifications in a query.
+ *
+ * @param   ctx     The request object
  */
-module.exports.listAreaCategories = function *() {
-    try {
-        let categories = yield AreaCategory.getAllAreaCategories();
-        this.status = 200;
-        this.body = categories;
-    } catch (error) {
-        console.error(error);
-        this.status = 500;
-        this.body = { message: this.message };
+let paginationCheck = function (ctx) {
+    let pagination = {};
+
+    if (ctx.query.start && ctx.query.start < 1) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid start: ' + ctx.query.start };
+    } else {
+        pagination.start = (parseInt(ctx.query.start) || 1) - 1;
+    }
+
+    if (ctx.query.limit && (ctx.query.limit < 1 || ctx.query.limit > 100)) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid limit: ' + ctx.query.limit };
+    } else {
+        pagination.limit = parseInt(ctx.query.limit) || 10;
+    }
+
+    if (ctx.query.sort && !(_.includes(['name'], ctx.query.sort))) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid sort: ' + ctx.query.sort };
+    } else {
+        pagination.sort = ctx.query.order || 'name';
+    }
+
+    if (ctx.query.order && !(_.includes(['asc', 'desc'], ctx.query.order))) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid order: ' + ctx.query.order };
+    } else {
+        pagination.order = ctx.query.order || 'asc';
+    }
+
+    ctx.query.pagination = pagination;
+};
+
+/**
+ * Format and check the fields to be returned in a query.
+ *
+ * @param   ctx     The request object
+ */
+let fieldsCheck = function (ctx) {
+    if (ctx.query.fields) {
+        ctx.query.fields = ctx.query.fields.split('||');
     }
 };
 
 /**
- * @api {get}   /api/area-category/list/:start/:length  List all area categories (paginated)
- * @apiName     getAreaCategoriesByRange
- * @apiGroup    AreaCategory
+ * @api {get}   /api/area-categories    Query with complex conditions
+ * @apiName     query
+ * @apiGroup    AreaCategories
  * @apiVersion  0.0.1
  *
- * @apiParam    {Number}        start       Index to start listing from.
- * @apiParam    {Number}        length      Number of item to list from <code>start</code>
- * @apiParam    {String="desc"} [order]     Whether to order descendingly
+ * @apiDescription  The mega query function that allows query strings,
+ *                  filtering, sorting by field, sorting order, fields
+ *                  selections, and possibly more in the future.
+ *
+ * @apiParam    {String}    [name]      The name to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [fields]    The fields to select from. Fields must
+ *                                      be one of the fields of the school schema,
+ *                                      separated by <code>||</code> and then
+ *                                      encoded with <code>encodeURI</code> entirely
+ *
+ * @apiParam    {Number}        [start=1]   The starting index
+ * @apiParam    {Number{1-100}} [limit=10]  Number of items per page
+ * @apiParam    {String=name} [sort=name]   The sorting attribute
+ * @apiParam    {String=asc,desc}   [order=asc]
+ *                                          The order to sort
+ *
+ * @apiParamExample {URL}  Request Examples
+ *      <!-- Get 1st to 10th area categories -->
+ *      https://applyte.io/api/area-categories
+ *
+ *      <!-- Get 33rd to 35th area categories -->
+ *      https://applyte.io/api/area-categories?start=33&length=33
+ *
+ *      <!-- Get 2nd to 8th area categories, sorting descendingly by name -->
+ *      https://applyte.io/api/area-categories?start=2&length=7&sort=name&order=desc
+ *
+ *      <!-- Get field 'name' of area categories -->
+ *      https://applyte.io/api/area-categories?fields=name
  *
  * @apiUse  successAreaCategoryArray
  * @apiUse  errors
  */
-module.exports.listAreaCategoriesByRange = function *() {
-    if (!this.params.start || !this.params.length) {
-        this.status = 400;
-        this.body = { message: 'Missing parameters: start or length' };
-    } else {
-        // Pagination requests
-        let start = parseInt(this.params.start) - 1;
-        let length = parseInt(this.params.length);
+module.exports.getAreaCategories = function *() {
+    // Parse pagination parameters
+    paginationCheck(this);
+    fieldsCheck(this);
 
-        if (!_.isFinite(start) || !_.isFinite(length)) {
-            this.status = 422;
-            this.body = { message: 'Invalid start or length value' };
-        } else {
-            let order = (this.params.order === 'desc')? true : false;
+    if (!this.body) {
+        try {
+            let schools = yield AreaCategory.query(this.query);
 
-            try {
-                let categories = yield AreaCategory
-                        .getAreaCategoriesRange(start, length, order);
-                this.status = 200;
-                this.body = categories;
-            } catch (error) {
-                console.error(error);
-                this.status = 500;
-                this.body = { message: this.message };
-            }
+            this.status = 200;
+            this.body = schools;
+            this.set({
+                // TODO: Implement header navigation
+                'link': ''
+            });
+        } catch (error) {
+            console.log(error);
+            this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
 
 /**
- * @api {get} /api/area-category/id/:id     Get area category by ID
+ * @api {get} /api/area-categories/:id     Get area category by ID
  * @apiName     getAreaCategoryById
- * @apiGroup    AreaCategory
+ * @apiGroup    AreaCategories
  * @apiVersion  0.0.1
  *
  * @apiParam    {String} id     The ID of the area category
@@ -105,43 +154,9 @@ module.exports.getAreaCategoryById = function *() {
 };
 
 /**
- * @api {get} /api/area-category/name/:name     Find area categories by name
- * @apiName     getAreaCategoryByName
- * @apiGroup    AreaCategory
- * @apiVersion  0.0.1
- *
- * @apiParam    {String}    name    The name to search with.
- *                                  This parameter must be encoded
- *                                  with <code>encodeURI()</code>.
- *
- * @apiUse  successAreaCategoryArray
- * @apiUse  errors
- */
-module.exports.getAreaCategoryByName = function *() {
-    let data = this.params;
-
-    if (!data.name) {
-        this.status = 400;
-        this.body = { message: 'Missing parameters: name' };
-    } else {
-        let name = decodeURI(data.name);
-
-        try {
-            let category = yield AreaCategory.findByName(name);
-            this.status = 200;
-            this.body = category;
-        } catch (error) {
-            console.error(error);
-            this.status = 500;
-            this.body = { message: this.message };
-        }
-    }
-};
-
-/**
- * @api {post}  /api/area-category/create   Create a new area category
+ * @api {post}  /api/area-categories   Create a new area category
  * @apiName     createAreaCategory
- * @apiGroup    AreaCategory
+ * @apiGroup    AreaCategories
  * @apiVersion  0.0.1
  *
  * @apiDescription  Creates a new area category and returns the ID of the
@@ -180,9 +195,9 @@ module.exports.createAreaCategory = function *() {
 };
 
 /**
- * @api {put}   /api/area-category/update   Updates an existing area category
+ * @api {put}   /api/area-categories   Updates an existing area category
  * @apiName     updateAreaCategory
- * @apiGroup    AreaCategory
+ * @apiGroup    AreaCategories
  * @apiVersion  0.0.1
  *
  * @apiDescription  Updates the AreaCategory object in the database with
@@ -250,9 +265,9 @@ module.exports.updateAreaCategory = function *() {
 };
 
 /**
- * @api {delete}    /api/area-category/delete   Deletes an existing area category
+ * @api {delete}    /api/area-categories   Deletes an existing area category
  * @apiName     deleteAreaCategory
- * @apiGroup    AreaCategory
+ * @apiGroup    AreaCategories
  * @apiVersion  0.0.1
  *
  * @apiDescription  Deletes an AreaCategory with specified ID. During testing,

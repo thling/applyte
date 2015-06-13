@@ -4,73 +4,156 @@ let _       = require('lodash');
 let Program = require(basedir + 'models/program');
 
 /**
- * @api {get}   /api/program/list   List all programs
- * @apiName     getAllPrograms
- * @apiGroup    Program
- * @apiVersion  0.0.1
+ * Format and check the pagination specifications in a query.
  *
- * @apiUse  successProgramArray
- * @apiUse  errors
+ * @param   ctx     The request object
  */
-module.exports.listPrograms = function *() {
-    try {
-        let programs = yield Program.getAllPrograms();
-        this.status = 200;
-        this.body = programs;
-    } catch (error) {
-        console.log(error);
-        this.status = 500;
-        this.body = { message: this.message };
+let paginationCheck = function (ctx) {
+    let pagination = {};
+
+    if (ctx.query.start && ctx.query.start < 1) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid start: ' + ctx.query.start };
+    } else {
+        pagination.start = (parseInt(ctx.query.start) || 1) - 1;
+    }
+
+    if (ctx.query.limit && (ctx.query.limit < 1 || ctx.query.limit > 100)) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid limit: ' + ctx.query.limit };
+    } else {
+        pagination.limit = parseInt(ctx.query.limit) || 10;
+    }
+
+    if (ctx.query.sort && !(_.includes(['name'], ctx.query.sort))) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid sort: ' + ctx.query.sort };
+    } else {
+        pagination.sort = ctx.query.order || 'name';
+    }
+
+    if (ctx.query.order && !(_.includes(['asc', 'desc'], ctx.query.order))) {
+        ctx.status = 422;
+        ctx.body = { message: 'Invalid order: ' + ctx.query.order };
+    } else {
+        pagination.order = ctx.query.order || 'asc';
+    }
+
+    ctx.query.pagination = pagination;
+};
+
+/**
+ * Format and check the areas to search
+ *
+ * @param   ctx     The request object
+ */
+let areasCheck = function (ctx) {
+    if (ctx.query.areas) {
+        ctx.query.areas = ctx.query.areas.split('||');
     }
 };
 
 /**
- * @api {get}   /api/program/list/:start/:length  List all programs (paginated)
- * @apiName     getProgramsByRange
- * @apiGroup    Program
+ * Format and check the fields to be returned in a query.
+ *
+ * @param   ctx     The request object
+ */
+let fieldsCheck = function (ctx) {
+    if (ctx.query.fields) {
+        ctx.query.fields = ctx.query.fields.split('||');
+    }
+
+    ctx.query.school = (ctx.query.school && ctx.query.school === 'true');
+};
+
+/**
+ * @api {get}   /api/programs    Query with complex conditions
+ * @apiName     query
+ * @apiGroup    Programs
  * @apiVersion  0.0.1
  *
- * @apiParam    {Number}        start       The index fo the program to begin listing from
- * @apiParam    {Number}        length      The number of programs to fetch from <code>start</code>
- * @apiParam    {String="desc"} [order]     Whether to fetch in descending order
+ * @apiDescription  The mega query function that allows query strings,
+ *                  filtering, sorting by field, sorting order, fields
+ *                  selections, and possibly more in the future.
+ *
+ * @apiParam    {String}    [name]      The name to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [degree]    The degree to search for. Require name
+ *                                      if this is specified. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [level]     The level to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [department]    The department to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [faculty]   The faculty to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [areas]     The areas to search for. Check if the program
+ *                                      contains one or more of the specified areas.
+ *                                      Multiple areas can be separated by <code>||</code>,
+ *                                      and then encoded with <code>encodeURI</code> entirely.
+ * @apiParam    {String}    [fields]    The fields to select from. Fields must
+ *                                      be one of the fields of the school schema,
+ *                                      separated by <code>||</code> and then
+ *                                      encoded with <code>encodeURI</code> entirely
+ * @apiParam    {String=true,false} [school=false]
+ *                                      Include the actual School data referenced to
+ *                                      by the <code>schoolId</code> field.
+ *
+ * @apiParam    {Number}        [start=1]   The starting index
+ * @apiParam    {Number{1-100}} [limit=10]  Number of items per page
+ * @apiParam    {String=name} [sort=name]   The sorting attribute
+ * @apiParam    {String=asc,desc}   [order=asc]
+ *                                          The order to sort
+ *
+ * @apiParamExample {URL}  Request Examples
+ *      <!-- Get 1st to 10th programs -->
+ *      https://applyte.io/api/programs
+ *
+ *      <!-- Get 33rd to 35th programs -->
+ *      https://applyte.io/api/programs?start=33&length=33
+ *
+ *      <!-- Get 2nd to 8th programs, sorting descendingly by name -->
+ *      https://applyte.io/api/programs?start=2&length=7&sort=name&order=desc
+ *
+ *      <!-- Get the 2nd program with 'Database' area that is Undergraduate
+ *              level and whose faculty is School of Engineering, sorted desc,
+ *              include the data of the school this program belongs to -->
+ *      https://applyte.io/api/schools?start=2&fields=name||schoolId
+ *              &areas=Databases&level=Undergraduate
+ *              &faculty=School%20of%20Engineering&order=desc
+ *              &school=true
  *
  * @apiUse  successProgramArray
  * @apiUse  errors
  */
-module.exports.listProgramsByRange = function *() {
-    let data = this.params;
+module.exports.getPrograms = function *() {
+    // Parse pagination parameters
+    paginationCheck(this);
+    areasCheck(this);
+    fieldsCheck(this);
 
-    if (!data.start || !data.length) {
-        this.status = 400;
-        this.body = { message: 'Missing parameters: start or length'};
-    } else {
-        // Pagination requests
-        let start = parseInt(data.start) - 1;
-        let length = parseInt(data.length);
+    if (!this.body) {
+        try {
+            let programs = yield Program.query(this.query);
 
-        if (!_.isFinite(start) || !_.isFinite(length)) {
-            this.status = 400;
-            this.body = { message: 'Invalid start or length value' };
-        } else {
-            let order = (this.params.order === 'desc')? true : false;
-
-            try {
-                let programs = yield Program.getProgramsRange(start, length, order);
-                this.status = 200;
-                this.body = programs;
-            } catch (error) {
-                console.error(error);
-                this.status = 500;
-                this.body = { message: this.message };
-            }
+            this.status = 200;
+            this.body = programs;
+            this.set({
+                // TODO: Implement header navigation
+                'link': ''
+            });
+        } catch (error) {
+            console.log(error);
+            this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };
 
 /**
- * @api {get}   /api/program/id/:id      Get program by ID
+ * @api {get}   /api/programs/:id      Get program by ID
  * @apiName     getProgramById
- * @apiGroup    Program
+ * @apiGroup    Programs
  * @apiVersion  0.0.1
  *
  * @apiParam    {String}    id  The ID of the program to retrieve
@@ -105,43 +188,9 @@ module.exports.getProgramById = function *() {
 };
 
 /**
- * @api {get}   /api/program/name/:name     Get programs by name
- * @apiName     getProgramsByName
- * @apiGroup    Program
- * @apiVersion  0.0.1
- *
- * @apiParam    {String}    name    The name to search with.
- *                                  This parameter must be encoded
- *                                  with <code>encodeURI</code>.
- *
- * @apiUse      successProgramArray
- * @apiUse      errors
- */
-module.exports.getProgramsByName = function *() {
-    let data = this.params;
-
-    if (!data.name) {
-        this.status = 400;
-        this.body = { message: 'Missing parameters: name' };
-    } else {
-        let name = decodeURI(data.name);
-
-        try {
-            let programs = yield Program.findByName(name);
-            this.status = 200;
-            this.body = programs;
-        } catch (error) {
-            console.error(error);
-            this.status = 500;
-            this.body = { message: this.message };
-        }
-    }
-};
-
-/**
- * @api {get}   /api/program/level/:level   Get programs by level
+ * @api {get}   /api/programs/level/:level   Get programs by level
  * @apiName     getProgramsByLevel
- * @apiGroup    Program
+ * @apiGroup    Programs
  * @apiVersion  0.0.1
  *
  * @apiParam    {String="Undergraduate","Graduate"} level
@@ -173,9 +222,9 @@ module.exports.getProgramsByLevel = function *() {
 };
 
 /**
- * @api {get}   /api/program/area/:areaName     Get programs by area name
+ * @api {get}   /api/programs/area/:areaName     Get programs by area name
  * @apiName     getProgramsByAreaName
- * @apiGroup    Program
+ * @apiGroup    Programs
  * @apiVersion  0.0.1
  *
  * @apiParam    {String}    areaName
@@ -207,9 +256,9 @@ module.exports.getProgramByAreaName = function *() {
 };
 
 /**
- * @api {get}   /api/program/categories/:categories     Get programs by categories
+ * @api {get}   /api/programs/categories/:categories     Get programs by categories
  * @apiName     getProgramsByCategories
- * @apiGroup    Program
+ * @apiGroup    Programs
  * @apiVersion  0.0.1
  *
  * @apiParam    {String}    categories  The categories to search for. Multiple
@@ -222,7 +271,7 @@ module.exports.getProgramByAreaName = function *() {
  * @apiUse      errors
  *
  * @apiParamExample {URL}   Request Example:
- *      https://applyte.io/api/program/categories/Database%7C%7CSecurity
+ *      https://applyte.io/api/programs/categories/Database%7C%7CSecurity
  */
 module.exports.getProgramsByAreaCategories = function *() {
     let data = this.params;
@@ -246,9 +295,9 @@ module.exports.getProgramsByAreaCategories = function *() {
 };
 
 /**
- * @api {post}  /api/program/create     Create a new program
+ * @api {post}  /api/programs     Create a new program
  * @apiName     createProgram
- * @apiGroup    Program
+ * @apiGroup    Programs
  * @apiVersion  0.0.1
  *
  * @apiDescription  Creates a new program and returns the ID of the
@@ -289,9 +338,9 @@ module.exports.createProgram = function *() {
 };
 
 /**
- * @api {put}   /api/program/update     Updates an existing program
+ * @api {put}   /api/programs     Updates an existing program
  * @apiName     updateProgram
- * @apiGroup    Program
+ * @apiGroup    Programs
  * @apiVersion  0.0.1
  *
  * @apiDescription  Updates the Program object in the database with
@@ -375,9 +424,9 @@ module.exports.updateProgram = function *() {
 };
 
 /**
- * @api {delete}    /api/program/delete     Deletes an existing program
+ * @api {delete}    /api/programs     Deletes an existing program
  * @apiName     deleteProgram
- * @apiGroup    Program
+ * @apiGroup    Programs
  * @apiVersion  0.0.1
  *
  * @apiDescription  Deletes an Program with specified ID. During testing,

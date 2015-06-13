@@ -234,7 +234,7 @@ Program.defineStatic('getProgramsBySchoolId', function *(schoolId) {
  * @param   desc    True to sort descendingly; false to sort ascendingly
  * @return  An array of program objects that fall into the range
  */
-Program.defineStatic('getProgramsRange', function *(start, length, desc) {
+Program.defineStatic('getProgramsByRange', function *(start, length, desc) {
     let result = [];
     let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
 
@@ -243,6 +243,95 @@ Program.defineStatic('getProgramsRange', function *(start, length, desc) {
                 .orderBy({ index: orderIndex })
                 .slice(start, start + length)
                 .run();
+    } catch (error) {
+        console.error(error);
+    }
+
+    return result;
+});
+
+/**
+ * Mega query composer for complex data filtering. Supports pagination.
+ *
+ * @param   query   The query boject
+ * @return  An array of found matching data in
+ *          standard object, NOT Program model object
+ */
+Program.defineStatic('query', function *(query) {
+    let q = r.table(TABLE);
+    let pagination = query.pagination;
+    let school = query.school;
+    let tempQuery = _.pick(query, _.keys(SCHEMA));
+    let areas;
+
+    if (tempQuery.areas) {
+        areas = tempQuery.areas;
+        tempQuery = _.omit(tempQuery, 'areas');
+    }
+
+    // Determine the desired sorting index
+    let useIndex, queryChained = false;
+    switch (pagination.sort) {
+        default:
+            useIndex = (pagination.order === 'desc')?
+                    r.desc(NAME_INDEX) : NAME_INDEX;
+
+            if (tempQuery.name) {
+                q = q.getAll(tempQuery.name, { index: useIndex });
+                queryChained = true;
+                tempQuery = _.omit(tempQuery, 'name');
+            }
+    }
+
+    // If getAll has been chained, don't use orderBy
+    if (!queryChained) {
+        q = q.orderBy({ index: useIndex });
+    }
+
+    // Filter using the information we have
+    if (tempQuery.length !== 0) {
+        q = q.filter(tempQuery);
+    }
+
+    // Filter areas
+    if (areas) {
+        let areaFilters, init = true;
+
+        // For each area listed, construct an 'or' predicate
+        for (let area of areas) {
+            if (init) {
+                init = false;
+                areaFilters = r.row('areas')('name').contains(area);
+            } else {
+                areaFilters = areaFilters.or(r.row('areas')('name').contains(area));
+            }
+        }
+
+        q = q.filter(areaFilters);
+    }
+
+    // Paginate
+    q = q.slice(pagination.start, pagination.start + pagination.limit);
+
+    if (query.fields) {
+        // Remove unwanted fields
+        query.fields = _.intersection(query.fields, _.keys(SCHEMA));
+        q = q.pluck(query.fields);
+    }
+
+    // If the user requests to include school in the result
+    if (school) {
+        q = q.merge(function (prog) {
+            return {
+                school: r.table(School.getTableName()).get(prog('schoolId'))
+            };
+        });
+    }
+
+    // Actually execute query
+    let result = [];
+    try {
+        result = yield q.run();
     } catch (error) {
         console.error(error);
     }

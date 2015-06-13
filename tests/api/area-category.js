@@ -36,9 +36,9 @@ describe('AreaCategory API Routes', function () {
             yield category.delete();
         });
 
-        it('should create a new area category with /api/area-category/create', function (done) {
+        it('should create a new area category with POST request to /api/area-categories', function (done) {
             request()
-                .post('/api/area-category/create')
+                .post('/api/area-categories')
                 .send(template)
                 .expect(201)
                 .expect('Content-Type', /json/)
@@ -53,9 +53,9 @@ describe('AreaCategory API Routes', function () {
                 });
         });
 
-        it('should return the saved area category with /api/area-category/id', function (done) {
+        it('should return the saved area category with /api/area-categories/id', function (done) {
             request()
-                .get('/api/area-category/id/' + createdId)
+                .get('/api/area-categories/' + createdId)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -69,18 +69,18 @@ describe('AreaCategory API Routes', function () {
                 });
         });
 
-        it('should return the same thing with /api/area-category/name', function (done) {
+        it('should return the same thing with /api/area-categories?=name', function (done) {
             let name = encodeURI(template.name);
 
             request()
-                .get('/api/area-category/name/' + name)
+                .get('/api/area-categories?name=' + name)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
                     } else {
-                        master.areaCategory.assertEqual(res.body, template);
+                        master.areaCategory.assertEqual(res.body, [template]);
                     }
 
                     done();
@@ -122,7 +122,7 @@ describe('AreaCategory API Routes', function () {
 
         it('should list everything', function (done) {
             request()
-                .get('/api/area-category/list')
+                .get('/api/area-categories')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -138,7 +138,7 @@ describe('AreaCategory API Routes', function () {
 
         it('should list 2nd to 4th item in alphabetical order (LIT, NETWK, SECRTY)', function (done) {
             request()
-                .get('/api/area-category/list/2/3')
+                .get('/api/area-categories?start=2&limit=3')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -154,7 +154,7 @@ describe('AreaCategory API Routes', function () {
 
         it('should list 3rd to 1st item in alphabetical order (NETWK, LIT, DB)', function (done) {
             request()
-                .get('/api/area-category/list/3/3/desc')
+                .get('/api/area-categories?start=3&limit=3&order=desc')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -168,7 +168,31 @@ describe('AreaCategory API Routes', function () {
                 });
         });
 
-        it('should update the data with /api/area-category/update', function (done) {
+        it('should list all area categories with field \'name\' only', function (done) {
+            let fields = ['name', 'id'];
+            let queryFields = encodeURI(fields.join('||'));
+
+            request()
+                .get('/api/area-categories?fields=' + queryFields)
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        let temp = [];
+                        for (let tmp of categories) {
+                            temp.push(_.pick(tmp, fields));
+                        }
+                        
+                        master.listEquals(res.body, temp);
+                    }
+
+                    done();
+                });
+        });
+
+        it('should update the data with PUT request to /api/area-categories', function (done) {
             let temp = master.areaCategory.template,
                 newData = _.pick(temp, ['id', 'desc']);
 
@@ -187,7 +211,7 @@ describe('AreaCategory API Routes', function () {
             };
 
             request()
-                .put('/api/area-category/update')
+                .put('/api/area-categories')
                 .send(newData)
                 .expect(200)
                 .expect('Content-Type', /json/)
@@ -212,14 +236,14 @@ describe('AreaCategory API Routes', function () {
 
         it('should not be able to delete an area category without privilege', function (done) {
             request()
-                .delete('/api/area-category/delete')
+                .delete('/api/area-categories')
                 .send({ id: security.id })
                 .expect(403, done);
         });
 
         it('should be able to delete an area category with proper prvilege', function (done) {
             request()
-                .delete('/api/area-category/delete')
+                .delete('/api/area-categories')
                 .set('access_token', 'anythingfortest')
                 .send({ id: security.id, apiKey: 'test' })
                 .expect(204, done);

@@ -2,20 +2,14 @@
 
 // Routing for programs
 let programApi = require(basedir + 'controllers/api/program');
-let apiBase = '/api/program';
+let apiBase = '/api/programs';
 
 module.exports = function (router) {
     // List all available programs
-    router.get(apiBase + '/list', programApi.listPrograms);
-
-    // Pagination requests
-    router.get(apiBase + '/list/:start/:length/:order?', programApi.listProgramsByRange);
+    router.get(apiBase, programApi.getPrograms);
 
     // Fetch a particular one given ID
-    router.get(apiBase + '/id/:id', programApi.getProgramById);
-
-    // Fetch a particular program by name (may return multiple)
-    router.get(apiBase + '/name/:name', programApi.getProgramsByName);
+    router.get(apiBase + '/:id', programApi.getProgramById);
 
     // Fetch all programs by level
     router.get(apiBase + '/level/:level', programApi.getProgramsByLevel);
@@ -30,11 +24,11 @@ module.exports = function (router) {
     );
 
     // Add new program, returns id
-    router.post(apiBase + '/create', programApi.createProgram);
+    router.post(apiBase, programApi.createProgram);
 
     // Update existing program, returns changelog
-    router.put(apiBase + '/update', programApi.updateProgram);
+    router.put(apiBase, programApi.updateProgram);
 
     // Delete existing (need admin), returns nothing
-    router.delete(apiBase + '/delete', programApi.deleteProgram);
+    router.delete(apiBase, programApi.deleteProgram);
 };

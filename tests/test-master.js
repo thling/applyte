@@ -20,8 +20,9 @@ let address = {
 /**
  * Verifies that two sets (list) of programs contain the same data
  *
- * @param   progs   The first list to test
+ * @param   items   The first list to test
  * @param   tests   The second list to test
+ * @param   print   Whether to print the items being compared
  * @throws  Assertion error if two lists differ
  */
 module.exports.listEquals = function (items, tests, print) {
@@ -35,6 +36,7 @@ module.exports.listEquals = function (items, tests, print) {
                     console.log(item);
                     console.log(test);
                 }
+
                 assert.deepEqual(item, test);
                 count -= 1;
                 break;

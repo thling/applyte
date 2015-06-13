@@ -283,12 +283,12 @@ describe('Program model tests', function () {
 
             describe('Pagination test', function () {
                 it('should return programs from 3rd to 5th position (MGMT, ME, PHIL)', function *() {
-                    let foundPrograms = yield Program.getProgramsRange(2, 3);
+                    let foundPrograms = yield Program.getProgramsByRange(2, 3);
                     master.listEquals(foundPrograms, [management, mecheng, philosophy]);
                 });
 
                 it('should return programs from 4th to 2nd position (ME, MGMT, IE)', function *() {
-                    let foundPrograms = yield Program.getProgramsRange(1, 3, true);
+                    let foundPrograms = yield Program.getProgramsByRange(1, 3, true);
                     master.listEquals(foundPrograms, [mecheng, management, indseng]);
                 });
             });
