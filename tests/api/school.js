@@ -77,6 +77,11 @@ describe('School API Routes', function () {
                 .get('/api/schools?name=' + name)
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/schools?name=Purdue%20University'
+                            + '&start=1&limit=10&sort=name&order=asc>; rel="self"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -226,6 +231,10 @@ describe('School API Routes', function () {
                 .get('/api/schools')
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/schools?start=1&limit=10&sort=name&order=asc>; rel="self"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -242,6 +251,12 @@ describe('School API Routes', function () {
                 .get('/api/schools?start=4&limit=3')
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/schools?start=1&limit=3&sort=name&order=asc>; rel="prev", '
+                        + '<http://applyte.io/api/schools?start=4&limit=3&sort=name&order=asc>; rel="self", '
+                        + '<http://applyte.io/api/schools?start=7&limit=3&sort=name&order=asc>; rel="next"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -258,6 +273,12 @@ describe('School API Routes', function () {
                 .get('/api/schools?start=4&limit=3&order=desc')
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/schools?start=1&limit=3&sort=name&order=desc>; rel="prev", '
+                        + '<http://applyte.io/api/schools?start=4&limit=3&sort=name&order=desc>; rel="self", '
+                        + '<http://applyte.io/api/schools?start=7&limit=3&sort=name&order=desc>; rel="next"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -276,6 +297,11 @@ describe('School API Routes', function () {
                 .get('/api/schools?country=' + country)
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/schools?country=United%20States%20of%20America'
+                            + '&start=1&limit=10&sort=name&order=asc>; rel="self"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -295,6 +321,12 @@ describe('School API Routes', function () {
                 .get('/api/schools?country=' + country + '&state=' + state)
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/schools?country=United%20States%20of%20America'
+                            + '&state=Massachusetts&start=1&limit=10&sort=name&order=asc>; '
+                            + 'rel="self"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -313,6 +345,12 @@ describe('School API Routes', function () {
                 .get('/api/schools?state=' + state)
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/schools?state=Massachusetts'
+                            + '&start=1&limit=10&sort=name&order=asc>; '
+                            + 'rel="self"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -333,6 +371,12 @@ describe('School API Routes', function () {
                 .get('/api/schools?country=' + country + '&state=' + state + '&city=' + city)
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/schools?country=United%20States%20of%20America'
+                            + '&state=Massachusetts&city=Boston&start=1&limit=10&sort=name&order=asc>; '
+                            + 'rel="self"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -417,6 +461,19 @@ describe('School API Routes', function () {
                                 + '&order=desc')
                         .expect(200)
                         .expect('Content-Type', /json/)
+                        .expect(
+                            'Link',
+                            '<http://applyte.io/api/schools?fields=id%7C%7Cname%7C%7Ccampus'
+                                    + '&country=United%20States%20of%20America'
+                                    + '&state=Massachusetts&city=Boston'
+                                    + '&start=1&limit=1&sort=name&order=desc>; '
+                                    + 'rel="prev", '
+                                    + '<http://applyte.io/api/schools?fields=id%7C%7Cname%7C%7Ccampus'
+                                    + '&country=United%20States%20of%20America'
+                                    + '&state=Massachusetts&city=Boston'
+                                    + '&start=2&limit=1&sort=name&order=desc>; '
+                                    + 'rel="self"'
+                        )
                         .end(function (err, res) {
                             if (err) {
                                 throw err;

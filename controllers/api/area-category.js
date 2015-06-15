@@ -29,7 +29,7 @@ let paginationCheck = function (ctx) {
         ctx.status = 422;
         ctx.body = { message: 'Invalid sort: ' + ctx.query.sort };
     } else {
-        pagination.sort = ctx.query.order || 'name';
+        pagination.sort = ctx.query.sort || 'name';
     }
 
     if (ctx.query.order && !(_.includes(['asc', 'desc'], ctx.query.order))) {
@@ -54,10 +54,65 @@ let fieldsCheck = function (ctx) {
 };
 
 /**
+ * Generate the Link header for pagination.
+ *
+ * @param   origQuery   The original query object
+ * @param   hasMore     Returned by the model, indicates whether there are
+ *                      more data after self or not
+ * @return  A string with the pagination parameters: self (always),
+ *          prev and next (if applicable)
+ */
+let generateHeaderLinks = function (origQuery, hasMore) {
+    let query = _.omit(origQuery, _.keys(origQuery.pagination));
+    query = _.omit(query, ['pagination', 'fields']);
+
+    let base = 'http://applyte.io/api/area-categories?';
+
+    // Recompose fields
+    if (origQuery.fields) {
+        base += 'fields=' + encodeURI(origQuery.fields.join('||')) + '&';
+    }
+
+    // Parse each additional filter
+    for (let filter in query) {
+        base += filter + '=' + encodeURI(query[filter]) + '&';
+    }
+
+    // Construct pagination part of query string
+    let paginationQuery =
+            'limit=' + origQuery.pagination.limit + '&'
+            + 'sort=' + origQuery.pagination.sort + '&'
+            + 'order=' + origQuery.pagination.order;
+
+    // Calculate pagination
+    let selfStart = origQuery.pagination.start + 1;
+    let nextStart = origQuery.pagination.start + origQuery.pagination.limit + 1;
+    let prevStart = origQuery.pagination.start - origQuery.pagination.limit + 1;
+    prevStart = (prevStart <= 0)? 1 : prevStart;
+
+    // Determine which links to include in the Link header
+    let links = [];
+    if (selfStart > 1) {
+        let prev = base + 'start=' + prevStart + '&' + paginationQuery;
+        links.push('<' + prev + '>; rel="prev"');
+    }
+
+    let self = base + 'start=' + selfStart + '&' + paginationQuery;
+    links.push('<' + self +'>; rel="self"');
+
+    if (hasMore) {
+        let next = base + 'start=' + nextStart + '&' + paginationQuery;
+        links.push('<' + next + '>; rel="next"');
+    }
+
+    return links.join(', ');
+};
+
+/**
  * @api {get}   /api/area-categories    Query with complex conditions
  * @apiName     query
  * @apiGroup    AreaCategories
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  The mega query function that allows query strings,
  *                  filtering, sorting by field, sorting order, fields
@@ -81,7 +136,7 @@ let fieldsCheck = function (ctx) {
  *      https://applyte.io/api/area-categories
  *
  *      <!-- Get 33rd to 35th area categories -->
- *      https://applyte.io/api/area-categories?start=33&length=33
+ *      https://applyte.io/api/area-categories?start=33&length=3
  *
  *      <!-- Get 2nd to 8th area categories, sorting descendingly by name -->
  *      https://applyte.io/api/area-categories?start=2&length=7&sort=name&order=desc
@@ -89,24 +144,24 @@ let fieldsCheck = function (ctx) {
  *      <!-- Get field 'name' of area categories -->
  *      https://applyte.io/api/area-categories?fields=name
  *
+ * @apiUse  successPaginationHeader
  * @apiUse  successAreaCategoryArray
+ * @apiUse  successAreaCategoryExampleHeaders
  * @apiUse  errors
  */
-module.exports.getAreaCategories = function *() {
+module.exports.query = function *() {
     // Parse pagination parameters
     paginationCheck(this);
     fieldsCheck(this);
 
     if (!this.body) {
         try {
-            let schools = yield AreaCategory.query(this.query);
+            let categories = yield AreaCategory.query(this.query);
+            let headerLink = generateHeaderLinks(this.query, categories.hasMore);
 
             this.status = 200;
-            this.body = schools;
-            this.set({
-                // TODO: Implement header navigation
-                'link': ''
-            });
+            this.body = categories.results;
+            this.set('Link', headerLink);
         } catch (error) {
             console.log(error);
             this.status = 500;
@@ -119,7 +174,7 @@ module.exports.getAreaCategories = function *() {
  * @api {get} /api/area-categories/:id     Get area category by ID
  * @apiName     getAreaCategoryById
  * @apiGroup    AreaCategories
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiParam    {String} id     The ID of the area category
  *
@@ -157,7 +212,7 @@ module.exports.getAreaCategoryById = function *() {
  * @api {post}  /api/area-categories   Create a new area category
  * @apiName     createAreaCategory
  * @apiGroup    AreaCategories
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  Creates a new area category and returns the ID of the
  *                  newly created object. The optional parameters may be
@@ -198,7 +253,7 @@ module.exports.createAreaCategory = function *() {
  * @api {put}   /api/area-categories   Updates an existing area category
  * @apiName     updateAreaCategory
  * @apiGroup    AreaCategories
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  Updates the AreaCategory object in the database with
  *                  the specified change. Invalid keys will be ignored and
@@ -268,7 +323,7 @@ module.exports.updateAreaCategory = function *() {
  * @api {delete}    /api/area-categories   Deletes an existing area category
  * @apiName     deleteAreaCategory
  * @apiGroup    AreaCategories
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  Deletes an AreaCategory with specified ID. During testing,
  *                  any <code>access-token</code> will work; in production,

@@ -6,7 +6,7 @@ let apiBase = '/api/programs';
 
 module.exports = function (router) {
     // List all available programs
-    router.get(apiBase, programApi.getPrograms);
+    router.get(apiBase, programApi.query);
 
     // Fetch a particular one given ID
     router.get(apiBase + '/:id', programApi.getProgramById);

@@ -6,7 +6,7 @@ let apiBase = '/api/area-categories';
 
 module.exports = function (router) {
     // Gets the list of all area categories
-    router.get(apiBase, areaCategoryApi.getAreaCategories);
+    router.get(apiBase, areaCategoryApi.query);
 
     // Gets the school by area categories id
     router.get(apiBase + '/:id', areaCategoryApi.getAreaCategoryById);

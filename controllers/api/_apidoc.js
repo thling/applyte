@@ -4,7 +4,15 @@
 
 /**
  * @apiDefine currentVersion
- * @apiVersion 0.0.1
+ * @apiVersion 0.1.0
+ */
+
+/**
+ * @apiDefine successPaginationHeader
+ * @apiSuccess  (Responose Header)  {String}    Link
+ *      Links for previous page (<code>prev</code>), this page
+ *      (<code>self</code>), and next page (<code>next</code>).
+ *      Previous and next page maybe missing if nothing before or after this page.
  */
 
 /**
@@ -59,6 +67,45 @@
  * @apiSuccess  (200)   {Object[]}  School.links    Related links ofr this school
  * @apiSuccess  (200)   {String}    School.links.name   Name of the link
  * @apiSuccess  (200)   {String}    School.links.url    URL of the link
+ */
+
+/**
+ * @apiDefine   successSchoolExampleHeaders
+ * @apiSuccessExample   {json}  Response Example
+ *      <!-- Response example for second request example.
+ *           Note that although there are 3 lines here, the actual Link header
+ *           will contain only one line, with spaces replacing the \n characer -->
+ *      HTTP/1.1 200 OK
+ *      Link: <https://applyte.io/api/schools?start=30&length=3>; rel="prev",
+ *            <https://applyte.io/api/schools?start=33&length=3>; rel="self",
+ *            <https://applyte.io/api/schools?start=36&length=3>; rel="next"
+ *      [{
+ *          "id": "random-school-identifier",
+ *          "name": "Purdue University",
+ *          "campus": "West Lafayette",
+ *          "desc": "Better than IU in every aspect",
+ *          "email": "test@email.com",
+ *          "phone": "+1 (765) 494-4600",
+ *          "logo": "",
+ *          "address": {
+ *              "address1": "610 Purdue Mall",
+ *              "address2": "",
+ *              "city": "West Lafayette",
+ *              "state": "Indiana",
+ *              "postalCode": "47907",
+ *              "country": "United States of America"
+ *          },
+ *          "links": [{
+ *                  "name": "Official Website",
+ *                  "url": "http://www.purdue.edu"
+ *          }]
+ *      },
+ *      {
+ *          // School with the same format
+ *      },
+ *      {
+ *          // School with the same format
+ *      }]
  */
 
 /**
@@ -156,6 +203,51 @@
  */
 
 /**
+ * @apiDefine   successProgramExampleHeaders
+ * @apiSuccessExample   {json}  Response Example
+ *      <!-- Response example for second request example.
+ *           Note that although there are 3 lines here, the actual Link header
+ *           will contain only one line, with spaces replacing the \n characer -->
+ *      HTTP/1.1 200 OK
+ *      Link: <https://applyte.io/api/programs?start=30&length=3>; rel="prev",
+ *            <https://applyte.io/api/programs?start=33&length=3>; rel="self",
+ *            <https://applyte.io/api/programs?start=36&length=3>; rel="next"
+ *      [{
+ *          "id": "random-program-identifier",
+ *          "name": "Computer Science",
+ *          "degree": "Master of Science",
+ *          "level": "Graduate",
+ *          "desc": "The Department of Computer Sciences is good.",
+ *          "schoolId": "random-school-identifier",
+ *          "department": "Department of Computer Science",
+ *          "faculty": "College of Science",
+ *          "areas": [{
+ *                  "name": "Information Security and Assurance",
+ *                  "categories": ["Security"]
+ *          }],
+ *          "contact": {
+ *              "fax": "+1 (765) 494-0739",
+ *              "phone": "+1 (765) 494-6010",
+ *              "email": "grad-info@cs.purdue.edu",
+ *              "address": {
+ *                  "address1": "610 Purdue Mall",
+ *                  "address2": "",
+ *                  "city": "West Lafayette",
+ *                  "state": "Indiana",
+ *                  "postalCode": "47907",
+ *                  "country": "United States of America"
+ *              }
+ *          }
+ *      },
+ *      {
+ *          // Program with the same format
+ *      },
+ *      {
+ *          // Program with the same format
+ *      }]
+ */
+
+/**
  * @apiDefine paramProgram
  * @apiParam    {String}    name        Name of the program
  * @apiParam    {String}    degree      Degree of the program
@@ -223,6 +315,29 @@
  */
 
 /**
+ * @apiDefine   successAreaCategoryExampleHeaders
+ * @apiSuccessExample   {json}  Response Example
+ *      <!-- Response example for second request example.
+ *           Note that although there are 3 lines here, the actual Link header
+ *           will contain only one line, with spaces replacing the \n characer -->
+ *      HTTP/1.1 200 OK
+ *      Link: <https://applyte.io/api/area-categories?start=30&length=3>; rel="prev",
+ *            <https://applyte.io/api/area-categories?start=33&length=3>; rel="self",
+ *            <https://applyte.io/api/area-categories?start=36&length=3>; rel="next"
+ *      [{
+ *          "id": "random-area-category-identifier",
+ *          "name": "Security",
+ *          "desc": "Research of security",
+ *      },
+ *      {
+ *          // Program with the same format
+ *      },
+ *      {
+ *          // Program with the same format
+ *      }]
+ */
+
+/**
  * @apiDefine paramAreaCategory
  * @apiParam    {String}    name        Name of the object
  * @apiParam    {String}    [desc]      Description of the object
@@ -239,3 +354,158 @@
 // -----------
 // Histories
 // -----------
+
+/**
+ * @api {get}   /api/schools    Query with complex conditions
+ * @apiName     query
+ * @apiGroup    Schools
+ * @apiVersion  0.0.1
+ *
+ * @apiDescription  The mega query function that allows query strings,
+ *                  filtering, sorting by field, sorting order, fields
+ *                  selections, and possibly more in the future.
+ *
+ * @apiParam    {String}    [name]      The name to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [campus]    The campus to search for. Require name
+ *                                      if this is specified. Must be encoded
+ *                                      with <code>encodeURI</code>
+ *
+ * @apiParam    {String}    [country]   The country to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [state]     The state/province to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [city]      The city to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ *
+ * @apiParam    {String}    [fields]    The fields to select from. Fields must
+ *                                      be one of the fields of the school schema,
+ *                                      separated by <code>||</code> and then
+ *                                      encoded with <code>encodeURI</code> entirely
+ *
+ * @apiParam    {Number}        [start=1]   The starting index
+ * @apiParam    {Number{1-100}} [limit=10]  Number of items per page
+ * @apiParam    {String=name} [sort=name]   The sorting attribute
+ * @apiParam    {String=asc,desc}   [order=asc]
+ *                                          The order to sort
+ *
+ * @apiParamExample {URL}  Request Examples
+ *      <!-- Get 1st to 10th schools -->
+ *      https://applyte.io/api/schools
+ *
+ *      <!-- Get 33rd to 35th schools -->
+ *      https://applyte.io/api/schools?start=33&length=3
+ *
+ *      <!-- Get 2nd to 8th schools, sorting descendingly by name -->
+ *      https://applyte.io/api/schools?start=2&length=7&sort=name&order=desc
+ *
+ *      <!-- Get fields [id, name, campus] of the schools that are located in Boston, MA, US,
+ *              limit 1, start at 2, and sorted descendingly -->
+ *      https://applyte.io/api/schools?fields=id||name||campus
+ *              &country=United%20States%20of%20America&state=Massachusetts&city=Boston
+ *              &limit=1&start=2&order=desc
+ *
+ * @apiUse  successSchoolArray
+ * @apiUse  errors
+ */
+
+/**
+ * @api {get}   /api/programs    Query with complex conditions
+ * @apiName     query
+ * @apiGroup    Programs
+ * @apiVersion  0.0.1
+ *
+ * @apiDescription  The mega query function that allows query strings,
+ *                  filtering, sorting by field, sorting order, fields
+ *                  selections, and possibly more in the future.
+ *
+ * @apiParam    {String}    [name]      The name to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [degree]    The degree to search for. Require name
+ *                                      if this is specified. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [level]     The level to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [department]    The department to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [faculty]   The faculty to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [areas]     The areas to search for. Check if the program
+ *                                      contains one or more of the specified areas.
+ *                                      Multiple areas can be separated by <code>||</code>,
+ *                                      and then encoded with <code>encodeURI</code> entirely.
+ * @apiParam    {String}    [fields]    The fields to select from. Fields must
+ *                                      be one of the fields of the school schema,
+ *                                      separated by <code>||</code> and then
+ *                                      encoded with <code>encodeURI</code> entirely
+ * @apiParam    {String=true,false} [school=false]
+ *                                      Include the actual School data referenced to
+ *                                      by the <code>schoolId</code> field.
+ *
+ * @apiParam    {Number}        [start=1]   The starting index
+ * @apiParam    {Number{1-100}} [limit=10]  Number of items per page
+ * @apiParam    {String=name} [sort=name]   The sorting attribute
+ * @apiParam    {String=asc,desc}   [order=asc]
+ *                                          The order to sort
+ *
+ * @apiParamExample {URL}  Request Examples
+ *      <!-- Get 1st to 10th programs -->
+ *      https://applyte.io/api/programs
+ *
+ *      <!-- Get 33rd to 35th programs -->
+ *      https://applyte.io/api/programs?start=33&length=3
+ *
+ *      <!-- Get 2nd to 8th programs, sorting descendingly by name -->
+ *      https://applyte.io/api/programs?start=2&length=7&sort=name&order=desc
+ *
+ *      <!-- Get the 2nd program with 'Database' area that is Undergraduate
+ *              level and whose faculty is School of Engineering, sorted desc,
+ *              include the data of the school this program belongs to -->
+ *      https://applyte.io/api/schools?start=2&fields=name||schoolId
+ *              &areas=Databases&level=Undergraduate
+ *              &faculty=School%20of%20Engineering&order=desc
+ *              &school=true
+ *
+ * @apiUse  successProgramArray
+ * @apiUse  errors
+ */
+
+/**
+ * @api {get}   /api/area-categories    Query with complex conditions
+ * @apiName     query
+ * @apiGroup    AreaCategories
+ * @apiVersion  0.0.1
+ *
+ * @apiDescription  The mega query function that allows query strings,
+ *                  filtering, sorting by field, sorting order, fields
+ *                  selections, and possibly more in the future.
+ *
+ * @apiParam    {String}    [name]      The name to search for. Must be encoded
+ *                                      with <code>encodeURI</code>
+ * @apiParam    {String}    [fields]    The fields to select from. Fields must
+ *                                      be one of the fields of the school schema,
+ *                                      separated by <code>||</code> and then
+ *                                      encoded with <code>encodeURI</code> entirely
+ *
+ * @apiParam    {Number}        [start=1]   The starting index
+ * @apiParam    {Number{1-100}} [limit=10]  Number of items per page
+ * @apiParam    {String=name} [sort=name]   The sorting attribute
+ * @apiParam    {String=asc,desc}   [order=asc]
+ *                                          The order to sort
+ *
+ * @apiParamExample {URL}  Request Examples
+ *      <!-- Get 1st to 10th area categories -->
+ *      https://applyte.io/api/area-categories
+ *
+ *      <!-- Get 33rd to 35th area categories -->
+ *      https://applyte.io/api/area-categories?start=33&length=3
+ *
+ *      <!-- Get 2nd to 8th area categories, sorting descendingly by name -->
+ *      https://applyte.io/api/area-categories?start=2&length=7&sort=name&order=desc
+ *
+ *      <!-- Get field 'name' of area categories -->
+ *      https://applyte.io/api/area-categories?fields=name
+ *
+ * @apiUse  successAreaCategoryArray
+ * @apiUse  errors
+ */

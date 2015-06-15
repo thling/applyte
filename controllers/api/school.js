@@ -30,7 +30,7 @@ let paginationCheck = function (ctx) {
         ctx.status = 422;
         ctx.body = { message: 'Invalid sort: ' + ctx.query.sort };
     } else {
-        pagination.sort = ctx.query.order || 'name';
+        pagination.sort = ctx.query.sort || 'name';
     }
 
     if (ctx.query.order && !(_.includes(['asc', 'desc'], ctx.query.order))) {
@@ -92,10 +92,65 @@ let fieldsCheck = function (ctx) {
 };
 
 /**
+ * Generate the Link header for pagination.
+ *
+ * @param   origQuery   The original query object
+ * @param   hasMore     Returned by the model, indicates whether there are
+ *                      more data after self or not
+ * @return  A string with the pagination parameters: self (always),
+ *          prev and next (if applicable)
+ */
+let generateHeaderLinks = function (origQuery, hasMore) {
+    let query = _.omit(origQuery, _.keys(origQuery.pagination));
+    query = _.omit(query, ['pagination', 'fields', 'address']);
+
+    let base = 'http://applyte.io/api/schools?';
+
+    // Recompose fields
+    if (origQuery.fields) {
+        base += 'fields=' + encodeURI(origQuery.fields.join('||')) + '&';
+    }
+
+    // Parse each additional filter
+    for (let filter in query) {
+        base += filter + '=' + encodeURI(query[filter]) + '&';
+    }
+
+    // Construct pagination part of query string
+    let paginationQuery =
+            'limit=' + origQuery.pagination.limit + '&'
+            + 'sort=' + origQuery.pagination.sort + '&'
+            + 'order=' + origQuery.pagination.order;
+
+    // Calculate pagination
+    let selfStart = origQuery.pagination.start + 1;
+    let nextStart = origQuery.pagination.start + origQuery.pagination.limit + 1;
+    let prevStart = origQuery.pagination.start - origQuery.pagination.limit + 1;
+    prevStart = (prevStart <= 0)? 1 : prevStart;
+
+    // Determine which links to include in the Link header
+    let links = [];
+    if (selfStart > 1) {
+        let prev = base + 'start=' + prevStart + '&' + paginationQuery;
+        links.push('<' + prev + '>; rel="prev"');
+    }
+
+    let self = base + 'start=' + selfStart + '&' + paginationQuery;
+    links.push('<' + self +'>; rel="self"');
+
+    if (hasMore) {
+        let next = base + 'start=' + nextStart + '&' + paginationQuery;
+        links.push('<' + next + '>; rel="next"');
+    }
+
+    return links.join(', ');
+};
+
+/**
  * @api {get}   /api/schools    Query with complex conditions
  * @apiName     query
  * @apiGroup    Schools
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  The mega query function that allows query strings,
  *                  filtering, sorting by field, sorting order, fields
@@ -130,7 +185,7 @@ let fieldsCheck = function (ctx) {
  *      https://applyte.io/api/schools
  *
  *      <!-- Get 33rd to 35th schools -->
- *      https://applyte.io/api/schools?start=33&length=33
+ *      https://applyte.io/api/schools?start=33&length=3
  *
  *      <!-- Get 2nd to 8th schools, sorting descendingly by name -->
  *      https://applyte.io/api/schools?start=2&length=7&sort=name&order=desc
@@ -141,10 +196,12 @@ let fieldsCheck = function (ctx) {
  *              &country=United%20States%20of%20America&state=Massachusetts&city=Boston
  *              &limit=1&start=2&order=desc
  *
+ * @apiUse  successPaginationHeader
  * @apiUse  successSchoolArray
+ * @apiUse  successSchoolExampleHeaders
  * @apiUse  errors
  */
-module.exports.getSchools = function *() {
+module.exports.query = function *() {
     // Parse pagination parameters
     paginationCheck(this);
     nameCampusCheck(this);
@@ -154,13 +211,11 @@ module.exports.getSchools = function *() {
     if (!this.body) {
         try {
             let schools = yield School.query(this.query);
+            let headerLink = generateHeaderLinks(this.query, schools.hasMore);
 
             this.status = 200;
-            this.body = schools;
-            this.set({
-                // TODO: Implement header navigation
-                'link': ''
-            });
+            this.body = schools.results;
+            this.set('Link', headerLink);
         } catch (error) {
             console.log(error);
             this.status = 500;
@@ -173,7 +228,7 @@ module.exports.getSchools = function *() {
  * @api {get}   /api/schools/:id  Get school by ID
  * @apiName     getSchoolById
  * @apiGroup    Schools
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiParam    {String}    id  The ID of the school to retrieve
  *
@@ -210,7 +265,7 @@ module.exports.getSchoolById = function *() {
  * @api {get}   /api/schools/:name/:campus  Get school by name and campus
  * @apiName     getSchoolByNameCampus
  * @apiGroup    Schools
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  This API will return single object as <code>name</code>
  *                  and <code>campus</code> can uniquely identify a school.
@@ -258,7 +313,7 @@ module.exports.getSchoolByNameCampus = function *() {
  * @api {get}   /api/schools/location/:country/:state/:city  Get schools by location
  * @apiName     getSchoolsByLocation
  * @apiGroup    Schools
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  Find schools by specified country, state, or city. Any subset
  *                  of preceding elements are permetted (e.g. <code>[country, state]
@@ -311,7 +366,7 @@ module.exports.getSchoolsByLocation = function *() {
  * @api {get}   /api/schools/:id/programs    Get all the program the school has
  * @apiName     getProgramsBySchoolId
  * @apiGroup    Schools
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiParam    {String}    id  The ID of the school to get all its programs
  *
@@ -323,7 +378,7 @@ module.exports.getSchoolsByLocation = function *() {
  * @api {get}   /api/school/:name/:campus/programs    Get all the program the school has
  * @apiName     getProgramsBySchooNameCampus
  * @apiGroup    Schools
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiParam    {String}    name    The name of the school to search with.
  *                                  This parameter must be encoded
@@ -369,7 +424,7 @@ module.exports.getSchoolPrograms = function *() {
  * @api {post}  /api/schools  Create a new school
  * @apiName     createSchool
  * @apiGroup    Schools
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  Creates a new school and returns the ID of the
  *                  newly created object. The optional parameters may be
@@ -411,7 +466,7 @@ module.exports.createSchool = function *() {
  * @api {put} /api/schools     Updates an existing school
  * @apiName     updateSchool
  * @apiGroup    Schools
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  Updates the School object in the database with
  *                  the specified change. Invalid keys will be ignored and
@@ -493,7 +548,7 @@ module.exports.updateSchool = function *() {
  * @api {delete} /api/schools    Delete an existing school
  * @apiName     deleteSchool
  * @apiGroup    Schools
- * @apiVersion  0.0.1
+ * @apiVersion  0.1.0
  *
  * @apiDescription  Deletes an School with specified ID. During testing,
  *                  any <code>access-token</code> will work; in production,

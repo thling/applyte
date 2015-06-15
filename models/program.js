@@ -254,8 +254,12 @@ Program.defineStatic('getProgramsByRange', function *(start, length, desc) {
  * Mega query composer for complex data filtering. Supports pagination.
  *
  * @param   query   The query boject
- * @return  An array of found matching data in
- *          standard object, NOT Program model object
+ * @return  An object of result and indicator:
+ *      {
+ *          results: array of found matching data in
+ *                  standard object, NOT Program model object
+ *          hasMore: true if there are more data; false otherwise
+ *      }
  */
 Program.defineStatic('query', function *(query) {
     let q = r.table(TABLE);
@@ -310,8 +314,8 @@ Program.defineStatic('query', function *(query) {
         q = q.filter(areaFilters);
     }
 
-    // Paginate
-    q = q.slice(pagination.start, pagination.start + pagination.limit);
+    // Paginate; request for one more entry to see if there are more data
+    q = q.slice(pagination.start, pagination.start + pagination.limit + 1);
 
     if (query.fields) {
         // Remove unwanted fields
@@ -332,6 +336,12 @@ Program.defineStatic('query', function *(query) {
     let result = [];
     try {
         result = yield q.run();
+        let retData = {
+            results: result.slice(0, pagination.limit),
+            hasMore: result.length > pagination.limit
+        };
+
+        result = retData;
     } catch (error) {
         console.error(error);
     }

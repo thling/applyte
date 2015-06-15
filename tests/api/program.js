@@ -77,6 +77,10 @@ describe('Program API Routes', function () {
                 .get('/api/programs?name=' + name)
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/programs?name=Computer%20Science&start=1&limit=10&sort=name&order=asc>; rel="self"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -148,6 +152,10 @@ describe('Program API Routes', function () {
                 .get('/api/programs')
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/programs?start=1&limit=10&sort=name&order=asc>; rel="self"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -164,6 +172,10 @@ describe('Program API Routes', function () {
                 .get('/api/programs?school=true')
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/programs?school=true&start=1&limit=10&sort=name&order=asc>; rel="self"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -248,6 +260,13 @@ describe('Program API Routes', function () {
                         .get('/api/programs?areas=' + areas)
                         .expect(200)
                         .expect('Content-Type', /json/)
+                        .expect(
+                            'Link',
+                            '<http://applyte.io/api/programs?'
+                                    + 'areas=Databases%7C%7CInformation%20Security%20and%20Assurance&'
+                                    + 'start=1&limit=10&sort=name&order=asc>; '
+                                    + 'rel="self"'
+                        )
                         .end(function (err, res) {
                             if (err) {
                                 throw err;
@@ -266,6 +285,11 @@ describe('Program API Routes', function () {
                         .get('/api/programs?start=3&limit=3')
                         .expect(200)
                         .expect('Content-Type', /json/)
+                        .expect(
+                            'Link',
+                            '<http://applyte.io/api/programs?start=1&limit=3&sort=name&order=asc>; rel="prev", '
+                                    + '<http://applyte.io/api/programs?start=3&limit=3&sort=name&order=asc>; rel="self"'
+                        )
                         .end(function (err, res) {
                             if (err) {
                                 throw err;
@@ -283,6 +307,11 @@ describe('Program API Routes', function () {
                 .get('/api/programs?start=1&limit=3&order=desc')
                 .expect(200)
                 .expect('Content-Type', /json/)
+                .expect(
+                    'Link',
+                    '<http://applyte.io/api/programs?start=1&limit=3&sort=name&order=desc>; rel="self", '
+                            + '<http://applyte.io/api/programs?start=4&limit=3&sort=name&order=desc>; rel="next"'
+                )
                 .end(function (err, res) {
                     if (err) {
                         throw err;
@@ -314,6 +343,17 @@ describe('Program API Routes', function () {
                                 + '&school=true')
                         .expect(200)
                         .expect('Content-Type', /json/)
+                        .expect(
+                            'Link',
+                            '<http://applyte.io/api/programs?fields=name%7C%7CschoolId'
+                                    + '&areas=Databases&school=true&level=Undergraduate'
+                                    + '&faculty=School%20of%20Engineering'
+                                    + '&start=1&limit=10&sort=name&order=desc>; rel="prev", '
+                                    + '<http://applyte.io/api/programs?fields=name%7C%7CschoolId'
+                                    + '&areas=Databases&school=true&level=Undergraduate'
+                                    + '&faculty=School%20of%20Engineering'
+                                    + '&start=2&limit=10&sort=name&order=desc>; rel="self"'
+                        )
                         .end(function (err, res) {
                             if (err) {
                                 throw err;

@@ -6,7 +6,7 @@ let apiBase = '/api/schools';
 
 module.exports = function (router) {
     // Gets the list of all schools
-    router.get(apiBase, schoolApi.getSchools);
+    router.get(apiBase, schoolApi.query);
 
     // Gets the school by school id
     router.get(apiBase + '/:id', schoolApi.getSchoolById);
