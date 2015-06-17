@@ -13,6 +13,7 @@ let app        = require('../../app');
 let master     = require('../test-master');
 let Program    = require('../../models/program');
 let School     = require('../../models/school');
+let utils      = require('../../lib/utils');
 
 require('co-mocha');
 
@@ -264,7 +265,21 @@ describe('School API Routes', function () {
                         master.listEquals(res.body, [purdueWL, purdueCal, uiuc]);
                     }
 
-                    done();
+                    // Check if the link it returned is correct
+                    let links = utils.getPaginationLinks(res.header.link);
+                    request()
+                        .get(links.next)
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(res.body, [umich]);
+                            }
+
+                            done();
+                        });
                 });
         });
 
@@ -286,7 +301,21 @@ describe('School API Routes', function () {
                         master.listEquals(res.body, [purdueCal, mit, emerson]);
                     }
 
-                    done();
+                    // Check if the link it returned is correct
+                    let links = utils.getPaginationLinks(res.header.link);
+                    request()
+                        .get(links.next)
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(res.body, [bu]);
+                            }
+
+                            done();
+                        });
                 });
         });
 
@@ -334,7 +363,21 @@ describe('School API Routes', function () {
                         master.listEquals(res.body, [bu, emerson, mit]);
                     }
 
-                    done();
+                    // Check if the link it returned is correct
+                    let links = utils.getPaginationLinks(res.header.link);
+                    request()
+                        .get(links.self)
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(res.body, [bu, emerson, mit]);
+                            }
+
+                            done();
+                        });
                 });
         });
 
@@ -482,7 +525,22 @@ describe('School API Routes', function () {
                                 master.listEquals(res.body, [tempBu]);
                             }
 
-                            done();
+                            // Check if the link it returned is correct
+                            let links = utils.getPaginationLinks(res.header.link);
+                            request()
+                                .get(links.prev)
+                                .expect(200)
+                                .expect('Content-Type', /json/)
+                                .end(function (err, res) {
+                                    if (err) {
+                                        throw err;
+                                    } else {
+                                        let tempEmer = _.pick(emerson, fields);
+                                        master.listEquals(res.body, [tempEmer]);
+                                    }
+
+                                    done();
+                                });
                         });
                 }
         );

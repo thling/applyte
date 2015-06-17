@@ -13,6 +13,7 @@ let app        = require('../../app');
 let master     = require('../test-master');
 let Program    = require('../../models/program');
 let School     = require('../../models/school');
+let utils      = require('../../lib/utils');
 
 require('co-mocha');
 
@@ -79,7 +80,8 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/programs?name=Computer%20Science&start=1&limit=10&sort=name&order=asc>; rel="self"'
+                    '<http://applyte.io/api/programs?name=Computer%20Science'
+                            + '&start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
                     if (err) {
@@ -136,7 +138,7 @@ describe('Program API Routes', function () {
             yield management.save();
             yield philosophy.save();
 
-            programs = [compsci, mecheng, indseng, management, philosophy];
+            programs = [compsci, indseng, management, mecheng, philosophy];
         });
 
         after('cleaning up data', function *() {
@@ -163,7 +165,21 @@ describe('Program API Routes', function () {
                         master.listEquals(res.body, programs);
                     }
 
-                    done();
+                    // Check if the link it returned is correct
+                    let links = utils.getPaginationLinks(res.header.link);
+                    request()
+                        .get(links.self)
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(res.body, programs);
+                            }
+
+                            done();
+                        });
                 });
         });
 
@@ -268,13 +284,28 @@ describe('Program API Routes', function () {
                                     + 'rel="self"'
                         )
                         .end(function (err, res) {
+                            let expectedPrograms = [compsci, indseng, mecheng, management];
                             if (err) {
                                 throw err;
                             } else {
-                                master.listEquals(res.body, [compsci, indseng, mecheng, management]);
+                                master.listEquals(res.body, expectedPrograms);
                             }
 
-                            done();
+                            // Check if the link it returned is correct
+                            let links = utils.getPaginationLinks(res.header.link);
+                            request()
+                                .get(links.self)
+                                .expect(200)
+                                .expect('Content-Type', /json/)
+                                .end(function (err, res) {
+                                    if (err) {
+                                        throw err;
+                                    } else {
+                                        master.listEquals(res.body, expectedPrograms);
+                                    }
+
+                                    done();
+                                });
                         });
                 }
         );
@@ -297,7 +328,21 @@ describe('Program API Routes', function () {
                                 master.listEquals(res.body, [management, mecheng, philosophy]);
                             }
 
-                            done();
+                            // Check if the link it returned is correct
+                            let links = utils.getPaginationLinks(res.header.link);
+                            request()
+                                .get(links.prev)
+                                .expect(200)
+                                .expect('Content-Type', /json/)
+                                .end(function (err, res) {
+                                    if (err) {
+                                        throw err;
+                                    } else {
+                                        master.listEquals(res.body, [compsci, indseng, management]);
+                                    }
+
+                                    done();
+                                });
                         });
                 }
         );
@@ -336,7 +381,7 @@ describe('Program API Routes', function () {
                     request()
                         .get('/api/programs?start=2'
                                 + '&fields=' + queryFields
-                                + '&areas='+areas
+                                + '&areas=' + areas
                                 + '&level=' + level
                                 + '&faculty=' + faculty
                                 + '&order=desc'
@@ -355,15 +400,31 @@ describe('Program API Routes', function () {
                                     + '&start=2&limit=10&sort=name&order=desc>; rel="self"'
                         )
                         .end(function (err, res) {
+                            let tmp;
+
                             if (err) {
                                 throw err;
                             } else {
-                                let tmp = _.pick(management, fields);
+                                tmp = _.pick(management, fields);
                                 tmp.school = purdue;
                                 master.listEquals(res.body, [tmp]);
                             }
 
-                            done();
+                            // Check if the link it returned is correct
+                            let links = utils.getPaginationLinks(res.header.link);
+                            request()
+                                .get(links.self)
+                                .expect(200)
+                                .expect('Content-Type', /json/)
+                                .end(function (err, res) {
+                                    if (err) {
+                                        throw err;
+                                    } else {
+                                        master.listEquals(res.body, [tmp]);
+                                    }
+
+                                    done();
+                                });
                         });
                 }
         );

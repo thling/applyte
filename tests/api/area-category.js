@@ -12,6 +12,7 @@ let superagent   = require('supertest');
 let app          = require('../../app');
 let AreaCategory = require('../../models/area-category');
 let master       = require('../test-master');
+let utils        = require('../../lib/utils');
 
 require('co-mocha');
 
@@ -142,7 +143,21 @@ describe('AreaCategory API Routes', function () {
                         master.listEquals(res.body, categories);
                     }
 
-                    done();
+                    // Check if the link it returned is correct
+                    let links = utils.getPaginationLinks(res.header.link);
+                    request()
+                        .get(links.self)
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(res.body, categories);
+                            }
+
+                            done();
+                        });
                 });
         });
 
@@ -167,7 +182,34 @@ describe('AreaCategory API Routes', function () {
                         master.listEquals(res.body, [literature, network, security]);
                     }
 
-                    done();
+                    // Check prev
+                    let links = utils.getPaginationLinks(res.header.link);
+                    request()
+                        .get(links.prev)
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(res.body, [database, literature, network]);
+                            }
+
+                            // Check next
+                            request()
+                                .get(links.next)
+                                .expect(200)
+                                .expect('Content-Type', /json/)
+                                .end(function (err, res) {
+                                    if (err) {
+                                        throw err;
+                                    } else {
+                                        master.listEquals(res.body, [systems]);
+                                    }
+
+                                    done();
+                                });
+                        });
                 });
         });
 
@@ -208,10 +250,11 @@ describe('AreaCategory API Routes', function () {
                             + '&start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
+                    let temp = [];
+
                     if (err) {
                         throw err;
                     } else {
-                        let temp = [];
                         for (let tmp of categories) {
                             temp.push(_.pick(tmp, fields));
                         }
@@ -219,7 +262,21 @@ describe('AreaCategory API Routes', function () {
                         master.listEquals(res.body, temp);
                     }
 
-                    done();
+                    // Check if the link it returned is correct
+                    let links = utils.getPaginationLinks(res.header.link);
+                    request()
+                        .get(links.self)
+                        .expect(200)
+                        .expect('Content-Type', /json/)
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            } else {
+                                master.listEquals(res.body, temp);
+                            }
+
+                            done();
+                        });
                 });
         });
 

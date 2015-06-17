@@ -349,8 +349,6 @@
  * @apiParam    {String}    [desc]      Description of the object
  */
 
-
-
 // -----------
 // Histories
 // -----------

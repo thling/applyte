@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node --harmony app.js",
-    "test": "mocha --harmony -R nyan $(find tests -name '*.js')",
+    "test": "mocha --harmony -R nyan $(find tests -name '*.js') && gulp",
     "build": "node --harmony $(which gulp)"
   },
   "dependencies": {
@@ -17,7 +17,7 @@
     "koa-json": "*",
     "koa-logger": "*",
     "koa-mount": "*",
-    "koa-router": "*",
+    "koa-router": "^5.1.2",
     "koa-static": "*",
     "lodash": "*",
     "swig": "*",
@@ -28,6 +28,9 @@
     "co-mocha": "*",
     "gulp": "^3.9.0",
     "gulp-apidoc": "^0.1.4",
+    "gulp-jscs": "^1.6.0",
+    "gulp-jshint": "^1.11.0",
+    "jshint-stylish": "^2.0.0",
     "mocha": "*",
     "supertest": "*"
   }

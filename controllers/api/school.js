@@ -136,7 +136,7 @@ let generateHeaderLinks = function (origQuery, hasMore) {
     }
 
     let self = base + 'start=' + selfStart + '&' + paginationQuery;
-    links.push('<' + self +'>; rel="self"');
+    links.push('<' + self + '>; rel="self"');
 
     if (hasMore) {
         let next = base + 'start=' + nextStart + '&' + paginationQuery;
