@@ -70,7 +70,7 @@ describe('AreaCategory API Routes', function () {
                 });
         });
 
-        it('should return the same thing with /api/area-categories?=name', function (done) {
+        it('should return the same thing with /api/area-categories?name', function (done) {
             let name = encodeURI(template.name);
 
             request()
@@ -144,7 +144,7 @@ describe('AreaCategory API Routes', function () {
                     }
 
                     // Check if the link it returned is correct
-                    let links = utils.getPaginationLinks(res.header.link);
+                    let links = utils.parseLinkHeader(res.header.link);
                     request()
                         .get(links.self)
                         .expect(200)
@@ -183,7 +183,7 @@ describe('AreaCategory API Routes', function () {
                     }
 
                     // Check prev
-                    let links = utils.getPaginationLinks(res.header.link);
+                    let links = utils.parseLinkHeader(res.header.link);
                     request()
                         .get(links.prev)
                         .expect(200)
@@ -263,7 +263,7 @@ describe('AreaCategory API Routes', function () {
                     }
 
                     // Check if the link it returned is correct
-                    let links = utils.getPaginationLinks(res.header.link);
+                    let links = utils.parseLinkHeader(res.header.link);
                     request()
                         .get(links.self)
                         .expect(200)
@@ -322,19 +322,85 @@ describe('AreaCategory API Routes', function () {
                 });
         });
 
-        it('should not be able to delete an area category without privilege', function (done) {
-            request()
-                .delete('/api/area-categories')
-                .send({ id: security.id })
-                .expect(403, done);
-        });
-
         it('should be able to delete an area category with proper prvilege', function (done) {
             request()
                 .delete('/api/area-categories')
                 .set('access_token', 'anythingfortest')
                 .send({ id: security.id, apiKey: 'test' })
                 .expect(204, done);
+        });
+
+        describe('Error tests', function () {
+            it('should produce error because of bad start criteria', function (done) {
+                request()
+                    .get('/api/area-categories?start=-1')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid start: -1');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of bad limit criteria', function (done) {
+                request()
+                    .get('/api/area-categories?limit=-1')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid limit: -1');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of bad sort criteria', function (done) {
+                request()
+                    .get('/api/area-categories?sort=dne')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid sort: dne');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of bad order criteria', function (done) {
+                request()
+                    .get('/api/area-categories?order=dne')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid order: dne');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should not be able to delete an area category without privilege', function (done) {
+                request()
+                    .delete('/api/area-categories')
+                    .send({ id: security.id })
+                    .expect(403, done);
+            });
         });
     });
 });

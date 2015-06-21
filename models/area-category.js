@@ -11,6 +11,7 @@ const NAME_INDEX = 'name';
 const SCHEMA = schemas[TABLE];
 
 let AreaCategory = thinky.createModel(TABLE, SCHEMA, {
+    // No extra fields allowed
     enforce_extra: 'strict'
 });
 

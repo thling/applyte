@@ -80,7 +80,7 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/programs?name=Computer%20Science'
+                    '<http://applyte.io/api/programs?name=Computer%20Science&school=false'
                             + '&start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
@@ -156,7 +156,8 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/programs?start=1&limit=10&sort=name&order=asc>; rel="self"'
+                    '<http://applyte.io/api/programs?school=false&'
+                            + 'start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
                     if (err) {
@@ -166,7 +167,7 @@ describe('Program API Routes', function () {
                     }
 
                     // Check if the link it returned is correct
-                    let links = utils.getPaginationLinks(res.header.link);
+                    let links = utils.parseLinkHeader(res.header.link);
                     request()
                         .get(links.self)
                         .expect(200)
@@ -280,7 +281,7 @@ describe('Program API Routes', function () {
                             'Link',
                             '<http://applyte.io/api/programs?'
                                     + 'areas=Databases%7C%7CInformation%20Security%20and%20Assurance&'
-                                    + 'start=1&limit=10&sort=name&order=asc>; '
+                                    + 'school=false&start=1&limit=10&sort=name&order=asc>; '
                                     + 'rel="self"'
                         )
                         .end(function (err, res) {
@@ -292,7 +293,7 @@ describe('Program API Routes', function () {
                             }
 
                             // Check if the link it returned is correct
-                            let links = utils.getPaginationLinks(res.header.link);
+                            let links = utils.parseLinkHeader(res.header.link);
                             request()
                                 .get(links.self)
                                 .expect(200)
@@ -318,8 +319,10 @@ describe('Program API Routes', function () {
                         .expect('Content-Type', /json/)
                         .expect(
                             'Link',
-                            '<http://applyte.io/api/programs?start=1&limit=3&sort=name&order=asc>; rel="prev", '
-                                    + '<http://applyte.io/api/programs?start=3&limit=3&sort=name&order=asc>; rel="self"'
+                            '<http://applyte.io/api/programs?school=false&'
+                                    + 'start=1&limit=3&sort=name&order=asc>; rel="prev", '
+                                    + '<http://applyte.io/api/programs?school=false&'
+                                    + 'start=3&limit=3&sort=name&order=asc>; rel="self"'
                         )
                         .end(function (err, res) {
                             if (err) {
@@ -329,7 +332,7 @@ describe('Program API Routes', function () {
                             }
 
                             // Check if the link it returned is correct
-                            let links = utils.getPaginationLinks(res.header.link);
+                            let links = utils.parseLinkHeader(res.header.link);
                             request()
                                 .get(links.prev)
                                 .expect(200)
@@ -354,8 +357,10 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/programs?start=1&limit=3&sort=name&order=desc>; rel="self", '
-                            + '<http://applyte.io/api/programs?start=4&limit=3&sort=name&order=desc>; rel="next"'
+                    '<http://applyte.io/api/programs?school=false&'
+                            + 'start=1&limit=3&sort=name&order=desc>; rel="self", '
+                            + '<http://applyte.io/api/programs?school=false'
+                            + '&start=4&limit=3&sort=name&order=desc>; rel="next"'
                 )
                 .end(function (err, res) {
                     if (err) {
@@ -391,12 +396,12 @@ describe('Program API Routes', function () {
                         .expect(
                             'Link',
                             '<http://applyte.io/api/programs?fields=name%7C%7CschoolId'
-                                    + '&areas=Databases&school=true&level=Undergraduate'
-                                    + '&faculty=School%20of%20Engineering'
+                                    + '&areas=Databases&level=Undergraduate'
+                                    + '&faculty=School%20of%20Engineering&school=true'
                                     + '&start=1&limit=10&sort=name&order=desc>; rel="prev", '
                                     + '<http://applyte.io/api/programs?fields=name%7C%7CschoolId'
-                                    + '&areas=Databases&school=true&level=Undergraduate'
-                                    + '&faculty=School%20of%20Engineering'
+                                    + '&areas=Databases&level=Undergraduate'
+                                    + '&faculty=School%20of%20Engineering&school=true'
                                     + '&start=2&limit=10&sort=name&order=desc>; rel="self"'
                         )
                         .end(function (err, res) {
@@ -411,7 +416,7 @@ describe('Program API Routes', function () {
                             }
 
                             // Check if the link it returned is correct
-                            let links = utils.getPaginationLinks(res.header.link);
+                            let links = utils.parseLinkHeader(res.header.link);
                             request()
                                 .get(links.self)
                                 .expect(200)
@@ -475,19 +480,85 @@ describe('Program API Routes', function () {
                 });
         });
 
-        it('should not be able to delete a program without privilege', function (done) {
-            request()
-                .delete('/api/programs')
-                .send({ id: compsci.id })
-                .expect(403, done);
-        });
-
         it('should be able to delete a program with proper prvilege', function (done) {
             request()
                 .delete('/api/programs')
                 .set('access_token', 'anythingfortest')
                 .send({ id: compsci.id, apiKey: 'test' })
                 .expect(204, done);
+        });
+
+        describe('Error tests', function () {
+            it('should produce error because of bad start criteria', function (done) {
+                request()
+                    .get('/api/programs?start=-1')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid start: -1');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of bad limit criteria', function (done) {
+                request()
+                    .get('/api/programs?limit=-1')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid limit: -1');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of bad sort criteria', function (done) {
+                request()
+                    .get('/api/programs?sort=dne')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid sort: dne');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of bad order criteria', function (done) {
+                request()
+                    .get('/api/programs?order=dne')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid order: dne');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should not be able to delete a program without privilege', function (done) {
+                request()
+                    .delete('/api/programs')
+                    .send({ id: compsci.id })
+                    .expect(403, done);
+            });
         });
     });
 });

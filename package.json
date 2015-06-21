@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node --harmony app.js",
-    "test": "mocha --harmony -R nyan $(find tests -name '*.js') && gulp",
+    "test": "mocha --harmony -R nyan $(find tests -name '*.js')",
     "build": "node --harmony $(which gulp)"
   },
   "dependencies": {

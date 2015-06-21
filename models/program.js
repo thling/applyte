@@ -14,6 +14,7 @@ const SCHOOL_ID_INDEX = 'schoolId';
 const SCHEMA = schemas[TABLE];
 
 let Program = thinky.createModel(TABLE, SCHEMA, {
+    // No extra fields allowed
     enforce_extra: 'strict'
 });
 

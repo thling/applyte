@@ -1,6 +1,6 @@
 'use strict';
 
-let type = require('thinky')().type;
+let type = require('./thinky')().type;
 
 /**
  * This file is used as a barebone for each table. The reason to
@@ -27,51 +27,51 @@ let address = {
     country: type.string()
 };
 
-module.exports = {
-    // Schools schema
-    school: {
-        id: type.string(),      // Primary key
-        name: type.string().required(),
-        campus: type.string().default(null),
-        desc: type.string(),
-        email: type.string().email(),
-        phone: type.string(),
-        logo: type.string(),
-        address: address,
-        links: [
-            {
-                name: type.string(),
-                url: type.string()
-            }
-        ]
-    },
-    // Programs schema
-    program: {
-        id: type.string(),
-        name: type.string().required(),
-        degree: type.string().required(),
-        level: type.string().required(),
-        desc: type.string().required(),
-        schoolId: type.string(),
-        department: type.string().required(),
-        faculty: type.string().required(),  // Also known as 'College of *' in US
-        areas: [
-            {
-                name: type.string(),
-                categories: [type.string()]
-            }
-        ],
-        contact: {
-            fax: type.string(),
-            phone: type.string(),
-            email: type.string().email(),
-            address: address
+// Schools schema
+module.exports.school = {
+    id: type.string(),      // Primary key
+    name: type.string().required(),
+    campus: type.string().default(null),
+    desc: type.string(),
+    email: type.string().email(),
+    phone: type.string(),
+    logo: type.string(),
+    address: address,
+    links: [
+        {
+            name: type.string(),
+            url: type.string()
         }
-    },
-    // AreaCategory schema
-    area_category: {
-        id: type.string(),
-        name: type.string().required(),     // Primary key
-        desc: type.string()
+    ]
+};
+
+// Programs schema
+module.exports.program = {
+    id: type.string(),
+    name: type.string().required(),
+    degree: type.string().required(),
+    level: type.string().required(),
+    desc: type.string().required(),
+    schoolId: type.string(),
+    department: type.string().required(),
+    faculty: type.string().required(),  // Also known as 'College of *' in US
+    areas: [
+        {
+            name: type.string(),
+            categories: [type.string()]
+        }
+    ],
+    contact: {
+        fax: type.string(),
+        phone: type.string(),
+        email: type.string().email(),
+        address: address
     }
+};
+
+// AreaCategory schema
+module.exports.area_category = {
+    id: type.string(),
+    name: type.string().required(),
+    desc: type.string()
 };

@@ -1,135 +1,11 @@
 'use strict';
 
 let _       = require('lodash');
+let errors  = require(basedir + 'lib/errors');
 let Program = require(basedir + 'models/program');
+let utils   = require(basedir + 'lib/utils');
 
-/**
- * Format and check the pagination specifications in a query.
- *
- * @param   ctx     The request object
- */
-let paginationCheck = function (ctx) {
-    let pagination = {};
-
-    if (ctx.query.start && ctx.query.start < 1) {
-        ctx.status = 422;
-        ctx.body = { message: 'Invalid start: ' + ctx.query.start };
-    } else {
-        pagination.start = (parseInt(ctx.query.start) || 1) - 1;
-    }
-
-    if (ctx.query.limit && (ctx.query.limit < 1 || ctx.query.limit > 100)) {
-        ctx.status = 422;
-        ctx.body = { message: 'Invalid limit: ' + ctx.query.limit };
-    } else {
-        pagination.limit = parseInt(ctx.query.limit) || 10;
-    }
-
-    if (ctx.query.sort && !(_.includes(['name'], ctx.query.sort))) {
-        ctx.status = 422;
-        ctx.body = { message: 'Invalid sort: ' + ctx.query.sort };
-    } else {
-        pagination.sort = ctx.query.sort || 'name';
-    }
-
-    if (ctx.query.order && !(_.includes(['asc', 'desc'], ctx.query.order))) {
-        ctx.status = 422;
-        ctx.body = { message: 'Invalid order: ' + ctx.query.order };
-    } else {
-        pagination.order = ctx.query.order || 'asc';
-    }
-
-    ctx.query.pagination = pagination;
-};
-
-/**
- * Format and check the areas to search
- *
- * @param   ctx     The request object
- */
-let areasCheck = function (ctx) {
-    if (ctx.query.areas) {
-        ctx.query.areas = ctx.query.areas.split('||');
-    }
-};
-
-/**
- * Format and check the fields to be returned in a query.
- *
- * @param   ctx     The request object
- */
-let fieldsCheck = function (ctx) {
-    if (ctx.query.fields) {
-        ctx.query.fields = ctx.query.fields.split('||');
-    }
-
-    ctx.query.school = (ctx.query.school && ctx.query.school === 'true');
-};
-
-/**
- * Generate the Link header for pagination.
- *
- * @param   origQuery   The original query object
- * @param   hasMore     Returned by the model, indicates whether there are
- *                      more data after self or not
- * @return  A string with the pagination parameters: self (always),
- *          prev and next (if applicable)
- */
-let generateHeaderLinks = function (origQuery, hasMore) {
-    let query = _.omit(origQuery, _.keys(origQuery.pagination));
-    query = _.omit(query, ['pagination', 'fields', 'areas', 'school']);
-
-    let base = 'http://applyte.io/api/programs?';
-
-    // Recompose fields
-    if (origQuery.fields) {
-        base += 'fields=' + encodeURI(origQuery.fields.join('||')) + '&';
-    }
-
-    // Recompose areas
-    if (origQuery.areas) {
-        base += 'areas=' + encodeURI(origQuery.areas.join('||')) + '&';
-    }
-
-    // If option to include school was set, set it here
-    if (origQuery.school) {
-        base += 'school=true&';
-    }
-
-    // Parse each additional filter
-    for (let filter in query) {
-        base += filter + '=' + encodeURI(query[filter]) + '&';
-    }
-
-    // Construct pagination part of query string
-    let paginationQuery =
-            'limit=' + origQuery.pagination.limit + '&'
-            + 'sort=' + origQuery.pagination.sort + '&'
-            + 'order=' + origQuery.pagination.order;
-
-    // Calculate pagination
-    let selfStart = origQuery.pagination.start + 1;
-    let nextStart = origQuery.pagination.start + origQuery.pagination.limit + 1;
-    let prevStart = origQuery.pagination.start - origQuery.pagination.limit + 1;
-    prevStart = (prevStart <= 0)? 1 : prevStart;
-
-    // Determine which links to include in the Link header
-    let links = [];
-    if (selfStart > 1) {
-        let prev = base + 'start=' + prevStart + '&' + paginationQuery;
-        links.push('<' + prev + '>; rel="prev"');
-    }
-
-    let self = base + 'start=' + selfStart + '&' + paginationQuery;
-    links.push('<' + self + '>; rel="self"');
-
-    if (hasMore) {
-        let next = base + 'start=' + nextStart + '&' + paginationQuery;
-        links.push('<' + next + '>; rel="next"');
-    }
-
-    return links.join(', ');
-};
+let BadRequestError = errors.BadRequestError;
 
 /**
  * @api {get}   /api/programs    Query with complex conditions
@@ -194,23 +70,32 @@ let generateHeaderLinks = function (origQuery, hasMore) {
  * @apiUse  errors
  */
 module.exports.query = function *() {
-    // Parse pagination parameters
-    paginationCheck(this);
-    areasCheck(this);
-    fieldsCheck(this);
+    try {
+        let query = this.query;
 
-    if (!this.body) {
-        try {
-            let programs = yield Program.query(this.query);
-            let headerLink = generateHeaderLinks(this.query, programs.hasMore);
+        utils.formatQueryPagination(query);
+        utils.formatQueryLists(query, ['fields', 'areas']);
+        query.school = (query.school === 'true');
+        query = _.omit(query, ['start', 'limit', 'sort', 'order']);
 
-            this.status = 200;
-            this.body = programs.results;
-            this.set('Link', headerLink);
-        } catch (error) {
-            console.log(error);
+        let programs = yield Program.query(query);
+        let headerLink = utils.composePaginationLinkHeader(
+                query,
+                'programs',
+                programs.hasMore
+        );
+
+        this.status = 200;
+        this.body = programs.results;
+        this.set('Link', headerLink);
+    } catch (error) {
+        if (error instanceof BadRequestError) {
+            error.generateContext(this);
+        } else {
+            console.error(error);
             this.status = 500;
-            this.body = { message: this.message };
+            this.body = { message: 'Internal error' };
+
         }
     }
 };

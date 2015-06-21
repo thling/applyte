@@ -7,11 +7,13 @@ describe('Library tests', function () {
     describe('utils.js tests', function () {
         describe('parseURI tests', function () {
             it('should return a proper object with uri parts', function () {
-                let uri = 'http://test.com:1234/this/is/random/path';
+                let uri = 'http://sam:password@test.com:1234/this/is/random/path';
                 let parsed = utils.parseURI(uri);
                 let expected = {
                     uri: uri,
                     protocol: 'http',
+                    username: 'sam',
+                    password: 'password',
                     host: 'test.com:1234',
                     hostname: 'test.com',
                     port: 1234,
@@ -27,6 +29,8 @@ describe('Library tests', function () {
                 let expected = {
                     uri: uri,
                     protocol: undefined,
+                    username: undefined,
+                    password: undefined,
                     host: 'test.com:1234',
                     hostname: 'test.com',
                     port: 1234,
@@ -42,6 +46,8 @@ describe('Library tests', function () {
                 let expected = {
                     uri: uri,
                     protocol: undefined,
+                    username: undefined,
+                    password: undefined,
                     host: undefined,
                     hostname: undefined,
                     port: undefined,
@@ -57,6 +63,8 @@ describe('Library tests', function () {
                 let expected = {
                     uri: uri,
                     protocol: undefined,
+                    username: undefined,
+                    password: undefined,
                     host: 'localhost',
                     hostname: 'localhost',
                     port: undefined,
@@ -72,6 +80,8 @@ describe('Library tests', function () {
                 let expected = {
                     uri: uri,
                     protocol: undefined,
+                    username: undefined,
+                    password: undefined,
                     host: 'test.com',
                     hostname: 'test.com',
                     port: undefined,
@@ -87,6 +97,8 @@ describe('Library tests', function () {
                 let expected = {
                     uri: uri,
                     protocol: undefined,
+                    username: undefined,
+                    password: undefined,
                     host: 'test.com:3000',
                     hostname: 'test.com',
                     port: 3000,
@@ -102,6 +114,8 @@ describe('Library tests', function () {
                 let expected = {
                     uri: uri,
                     protocol: undefined,
+                    username: undefined,
+                    password: undefined,
                     host: 'test.com',
                     hostname:  'test.com',
                     port: undefined,
@@ -117,6 +131,8 @@ describe('Library tests', function () {
                 let expected = {
                     uri: '',
                     protocol: undefined,
+                    username: undefined,
+                    password: undefined,
                     host: undefined,
                     hostname: undefined,
                     port: undefined,
@@ -210,7 +226,7 @@ describe('Library tests', function () {
             });
         });
 
-        describe('getPaginationLinks tests', function () {
+        describe('parseLinkHeader tests', function () {
             it('should return all self, next, prev when all presented', function () {
                 let base = 'http://test.com/api';
                 let self = '?start=100&limit=20';
@@ -223,7 +239,7 @@ describe('Library tests', function () {
 
                 let full = prevLink + ', ' + selfLink + ', ' + nextLink;
 
-                let parsed = utils.getPaginationLinks(full);
+                let parsed = utils.parseLinkHeader(full);
                 let expected = {
                     self: '/api' + self,
                     prev: '/api' + prev,
@@ -243,7 +259,7 @@ describe('Library tests', function () {
 
                 let full = prevLink + ', ' + selfLink;
 
-                let parsed = utils.getPaginationLinks(full);
+                let parsed = utils.parseLinkHeader(full);
                 let expected = {
                     self: '/api' + self,
                     prev: '/api' + prev
@@ -252,7 +268,7 @@ describe('Library tests', function () {
                 assert.deepEqual(parsed, expected);
             });
 
-            it('should return only self, prev with extra info', function () {
+            it('should return all of self, prev and extra info', function () {
                 let base = 'http://test.com/api';
                 let self = '?start=100&limit=20';
                 let prev = '?start=80&limit=20';
@@ -264,16 +280,17 @@ describe('Library tests', function () {
 
                 let full = prevLink + ', ' + selfLink + ', ' + extraLink;
 
-                let parsed = utils.getPaginationLinks(full);
+                let parsed = utils.parseLinkHeader(full);
                 let expected = {
                     self: '/api' + self,
-                    prev: '/api' + prev
+                    prev: '/api' + prev,
+                    test: '/api' + extra
                 };
 
                 assert.deepEqual(parsed, expected);
             });
 
-            it('should return nothing if link does not contain self, prev, or next', function () {
+            it('should return all parsed information', function () {
                 let base = 'http://test.com/api';
                 let other1 = '?start=100&limit=20';
                 let other2 = '?start=80&limit=20';
@@ -281,26 +298,49 @@ describe('Library tests', function () {
                 let other1Link = '<' + base + other1 + '>; rel="self"';
                 let other2Link = '<' + base + other2 + '>; rel="prev"';
 
-                let full = other1Link + other2Link;
+                let full = other1Link + ', ' + other2Link;
 
-                let parsed = utils.getPaginationLinks(full);
-                let expected = {};
+                let parsed = utils.parseLinkHeader(full);
+                let expected = {
+                    self: '/api' + other1,
+                    prev: '/api' + other2
+                };
 
                 assert.deepEqual(parsed, expected);
             });
 
             it('should return nothing if Link is empty', function () {
-                let parsed = utils.getPaginationLinks('');
+                let parsed = utils.parseLinkHeader('');
                 let expected = {};
 
                 assert.deepEqual(parsed, expected);
             });
 
             it('should return nothing if param is undefined', function () {
-                let parsed = utils.getPaginationLinks();
+                let parsed = utils.parseLinkHeader();
                 let expected = {};
 
                 assert.deepEqual(parsed, expected);
+            });
+        });
+
+        describe('composeLinkHeader tests', function () {
+            it('should compose properly', function () {
+                let links = {
+                    'next': 'testnext/barp',
+                    'prev': 'testprev/foop',
+                    'self': 'test/foo/bar'
+                };
+
+                let header = utils.composeLinkHeader(links);
+                assert.deepEqual(utils.parseLinkHeader(header), links);
+            });
+
+            it('should return nothing on empty param', function () {
+                let links = {};
+                let header = utils.composeLinkHeader(links);
+
+                assert.strictEqual(header, '');
             });
         });
     });

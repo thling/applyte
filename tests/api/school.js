@@ -266,7 +266,7 @@ describe('School API Routes', function () {
                     }
 
                     // Check if the link it returned is correct
-                    let links = utils.getPaginationLinks(res.header.link);
+                    let links = utils.parseLinkHeader(res.header.link);
                     request()
                         .get(links.next)
                         .expect(200)
@@ -302,7 +302,7 @@ describe('School API Routes', function () {
                     }
 
                     // Check if the link it returned is correct
-                    let links = utils.getPaginationLinks(res.header.link);
+                    let links = utils.parseLinkHeader(res.header.link);
                     request()
                         .get(links.next)
                         .expect(200)
@@ -352,8 +352,9 @@ describe('School API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/schools?country=United%20States%20of%20America'
-                            + '&state=Massachusetts&start=1&limit=10&sort=name&order=asc>; '
+                    '<http://applyte.io/api/schools?state=Massachusetts'
+                            + '&country=United%20States%20of%20America'
+                            + '&start=1&limit=10&sort=name&order=asc>; '
                             + 'rel="self"'
                 )
                 .end(function (err, res) {
@@ -364,7 +365,7 @@ describe('School API Routes', function () {
                     }
 
                     // Check if the link it returned is correct
-                    let links = utils.getPaginationLinks(res.header.link);
+                    let links = utils.parseLinkHeader(res.header.link);
                     request()
                         .get(links.self)
                         .expect(200)
@@ -416,8 +417,9 @@ describe('School API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/schools?country=United%20States%20of%20America'
-                            + '&state=Massachusetts&city=Boston&start=1&limit=10&sort=name&order=asc>; '
+                    '<http://applyte.io/api/schools?city=Boston&state=Massachusetts'
+                            + '&country=United%20States%20of%20America'
+                            + '&start=1&limit=10&sort=name&order=asc>; '
                             + 'rel="self"'
                 )
                 .end(function (err, res) {
@@ -507,13 +509,13 @@ describe('School API Routes', function () {
                         .expect(
                             'Link',
                             '<http://applyte.io/api/schools?fields=id%7C%7Cname%7C%7Ccampus'
+                                    + '&city=Boston&state=Massachusetts'
                                     + '&country=United%20States%20of%20America'
-                                    + '&state=Massachusetts&city=Boston'
                                     + '&start=1&limit=1&sort=name&order=desc>; '
                                     + 'rel="prev", '
                                     + '<http://applyte.io/api/schools?fields=id%7C%7Cname%7C%7Ccampus'
+                                    + '&city=Boston&state=Massachusetts'
                                     + '&country=United%20States%20of%20America'
-                                    + '&state=Massachusetts&city=Boston'
                                     + '&start=2&limit=1&sort=name&order=desc>; '
                                     + 'rel="self"'
                         )
@@ -526,7 +528,7 @@ describe('School API Routes', function () {
                             }
 
                             // Check if the link it returned is correct
-                            let links = utils.getPaginationLinks(res.header.link);
+                            let links = utils.parseLinkHeader(res.header.link);
                             request()
                                 .get(links.prev)
                                 .expect(200)
@@ -586,19 +588,104 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should not be able to delete a school without privilege', function (done) {
-            request()
-                .delete('/api/schools')
-                .send({ id: purdueWL.id })
-                .expect(403, done);
-        });
-
         it('should be able to delete a school with proper prvilege', function (done) {
             request()
                 .delete('/api/schools')
                 .set('access_token', 'anythingfortest')
                 .send({ id: purdueWL.id, apiKey: 'test' })
                 .expect(204, done);
+        });
+
+        describe('Error tests', function () {
+            it('should produce error because of bad start criteria', function (done) {
+                request()
+                    .get('/api/schools?start=-1')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid start: -1');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of bad limit criteria', function (done) {
+                request()
+                    .get('/api/schools?limit=-1')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid limit: -1');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of bad sort criteria', function (done) {
+                request()
+                    .get('/api/schools?sort=dne')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid sort: dne');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of bad order criteria', function (done) {
+                request()
+                    .get('/api/schools?order=dne')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(res.body.message, 'Invalid order: dne');
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should produce error because of campus without name', function (done) {
+                request()
+                    .get('/api/schools?campus=WL')
+                    .expect(422)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.strictEqual(
+                                    res.body.message,
+                                    '\'name\' is required when specifying campus'
+                            );
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should not be able to delete a school without privilege', function (done) {
+                request()
+                    .delete('/api/schools')
+                    .send({ id: purdueWL.id })
+                    .expect(403, done);
+            });
         });
     });
 });

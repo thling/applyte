@@ -1,149 +1,85 @@
 'use strict';
 
 let _       = require('lodash');
+let errors  = require(basedir + 'lib/errors');
 let Program = require(basedir + 'models/program');
 let School  = require(basedir + 'models/school');
+let utils   = require(basedir + 'lib/utils');
 
-/**
- * Format and check the pagination specifications in a query.
- *
- * @param   ctx     The request object
- */
-let paginationCheck = function (ctx) {
-    let pagination = {};
-
-    if (ctx.query.start && ctx.query.start < 1) {
-        ctx.status = 422;
-        ctx.body = { message: 'Invalid start: ' + ctx.query.start };
-    } else {
-        pagination.start = (parseInt(ctx.query.start) || 1) - 1;
-    }
-
-    if (ctx.query.limit && (ctx.query.limit < 1 || ctx.query.limit > 100)) {
-        ctx.status = 422;
-        ctx.body = { message: 'Invalid limit: ' + ctx.query.limit };
-    } else {
-        pagination.limit = parseInt(ctx.query.limit) || 10;
-    }
-
-    if (ctx.query.sort && !(_.includes(['name'], ctx.query.sort))) {
-        ctx.status = 422;
-        ctx.body = { message: 'Invalid sort: ' + ctx.query.sort };
-    } else {
-        pagination.sort = ctx.query.sort || 'name';
-    }
-
-    if (ctx.query.order && !(_.includes(['asc', 'desc'], ctx.query.order))) {
-        ctx.status = 422;
-        ctx.body = { message: 'Invalid order: ' + ctx.query.order };
-    } else {
-        pagination.order = ctx.query.order || 'asc';
-    }
-
-    ctx.query.pagination = pagination;
-};
+let BadRequestError = errors.BadRequestError;
 
 /**
  * Format and check the name and campus filters in a query.
  *
- * @param   ctx     The request object
+ * @param   query   The query object
  */
-let nameCampusCheck = function (ctx) {
-    if (ctx.query.campus && !ctx.query.name) {
-        ctx.status = 422;
-        ctx.body = { message: '\'name\' is required when specifying campus' };
+let assertNameCampus = function (query) {
+    if (query.campus && !query.name) {
+        throw new BadRequestError(422, '\'name\' is required when specifying campus');
     }
 };
 
 /**
  * Format and check the location filters in a query.
  *
- * @param   ctx     The request object
+ * @param   query   The query object
  */
-let locationCheck = function (ctx) {
+let assertLocation = function (query) {
     let address = {};
 
-    if (ctx.query.city) {
-        address.city = ctx.query.city;
+    if (query.city) {
+        address.city = query.city;
     }
 
-    if (ctx.query.state) {
-        address.state = ctx.query.state;
+    if (query.state) {
+        address.state = query.state;
     }
 
-    if (ctx.query.country) {
-        address.country = ctx.query.country;
+    if (query.country) {
+        address.country = query.country;
     }
 
     if (!_.isEmpty(address)) {
-        ctx.query.address = address;
+        query.address = address;
     }
 };
 
 /**
- * Format and check the fields to be returned in a query.
+ * Flattens the address object within a query, if existed
  *
- * @param   ctx     The request object
- */
-let fieldsCheck = function (ctx) {
-    if (ctx.query.fields) {
-        ctx.query.fields = ctx.query.fields.split('||');
-    }
-};
-
-/**
- * Generate the Link header for pagination.
+ * @param   query   The query to flatten its object of
+ * @return  A new query object with all its address subfields
+ *          pulled out of the address object, e.g.
+ *          {
+ *              address: {
+ *                  city: 'West Lafayette'
+ *              },
+ *              ...
+ *          }
  *
- * @param   origQuery   The original query object
- * @param   hasMore     Returned by the model, indicates whether there are
- *                      more data after self or not
- * @return  A string with the pagination parameters: self (always),
- *          prev and next (if applicable)
+ *          // will become:
+ *
+ *          {
+ *              city: 'West Lafayette',
+ *              ...
+ *          }
  */
-let generateHeaderLinks = function (origQuery, hasMore) {
-    let query = _.omit(origQuery, _.keys(origQuery.pagination));
-    query = _.omit(query, ['pagination', 'fields', 'address']);
+let flattenAddress = function (query) {
+    if (query.address) {
+        if (query.address.city) {
+            query.city = query.address.city;
+        }
 
-    let base = 'http://applyte.io/api/schools?';
+        if (query.address.state) {
+            query.state = query.address.state;
+        }
 
-    // Recompose fields
-    if (origQuery.fields) {
-        base += 'fields=' + encodeURI(origQuery.fields.join('||')) + '&';
+        if (query.address.country) {
+            query.country = query.address.country;
+        }
     }
 
-    // Parse each additional filter
-    for (let filter in query) {
-        base += filter + '=' + encodeURI(query[filter]) + '&';
-    }
-
-    // Construct pagination part of query string
-    let paginationQuery =
-            'limit=' + origQuery.pagination.limit + '&'
-            + 'sort=' + origQuery.pagination.sort + '&'
-            + 'order=' + origQuery.pagination.order;
-
-    // Calculate pagination
-    let selfStart = origQuery.pagination.start + 1;
-    let nextStart = origQuery.pagination.start + origQuery.pagination.limit + 1;
-    let prevStart = origQuery.pagination.start - origQuery.pagination.limit + 1;
-    prevStart = (prevStart <= 0)? 1 : prevStart;
-
-    // Determine which links to include in the Link header
-    let links = [];
-    if (selfStart > 1) {
-        let prev = base + 'start=' + prevStart + '&' + paginationQuery;
-        links.push('<' + prev + '>; rel="prev"');
-    }
-
-    let self = base + 'start=' + selfStart + '&' + paginationQuery;
-    links.push('<' + self + '>; rel="self"');
-
-    if (hasMore) {
-        let next = base + 'start=' + nextStart + '&' + paginationQuery;
-        links.push('<' + next + '>; rel="next"');
-    }
-
-    return links.join(', ');
+    return _.omit(query, 'address');
 };
 
 /**
@@ -176,7 +112,7 @@ let generateHeaderLinks = function (origQuery, hasMore) {
  *
  * @apiParam    {Number}        [start=1]   The starting index
  * @apiParam    {Number{1-100}} [limit=10]  Number of items per page
- * @apiParam    {String=name} [sort=name]   The sorting attribute
+ * @apiParam    {String=name}   [sort=name] The sorting attribute
  * @apiParam    {String=asc,desc}   [order=asc]
  *                                          The order to sort
  *
@@ -202,27 +138,42 @@ let generateHeaderLinks = function (origQuery, hasMore) {
  * @apiUse  errors
  */
 module.exports.query = function *() {
-    // Parse pagination parameters
-    paginationCheck(this);
-    nameCampusCheck(this);
-    locationCheck(this);
-    fieldsCheck(this);
+    try {
+        let query = this.query;
+        utils.formatQueryPagination(query);
+        utils.formatQueryLists(query, 'fields');
 
-    if (!this.body) {
-        try {
-            let schools = yield School.query(this.query);
-            let headerLink = generateHeaderLinks(this.query, schools.hasMore);
+        // Check and format the query string local to school
+        assertNameCampus(query);
+        assertLocation(query);
 
-            this.status = 200;
-            this.body = schools.results;
-            this.set('Link', headerLink);
-        } catch (error) {
-            console.log(error);
+        // Remove unnecessary fields
+        query = _.omit(
+                query,
+                ['start', 'limit', 'sort', 'order', 'city', 'state', 'country']
+        );
+
+        let schools = yield School.query(query);
+        let headerLink = utils.composePaginationLinkHeader(
+                flattenAddress(query),  // Flatten the address object
+                'schools',
+                schools.hasMore
+        );
+
+        this.status = 200;
+        this.body = schools.results;
+        this.set('Link', headerLink);
+    } catch (error) {
+        if (error instanceof BadRequestError) {
+            error.generateContext(this);
+        } else {
+            console.error(error);
             this.status = 500;
-            this.body = { message: this.message };
+            this.body = { message: 'Internal error' };
+
         }
     }
- };
+};
 
 /**
  * @api {get}   /api/schools/:id  Get school by ID
