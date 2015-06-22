@@ -1,31 +1,42 @@
+'use strict';
+
 /**
  * Per envrionment configuration.
  *
  * Anything not specified here will inherit from config.defaults.js.
  */
 module.exports = {
-		// Make sure your local development machine has
-		// environment variable "NODE_ENV" set to "development"
-        "development": {
-            "mode": "development"
-        },
+	// Make sure your local development machine has
+	// environment variable "NODE_ENV" set to "development"
+    development: {
+        mode: 'development'
+    },
 
-        // These configurations will be used on staging branch/server
-        "staging": {
-            "mode": "staging"
-        },
+    // These configurations will be used on staging branch/server
+    staging: {
+        mode: 'staging'
+    },
 
-        // These configurations will be used on production server
-        "production": {
-            "mode": "production",
-            "db": process.env.MONGOLAB_URI,		// Production DB environment variable
-            "port": process.env.PORT 			// Production port environment variable
-        },
+    // Test environment
+    test: {
+        mode: 'test'
+    },
 
-        "safemode": {
-            // Fallback mode if nothing is set
-            // DO NOT put any credentials here
-            // DO NOT put any reference to production server here
-            "mode": "safemode"
-        }
+    // These configurations will be used on production server
+    production: {
+        mode: 'production',
+        rethink: {
+            host: process.env.RETHINKDB_HOST,
+            port: process.env.RETHINKDB_PORT,
+            db: process.env.RETHINKDB_DBNAME
+        },
+        port: process.env.PORT
+    },
+
+    safemode: {
+        // Fallback mode if nothing is set
+        // DO NOT put any credentials here
+        // DO NOT put any reference to production server here
+        mode: 'safemode'
+    }
 };

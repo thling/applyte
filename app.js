@@ -1,39 +1,53 @@
 'use strict';
-// var messages = require('./controllers/messages');
-var compress = require('koa-compress');
-var logger = require('koa-logger');
-var serve = require('koa-static');
-var json = require('koa-json');
-var koa = require('koa');
-var path = require('path');
-var app = module.exports = koa();
-var config = require('./config/configure.js');
 
-// Requires from the root (the file which 'npm start' script calls)
-global.rootreq = function(reqPath) {
-    return require(path.join(__dirname, reqPath));
-}
+let koa        = require('koa');
+let bodyParser = require('koa-bodyparser');
+let compress   = require('koa-compress');
+let helmet     = require('koa-helmet');
+let json       = require('koa-json');
+let logger     = require('koa-logger');
+let serve      = require('koa-static');
+let path       = require('path');
+let config     = require('./config');
+let router     = require('./routes');
 
-// Logger
-app.use(logger());
+// Initialize new Koa application
+let app = module.exports = koa();
 
 // JSON prettifier
-if (config.jsonPrettify.prettify == true) {
-    app.use(json( {pretty: true, spaces: config.jsonPrettify.indentWidth} ));
+if (config.jsonPrettify.prettify === true) {
+    app.use(json(
+        {
+            pretty: true,
+            spaces: config.jsonPrettify.indentWidth
+        }
+    ));
 }
 
+app.use(helmet.defaults());
+
+// Logger
+if (config.mode !== 'test') {
+    app.use(logger());
+}
+
+// Body parser for HTTP request parsing
+app.use(bodyParser());
+
 // Import routes
-var router = rootreq('routes');
 app.use(router.routes());
 
 // Serve static files
 app.use(serve(path.join(__dirname, 'public')));
 
-// Compress
+// Compress middleware
 app.use(compress());
 
 // If no parent (i.e. starting script), listen
 if (!module.parent) {
-  app.listen(config.port);
-  console.log('listening on port 3000');
+    app.listen(config.port);
+
+    if (config.mode === 'development') {
+        console.log('listening on port ' + config.port);
+    }
 }

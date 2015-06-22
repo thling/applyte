@@ -1,21 +1,23 @@
 {
-    "node": true,
-    "esnext": true,
     "bitwise": true,
-    "camelcase": true,
     "curly": true,
     "eqeqeq": true,
-    "immed": true,
-    "indent": 2,
+    "esnext": true,
     "latedef": true,
-    "newcap": true,
+    "laxbreak": true,
     "noarg": true,
-    "quotmark": "single",
-    "regexp": true,
+    "node": true,
+    "noyield": true,
+    "strict": true,
     "undef": true,
     "unused": true,
-    "strict": true,
-    "trailing": true,
-    "smarttabs": true,
-    "white": true
+    "white": true,
+    "globals": {
+        "after": true,
+        "basedir": true,
+        "before": true,
+        "describe": true,
+        "it": true,
+        "rootreq": true
+    }
 }
