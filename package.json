@@ -21,7 +21,7 @@
     "koa-static": "*",
     "lodash": "*",
     "swig": "*",
-    "thinky": "*"
+    "thinky": "^2.0.6"
   },
   "devDependencies": {
     "assert": "*",
