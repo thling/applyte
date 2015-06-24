@@ -292,8 +292,8 @@ module.exports.getSchoolByNameCampus = function *() {
 module.exports.getSchoolsByLocation = function *() {
     let data = _.omit(
         _.pick(this.params, ['city', 'state', 'country']),
-        function (data) {
-            return (!data || data === 'null');
+        function (item) {
+            return (!item || item === 'null');
         }
     );
 
@@ -525,29 +525,27 @@ module.exports.deleteSchool = function *() {
     if (!header.access_token || process.env.NODE_ENV === 'production') {
         this.status = 403;
         this.body = { message: this.message };
+    } else if (!data.id) {
+        // Bad request
+        this.status = 400;
+        this.body = { message: 'Missing parameters: id' };
     } else {
-        if (!data.id) {
-            // Bad request
-            this.status = 400;
-            this.body = { message: 'Missing parameters: id' };
-        } else {
-            try {
-                let school = yield School.findById(data.id);
+        try {
+            let school = yield School.findById(data.id);
 
-                // Need to set saved before delete
-                school.setSaved();
-                yield school.delete();
+            // Need to set saved before delete
+            school.setSaved();
+            yield school.delete();
 
-                this.status = 204;
-                this.body = {
-                    message: this.message,
-                    id: data.id
-                };
-            } catch (error) {
-                console.error(error);
-                this.status = 500;
-                this.body = { message: this.message };
-            }
+            this.status = 204;
+            this.body = {
+                message: this.message,
+                id: data.id
+            };
+        } catch (error) {
+            console.error(error);
+            this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };

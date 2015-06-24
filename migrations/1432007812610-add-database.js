@@ -1,7 +1,7 @@
 'use strict';
 
-var config = require('../config');
-var r      = require('../models/utils/thinky')().r;
+let config = require('../config');
+let r      = require('../models/utils/thinky')().r;
 
 exports.up = function (next) {
     if (r.dbList().contains(config.rethink.db)) {

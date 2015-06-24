@@ -117,7 +117,7 @@ describe('Library tests', function () {
                     username: undefined,
                     password: undefined,
                     host: 'test.com',
-                    hostname:  'test.com',
+                    hostname: 'test.com',
                     port: undefined,
                     path: '/api?test=333'
                 };

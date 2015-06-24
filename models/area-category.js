@@ -87,7 +87,7 @@ AreaCategory.defineStatic('getAllAreaCategories', function *() {
 
 AreaCategory.defineStatic('getAreaCategoriesRange', function *(start, length, desc) {
     let result = [];
-    let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
+    let orderIndex = (desc) ? r.desc(NAME_INDEX) : NAME_INDEX;
 
     try {
         result = yield AreaCategory
@@ -118,7 +118,7 @@ AreaCategory.defineStatic('query', function *(query) {
     let tempQuery = _.pick(query, _.keys(SCHEMA));
 
     // Determine the desired sorting index
-    let useIndex = (pagination.order === 'desc')? r.desc(NAME_INDEX) : NAME_INDEX;
+    let useIndex = (pagination.order === 'desc') ? r.desc(NAME_INDEX) : NAME_INDEX;
     if (tempQuery.name) {
         q = q.getAll(tempQuery.name, { index: useIndex });
         tempQuery = _.omit(tempQuery, 'name');

@@ -1,19 +1,19 @@
 'use strict';
 
-var _        = require('lodash');
-var path     = require('path');
-var config   = require('./config');
-var defaults = require('./config-defaults');
+let _        = require('lodash');
+let path     = require('path');
+let config   = require('./config');
+let defaults = require('./config-defaults');
 
 // Decide which environment this app runs on
-var nodeEnv = process.env.NODE_ENV;
+let nodeEnv = process.env.NODE_ENV;
 
 // If the node environment is not defined, kill process (need better way)
 // This SHOULD NOT happen
 if (_.isUndefined(nodeEnv)) {
     console.error('Cannot find NODE_ENV environment variable; default to safemode');
     console.error('Please shutdown the app and set the NODE_ENV environment variable immediately');
-    process.exit();
+    throw new Error('Cannot find NODE_ENV environment variable');
 }
 
 // Configure the basedir global variable

@@ -1,10 +1,8 @@
 'use strict';
 
-var gulp = require('gulp');
-var apidoc = require('gulp-apidoc');
-var jscs = require('gulp-jscs');
-var jshint = require('gulp-jshint');
-var jshintStylish = require('jshint-stylish');
+let gulp = require('gulp');
+let eslint = require('gulp-eslint');
+let apidoc = require('gulp-apidoc');
 
 gulp.task('default', ['lint']);
 
@@ -17,11 +15,7 @@ gulp.task('apidoc', function () {
 });
 
 gulp.task('lint', function () {
-    return gulp.src(['./**/*.js', '!./node_modules/**/*', '!./controllers/messages.js'])
-        .pipe(jshint())
-        .pipe(jshint.reporter(jshintStylish))
-        .pipe(jscs({
-            esnext: true,
-            configPath: './.jscsrc'
-        }));
+    return gulp.src(['./**/*.js', '!./node_modules/**/*'])
+        .pipe(eslint())
+        .pipe(eslint.format());
 });

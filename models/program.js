@@ -237,7 +237,7 @@ Program.defineStatic('getProgramsBySchoolId', function *(schoolId) {
  */
 Program.defineStatic('getProgramsByRange', function *(start, length, desc) {
     let result = [];
-    let orderIndex = (desc)? r.desc(NAME_INDEX) : NAME_INDEX;
+    let orderIndex = (desc) ? r.desc(NAME_INDEX) : NAME_INDEX;
 
     try {
         result = yield Program
@@ -275,10 +275,10 @@ Program.defineStatic('query', function *(query) {
     }
 
     // Determine the desired sorting index
-    let useIndex, queryChained = false;
+    let queryChained = false, useIndex;
     switch (pagination.sort) {
         default:
-            useIndex = (pagination.order === 'desc')?
+            useIndex = (pagination.order === 'desc') ?
                     r.desc(NAME_INDEX) : NAME_INDEX;
 
             if (tempQuery.name) {

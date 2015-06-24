@@ -29,7 +29,7 @@ let request = function () {
 
 describe('AreaCategory API Routes', function () {
     describe('Basic API access test', function () {
-        let createdId, category, template = master.areaCategory.template;
+        let category, createdId, template = master.areaCategory.template;
 
         after('clean up database', function *() {
             category = yield AreaCategory.findById(createdId);
@@ -95,7 +95,7 @@ describe('AreaCategory API Routes', function () {
     });
 
     describe('Complex API access test', function () {
-        let database, systems, network, security, literature;
+        let database, literature, network, security, systems;
         let categories;
 
         before('setting up data', function *() {
@@ -281,8 +281,8 @@ describe('AreaCategory API Routes', function () {
         });
 
         it('should update the data with PUT request to /api/area-categories', function (done) {
-            let temp = master.areaCategory.template,
-                newData = _.pick(temp, ['id', 'desc']);
+            let temp = master.areaCategory.template;
+            let newData = _.pick(temp, ['id', 'desc']);
 
             newData.id = security.id;
             newData.desc = 'The awesomeness of security '

@@ -1,9 +1,9 @@
 'use strict';
 
-var thinkyOrm = require('thinky');
-var config    = require('../../config');
+let thinkyOrm = require('thinky');
+let config    = require('../../config');
 
-var thinky;
+let thinky;
 
 module.exports = function (dbOptions) {
     dbOptions = dbOptions || config.rethink;

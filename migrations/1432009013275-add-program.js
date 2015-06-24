@@ -1,10 +1,10 @@
 'use strict';
 
-var r = require('../models/utils/thinky')().r;
+let r = require('../models/utils/thinky')().r;
 
-var TABLE = 'program';
-var LEVEL_INDEX = 'level';
-var NAME_INDEX = 'name';
+let TABLE = 'program';
+let LEVEL_INDEX = 'level';
+let NAME_INDEX = 'name';
 
 exports.up = function (next) {
     r.tableCreate(TABLE)
@@ -18,7 +18,7 @@ exports.up = function (next) {
                         .indexCreate(NAME_INDEX)
                         .run(next);
                 });
-            });
+        });
 };
 
 exports.down = function (next) {

@@ -1,9 +1,9 @@
 'use strict';
 
-var r = require('../models/utils/thinky')().r;
+let r = require('../models/utils/thinky')().r;
 
-var TABLE = 'school';
-var NAME_CAMPUS_INDEX = 'name_campus';
+let TABLE = 'school';
+let NAME_CAMPUS_INDEX = 'name_campus';
 
 exports.up = function (next) {
     r.tableCreate(TABLE)
