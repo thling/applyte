@@ -96,7 +96,7 @@ describe('Program API Routes', function () {
     });
 
     describe('Complex API access test', function () {
-        let compsci, mecheng, indseng, management, philosophy;
+        let compsci, indseng, management, mecheng, philosophy;
         let purdue;
         let programs;
 
@@ -435,8 +435,8 @@ describe('Program API Routes', function () {
         );
 
         it('should update the data with PUT request to /api/programs', function (done) {
-            let temp = master.program.template,
-                newData = _.pick(temp, ['id', 'name', 'areas']);
+            let temp = master.program.template;
+            let newData = _.pick(temp, ['id', 'name', 'areas']);
 
             temp.schoolId = purdue.id;
 

@@ -48,7 +48,7 @@ describe('AreaCategory model test', function () {
         });
 
         describe('Complex database test', function () {
-            let database, systems, network, security, literature;
+            let database, literature, network, security, systems;
             let categories;
 
             before('adding more entries to database', function *() {

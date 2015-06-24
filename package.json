@@ -1,6 +1,6 @@
 {
   "name": "Applyte",
-  "version": "0.0.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "start": "node --harmony app.js",
@@ -25,12 +25,11 @@
   },
   "devDependencies": {
     "assert": "*",
-    "co-mocha": "*",
+    "co-mocha": "^1.1.2",
+    "eslint": "^0.23.0",
     "gulp": "^3.9.0",
     "gulp-apidoc": "^0.1.4",
-    "gulp-jscs": "^1.6.0",
-    "gulp-jshint": "^1.11.0",
-    "jshint-stylish": "^2.0.0",
+    "gulp-eslint": "^0.14.0",
     "mocha": "*",
     "supertest": "*"
   }

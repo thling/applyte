@@ -257,29 +257,27 @@ module.exports.deleteAreaCategory = function *() {
     if (!header.access_token || process.env.NODE_ENV === 'production') {
         this.status = 403;
         this.body = { message: this.message };
+    } else if (!data.id) {
+        // Bad request
+        this.status = 400;
+        this.body = { message: 'Missing parameters: id' };
     } else {
-        if (!data.id) {
-            // Bad request
-            this.status = 400;
-            this.body = { message: 'Missing parameters: id' };
-        } else {
-            try {
-                let category = yield AreaCategory.findById(data.id);
+        try {
+            let category = yield AreaCategory.findById(data.id);
 
-                // Need to set saved before delete
-                category.setSaved();
-                yield category.delete();
+            // Need to set saved before delete
+            category.setSaved();
+            yield category.delete();
 
-                this.status = 204;
-                this.body = {
-                    message: this.message,
-                    id: data.id
-                };
-            } catch (error) {
-                console.error(error);
-                this.status = 500;
-                this.body = { message: this.message };
-            }
+            this.status = 204;
+            this.body = {
+                message: this.message,
+                id: data.id
+            };
+        } catch (error) {
+            console.error(error);
+            this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };

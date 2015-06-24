@@ -154,7 +154,7 @@ School.defineStatic('getAllSchools', function *() {
  */
 School.defineStatic('getSchoolsByRange', function *(start, length, order) {
     let result = [];
-    let orderIndex = (order && order === 'desc')?
+    let orderIndex = (order && order === 'desc') ?
             r.desc(NAME_CAMPUS_INDEX) : NAME_CAMPUS_INDEX;
 
     try {
@@ -187,16 +187,16 @@ School.defineStatic('query', function *(query) {
     let tempQuery = _.pick(query, _.keys(SCHEMA));
 
     // Determine the desired sorting index
-    let useIndex, queryChained = false;
+    let queryChained = false, useIndex;
     switch (pagination.sort) {
         default:
-            useIndex = (pagination.order === 'desc')?
+            useIndex = (pagination.order === 'desc') ?
                     r.desc(NAME_CAMPUS_INDEX) : NAME_CAMPUS_INDEX;
 
             if (tempQuery.name && tempQuery.campus) {
                 q = q.getAll(
                     [tempQuery.name, tempQuery.campus],
-                    {index: useIndex}
+                    { index: useIndex }
                 );
 
                 queryChained = true;

@@ -11,7 +11,7 @@ require('co-mocha');
 
 describe('Program model tests', function () {
     let template = master.program.template;
-    let school, program;
+    let program, school;
 
     before('adding dummy school', function *() {
         school = new School(master.school.template);
@@ -32,7 +32,7 @@ describe('Program model tests', function () {
 
     describe('Program object basic functionality test', function () {
         it('should return a generator with program.areasIter', function () {
-            let i = 0, areas = program.areasIter();
+            let areas = program.areasIter(), i = 0;
             for (let area of areas()) {
                 assert.deepEqual(template.areas[i++], area);
             }
@@ -102,16 +102,16 @@ describe('Program model tests', function () {
         });
 
         describe('Complex database test', function () {
-            let purdueWL, umich, mit;
+            let mit, purdueWL, umich;
 
             let compsci = new Program(master.program.template),
-                mecheng = new Program(master.program.template),
                 indseng = new Program(master.program.template),
                 management = new Program(master.program.template),
+                mecheng = new Program(master.program.template),
                 philosophy = new Program(master.program.template);
 
-            let security = new AreaCategory(master.areaCategory.template),
-                database = new AreaCategory(master.areaCategory.template),
+            let database = new AreaCategory(master.areaCategory.template),
+                security = new AreaCategory(master.areaCategory.template),
                 systems = new AreaCategory(master.areaCategory.template);
 
             let testPrograms = [compsci, mecheng, indseng, management, philosophy];

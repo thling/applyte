@@ -403,29 +403,27 @@ module.exports.deleteProgram = function *() {
     if (!header.access_token || process.env.NODE_ENV === 'production') {
         this.status = 403;
         this.body = { message: this.message };
+    } else if (!data.id) {
+        // Bad request
+        this.status = 400;
+        this.body = { message: 'Missing parameters: id' };
     } else {
-        if (!data.id) {
-            // Bad request
-            this.status = 400;
-            this.body = { message: 'Missing parameters: id' };
-        } else {
-            try {
-                let program = yield Program.findById(data.id);
+        try {
+            let program = yield Program.findById(data.id);
 
-                // Need to set saved before delete
-                program.setSaved();
-                yield program.delete();
+            // Need to set saved before delete
+            program.setSaved();
+            yield program.delete();
 
-                this.status = 204;
-                this.body = {
-                    message: this.message,
-                    id: data.id
-                };
-            } catch (error) {
-                console.error(error);
-                this.status = 500;
-                this.body = { message: this.message };
-            }
+            this.status = 204;
+            this.body = {
+                message: this.message,
+                id: data.id
+            };
+        } catch (error) {
+            console.error(error);
+            this.status = 500;
+            this.body = { message: this.message };
         }
     }
 };

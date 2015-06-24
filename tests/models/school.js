@@ -115,12 +115,12 @@ describe('School model test', function () {
 
             let testPrograms = [program1, program2, program3, program4, program5];
 
-            let purdue = new School(master.school.template),
+            let bu = new School(master.school.template),
+                mit = new School(master.school.template),
+                purdue = new School(master.school.template),
                 purdueCal = new School(master.school.template),
                 uiuc = new School(master.school.template),
-                umich = new School(master.school.template),
-                bu = new School(master.school.template),
-                mit = new School(master.school.template);
+                umich = new School(master.school.template);
 
             before('Adding multiple programs', function *() {
                 program1.schoolId = school.id;
@@ -182,7 +182,7 @@ describe('School model test', function () {
                     }
                 });
 
-                bu.update( {
+                bu.update({
                     name: 'Boston University',
                     campus: 'Boston',
                     address: {

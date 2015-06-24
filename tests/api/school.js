@@ -96,9 +96,9 @@ describe('School API Routes', function () {
     });
 
     describe('Complex API access test', function () {
-        let compsci, mecheng, indseng, management, philosophy;
-        let purdueWL, purdueCal, uiuc, umich, bu, mit, emerson;
-        let schools, programs;
+        let compsci, indseng, management, mecheng, philosophy;
+        let bu, emerson, mit, purdueCal, purdueWL, uiuc, umich;
+        let programs, schools;
 
         before('setting up data', function *() {
             purdueWL = new School(master.school.template);
@@ -548,8 +548,8 @@ describe('School API Routes', function () {
         );
 
         it('should update the data with PUT request to /api/schools', function (done) {
-            let temp = master.school.template,
-                newData = _.pick(temp, ['id', 'name', 'campus']);
+            let temp = master.school.template;
+            let newData = _.pick(temp, ['id', 'name', 'campus']);
 
             newData.id = purdueWL.id;
             newData.name = 'Purrrrrdue University';
