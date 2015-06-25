@@ -411,11 +411,17 @@ Program.define('update', function (properties) {
         data.contact = _.pick(data.contact, _.keys(SCHEMA.contact));
 
         if (_.has(data, 'contact.address')) {
-            data.contact.address = _.pick(
+            let newAddress = _.pick(
                     data.contact.address,
                     _.keys(SCHEMA.contact.address)
             );
+
+            _.assign(this.contact.address, newAddress);
+            data.contact = _.omit(data.contact, 'address');
         }
+
+        _.assign(this.contact, data.contact);
+        data = _.omit(data, 'contact');
     }
 
     if (_.has(data, 'areas')) {

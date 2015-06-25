@@ -13,7 +13,7 @@ describe('AreaCategory model test', function () {
 
     describe('AreaCategory object instantiation test', function () {
         it('should create a newly populated AreaCategory object', function () {
-            areaCategory = new AreaCategory(template);
+            areaCategory = new AreaCategory(master.areaCategory.template);
             master.areaCategory.assertEqual(areaCategory, template);
         });
     });

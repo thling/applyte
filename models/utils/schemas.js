@@ -1,6 +1,8 @@
 'use strict';
 
-let type = require('./thinky')().type;
+let thinky = require('./thinky')();
+
+let type = thinky.type;
 
 /**
  * This file is used as a barebone for each table. The reason to
@@ -74,4 +76,30 @@ module.exports.area_category = {
     id: type.string(),
     name: type.string().required(),
     desc: type.string()
+};
+
+// User schema
+module.exports.user = {
+    id: type.string(),  // Not user set by user, this is ID for internal use
+    username: type.string(),
+    password: {
+        hash: type.string(),
+        salt: type.string()
+    },
+    name: {
+        first: type.string(),
+        middle: type.string(),
+        last: type.string(),
+        preferred: type.string()
+    },
+    birthday: type.date().required(),
+    contact: {
+        email: type.string().email(),
+        phone: type.string(),
+        address: address
+    },
+    accessRights: type.string().enum('user', 'admin'),
+    verified: type.boolean(),
+    created: type.date(),
+    modified: type.date()
 };

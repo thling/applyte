@@ -15,7 +15,7 @@ describe('School model test', function () {
 
     describe('School object instantiation test', function () {
         it('should create a populated School object', function () {
-            school = new School(template);
+            school = new School(master.school.template);
             master.school.assertEqual(school, template);
         });
 
@@ -27,11 +27,12 @@ describe('School model test', function () {
 
     describe('School object basic functionality test', function () {
         it('should return a generator with school.linksIter', function () {
-            let links = school.linksIter();
+            let links = school.linksIter(), linksArray = [];
             for (let link of links()) {
-                assert.notStrictEqual(template.links.indexOf(link), -1);
-                break;
+                linksArray.push(link);
             }
+
+            assert.deepEqual(linksArray, template.links);
         });
 
         it('should remove a link, then add it back', function () {

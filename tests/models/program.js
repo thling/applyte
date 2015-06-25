@@ -25,7 +25,8 @@ describe('Program model tests', function () {
 
     describe('Program object instantiation test', function () {
         it('Should create a newly populated program object', function () {
-            program = new Program(template);
+            program = new Program(master.program.template);
+            program.schoolId = template.schoolId;
             master.program.assertEqual(program, template);
         });
     });

@@ -48,7 +48,7 @@ module.exports.listEquals = function (items, tests, print) {
 };
 
 /**
- * For tests on school
+ * For tests on School module
  */
 module.exports.school = {
     get template() {
@@ -79,22 +79,22 @@ module.exports.school = {
      * @param   school  The school to validate
      * @throws  AssertionError if not valid
      */
-    assertEqual: function (school, temp) {
+    assertEqual: function (school, test) {
         assert(_.isObject(school), 'School is not an object');
-        assert.strictEqual(school.name, temp.name);
-        assert.strictEqual(school.campus, temp.campus);
-        assert.strictEqual(school.desc, temp.desc);
-        assert.strictEqual(school.email, temp.email);
-        assert.strictEqual(school.phone, temp.phone);
-        assert.strictEqual(school.logo, temp.logo);
+        assert.strictEqual(school.name, test.name);
+        assert.strictEqual(school.campus, test.campus);
+        assert.strictEqual(school.desc, test.desc);
+        assert.strictEqual(school.email, test.email);
+        assert.strictEqual(school.phone, test.phone);
+        assert.strictEqual(school.logo, test.logo);
 
-        assert.deepEqual(school.address, temp.address);
-        assert.deepEqual(school.links, temp.links);
+        assert.deepEqual(school.address, test.address);
+        assert.deepEqual(school.links, test.links);
     }
 };
 
 /**
- * For tests on programs
+ * For tests on Program module
  */
 module.exports.program = {
     get template() {
@@ -135,23 +135,23 @@ module.exports.program = {
      * @param   prog    The prog to validate
      * @throws  AssertionError if not valid
      */
-    assertEqual: function (prog, temp) {
+    assertEqual: function (prog, test) {
         assert(_.isObject(prog), 'Program is not a object');
-        assert.strictEqual(prog.name, temp.name);
-        assert.strictEqual(prog.degree, temp.degree);
-        assert.strictEqual(prog.level, temp.level);
-        assert.strictEqual(prog.desc, temp.desc);
-        assert.strictEqual(prog.schoolId, temp.schoolId);
-        assert.strictEqual(prog.department, temp.department);
-        assert.strictEqual(prog.faculty, temp.faculty);
+        assert.strictEqual(prog.name, test.name);
+        assert.strictEqual(prog.degree, test.degree);
+        assert.strictEqual(prog.level, test.level);
+        assert.strictEqual(prog.desc, test.desc);
+        assert.strictEqual(prog.schoolId, test.schoolId);
+        assert.strictEqual(prog.department, test.department);
+        assert.strictEqual(prog.faculty, test.faculty);
 
-        assert.deepEqual(prog.areas, temp.areas);
-        assert.deepEqual(prog.contact, temp.contact);
+        assert.deepEqual(prog.areas, test.areas);
+        assert.deepEqual(prog.contact, test.contact);
     }
 };
 
 /**
- * For tests on category
+ * For tests on AreaCategory module
  */
 module.exports.areaCategory = {
     get template() {
@@ -167,9 +167,59 @@ module.exports.areaCategory = {
      * @param   cat     The category objecto validate
      * @throws  AssertionError if not valid
      */
-    assertEqual: function (cat, temp) {
+    assertEqual: function (cat, test) {
         assert(_.isObject(cat), 'AreaCategory is not an object');
-        assert.strictEqual(cat.name, temp.name);
-        assert.strictEqual(cat.desc, temp.desc);
+        assert.strictEqual(cat.name, test.name);
+        assert.strictEqual(cat.desc, test.desc);
+    }
+};
+
+/**
+ * For tests on User module
+ */
+module.exports.user = {
+    get template() {
+        return {
+            username: 'thling90',
+            password: {
+                hash: null,
+                salt: null
+            },
+            name: {
+                first: 'Tzu',
+                middle: 'Hsuan',
+                last: 'Ling',
+                preferred: 'Sam'
+            },
+            birthday: 'Sun Nov 04 1990 00:00:00 GMT+08:00',
+            contact: {
+                email: 'sam@thling.com',
+                phone: '+1 (765) 237-9196',
+                address: _.cloneDeep(address)
+            },
+            accessRights: 'user',
+            verified: true,
+            created: 'Thu Jun 25 2015 04:54:42 GMT+00:00',
+            modified: 'Thu Jun 25 2015 04:54:42 GMT+00:00'
+        };
+    },
+
+    /**
+     * Validates the user against the template
+     *
+     * @param   user    The category objecto validate
+     * @throws  AssertionError if not valid
+     */
+    assertEqual: function (user, test) {
+        assert(_.isObject(user), 'User is not an object');
+        assert.strictEqual(user.username, test.username);
+        assert.strictEqual(user.birthday.toString(), test.birthday.toString());
+        assert.strictEqual(user.created.toString(), test.created.toString());
+        assert.strictEqual(user.accessRights, test.accessRights);
+        assert.strictEqual(user.verified, test.verified);
+
+        assert.deepEqual(user.password, test.password);
+        assert.deepEqual(user.name, test.name);
+        assert.deepEqual(user.contact, test.contact);
     }
 };

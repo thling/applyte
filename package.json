@@ -8,6 +8,8 @@
     "build": "node --harmony $(which gulp)"
   },
   "dependencies": {
+    "bcrypt": "^0.8.3",
+    "bluebird": "^2.9.30",
     "co-body": "*",
     "co-views": "^1.0.0",
     "koa": "^0.21.0",
@@ -17,9 +19,11 @@
     "koa-json": "*",
     "koa-logger": "*",
     "koa-mount": "*",
+    "koa-passport": "^1.1.6",
     "koa-router": "^5.1.2",
     "koa-static": "*",
     "lodash": "*",
+    "passport-local": "^1.0.0",
     "swig": "*",
     "thinky": "^2.0.6"
   },

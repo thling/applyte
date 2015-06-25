@@ -13,6 +13,11 @@ module.exports = {
         db: 'applyte'    // Default database name
     },
 
+    // Security configurations
+    security: {
+        hashRounds: 10  // Number of rounds to hash
+    },
+
     // Server port to listen to
     port: 3000,
 
