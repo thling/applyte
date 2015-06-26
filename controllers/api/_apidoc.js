@@ -4,7 +4,7 @@
 
 /**
  * @apiDefine currentVersion
- * @apiVersion 0.1.0
+ * @apiVersion 0.2.0
  */
 
 /**
@@ -194,12 +194,12 @@
  * @apiSuccess  (200)   {String}    Programs.contact.phone      Phone number
  * @apiSuccess  (200)   {String}    Programs.contact.email      Email address
  * @apiSuccess  (200)   {Object}    Programs.contact.address    Mailing address
- * @apiSuccess  (200)   {Object}    Programs.contact.address.address1   Address 1
- * @apiSuccess  (200)   {Object}    Programs.contact.address.address2   Address 2
- * @apiSuccess  (200)   {Object}    Programs.contact.address.city       City
- * @apiSuccess  (200)   {Object}    Programs.contact.address.state      State or Province
- * @apiSuccess  (200)   {Object}    Programs.contact.address.postalCode Postal code
- * @apiSuccess  (200)   {Object}    Programs.contact.address.country    Country
+ * @apiSuccess  (200)   {String}    Programs.contact.address.address1   Address 1
+ * @apiSuccess  (200)   {String}    Programs.contact.address.address2   Address 2
+ * @apiSuccess  (200)   {String}    Programs.contact.address.city       City
+ * @apiSuccess  (200)   {String}    Programs.contact.address.state      State or Province
+ * @apiSuccess  (200)   {String}    Programs.contact.address.postalCode Postal code
+ * @apiSuccess  (200)   {String}    Programs.contact.address.country    Country
  */
 
 /**
@@ -264,12 +264,12 @@
  * @apiParam    {String}    [contact.phone]     Phone number
  * @apiParam    {String}    [contact.email]     Email address
  * @apiParam    {Object}    [contact.address]   Mailing address
- * @apiParam    {Object}    [contact.address.address1]      Address 1
- * @apiParam    {Object}    [contact.address.address2]      Address 2
- * @apiParam    {Object}    [contact.address.city]          City
- * @apiParam    {Object}    [contact.address.state]         State or Province
- * @apiParam    {Object}    [contact.address.postalCode]    Postal code
- * @apiParam    {Object}    [contact.address.country]       Country
+ * @apiParam    {String}    [contact.address.address1]      Address 1
+ * @apiParam    {String}    [contact.address.address2]      Address 2
+ * @apiParam    {String}    [contact.address.city]          City
+ * @apiParam    {String}    [contact.address.state]         State or Province
+ * @apiParam    {String}    [contact.address.postalCode]    Postal code
+ * @apiParam    {String}    [contact.address.country]       Country
  */
 
 /**
@@ -347,6 +347,147 @@
  * @apiDefine paramAreaCategoryOptional
  * @apiParam    {String}    [name]      Name of the object
  * @apiParam    {String}    [desc]      Description of the object
+ */
+
+// User
+
+/**
+ * @apiDefine successUser
+ * @apiSuccess  (200)   {String}    id      ID of the object
+ * @apiSuccess  (200)   {Object}    name    Name specs of the user
+ * @apiSuccess  (200)   {String}    name.first      The first name of this user
+ * @apiSuccess  (200)   {String}    name.middle     The middle name of this user,
+ *                                                  can be empty string
+ * @apiSuccess  (200)   {String}    name.last       The last name of this user
+ * @apiSuccess  (200)   {String}    name.preferred  The preferred name of this user,
+ *                                                  default to first name
+ * @apiSuccess  (200)   {Date}      birthday    The birthday of this user
+ * @apiSuccess  (200)   {Object}    contact     Contact of the user
+ * @apiSuccess  (200)   {String}    contact.phone       Phone number
+ * @apiSuccess  (200)   {String}    contact.email       Email address
+ * @apiSuccess  (200)   {Object}    contact.address     Mailing address
+ * @apiSuccess  (200)   {String}    contact.address.address1    Address 1
+ * @apiSuccess  (200)   {String}    contact.address.address2    Address 2
+ * @apiSuccess  (200)   {String}    contact.address.city        City
+ * @apiSuccess  (200)   {String}    contact.address.state       State or Province
+ * @apiSuccess  (200)   {String}    contact.address.postalCode  Postal code
+ * @apiSuccess  (200)   {String}    contact.address.country     Country
+ */
+
+/**
+ * @apiDefine successUserArray
+ * @apiSuccess  (200)   {Object[]}  Users   An array of users
+ * @apiSuccess  (200)   {String}    Users.id    ID of the object
+ * @apiSuccess  (200)   {Object}    Users.name  Name specs of the user
+ * @apiSuccess  (200)   {String}    Users.name.first    The first name of this user
+ * @apiSuccess  (200)   {String}    Users.name.middle   The middle name of this user,
+ *                                                      can be empty string
+ * @apiSuccess  (200)   {String}    Users.name.last         The last name of this user
+ * @apiSuccess  (200)   {String}    Users.name.preferred    The preferred name of this user,
+ *                                                          default to first name
+ * @apiSuccess  (200)   {Date}      Users.birthday  The birthday of this user
+ * @apiSuccess  (200)   {Object}    Users.contact   Contact of the user
+ * @apiSuccess  (200)   {String}    Users.contact.phone     Phone number
+ * @apiSuccess  (200)   {String}    Users.contact.email     Email address
+ * @apiSuccess  (200)   {Object}    Users.contact.address   Mailing address
+ * @apiSuccess  (200)   {String}    Users.contact.address.address1      Address 1
+ * @apiSuccess  (200)   {String}    Users.contact.address.address2      Address 2
+ * @apiSuccess  (200)   {String}    Users.contact.address.city          City
+ * @apiSuccess  (200)   {String}    Users.contact.address.state         State or Province
+ * @apiSuccess  (200)   {String}    Users.contact.address.postalCode    Postal code
+ * @apiSuccess  (200)   {String}    Users.contact.address.country       Country
+ */
+
+/**
+ * @apiDefine   successUserExampleHeaders
+ * @apiSuccessExample   {json}  Response Example
+ *      <!-- Response example for second request example.
+ *           Note that although there are 3 lines here, the actual Link header
+ *           will contain only one line, with spaces replacing the \n characer -->
+ *      HTTP/1.1 200 OK
+ *      Link: <https://applyte.io/api/users?start=30&length=3>; rel="prev",
+ *            <https://applyte.io/api/users?start=33&length=3>; rel="self",
+ *            <https://applyte.io/api/users?start=36&length=3>; rel="next"
+ *      [{
+ *          "id": "random-user-identifier",
+ *          "username": "purduepete",
+ *          "name": {
+ *              "first": "Purdue",
+ *              "middle": "Boilermaker",
+ *              "last": "Pete",
+ *              "preferred": "Pete"
+ *          },
+ *          "birthday": "Wed May 01 1991 00:00:00 GMT-05:00",
+ *          "contact": {
+ *              "phone": "+ (123) 456-7890",
+ *              "email": "pete@purdue.edu",
+ *              "address": {
+ *                  "address1": "610 Purdue Mall",
+ *                  "address2": "",
+ *                  "city": "West Lafayette",
+ *                  "state": "Indiana",
+ *                  "postalCode": "47907",
+ *                  "country": "United States of America"
+ *              }
+ *          }
+ *      },
+ *      {
+ *          // User with the same format
+ *      },
+ *      {
+ *          // User with the same format
+ *      }]
+ */
+
+/**
+ * @apiDefine paramUser
+ * @apiParam    {String}    [username]      The username. Default to
+ *                                          <code>contact.email</code> if not supplied.
+ * @apiParam    {String}    newPassword     New password for the user
+ * @apiParam    {Object}    name    Name specs of the user
+ * @apiParam    {String}    name.first      The firstname of the user
+ * @apiParam    {String}    [name.middle]   The middle name of the user.
+ *                                          Default to <code>""</code> (empty string)
+ *                                          if not supplied
+ * @apiParam    {String}    name.last       The last name of the username
+ * @apiParam    {String}    [name.preferred]    The preferred name of the user.
+ *                                              Default to <code>name.first</code>
+ *                                              if not supplied
+ * @apiParam    {String}    [birthday]      The birthday of the user
+ * @apiParam    {Object}    contact         The contacts of the user
+ * @apiParam    {String}    contact.email       The email address of the user
+ * @apiParam    {String}    [contact.phone]     The phone number of the user
+ * @apiParam    {Object}    [contact.address]   The address of the user
+ * @apiParam    {String}    contact.address.address1    Address 1
+ * @apiParam    {String}    contact.address.address2    Address 2
+ * @apiParam    {String}    contact.address.city        City
+ * @apiParam    {String}    contact.address.state       State or Province
+ * @apiParam    {String}    contact.address.postalCode  Zipcode or postal code
+ * @apiParam    {String}    contact.address.country     Country name
+ */
+
+/**
+ * @apiDefine paramUserOptional
+ * @apiParam    {String}    [username]      The username. Default to email if not supplied.
+ * @apiParam    {String}    [newPassword]   New password for the user
+ * @apiParam    {Object}    [name]  Name specs of the user
+ * @apiParam    {String}    [name.first]    The firstname of the user
+ * @apiParam    {String}    [name.middle]   The middle name of the user
+ *                                          Default to '' if not supplied
+ * @apiParam    {String}    [name.last]     The last name of the username
+ * @apiParam    {String}    [name.preferred]    The preferred name of the user.
+ *                                              Default to firstname if not supplied
+ * @apiParam    {String}    [birthday]      The birthday of the user
+ * @apiParam    {Object}    [contact]       The contacts of the user
+ * @apiParam    {String}    [contact.email]     The email address of the user
+ * @apiParam    {String}    [contact.phone]     The phone number of the user
+ * @apiParam    {Object}    [contact.address]   The address of the user
+ * @apiParam    {String}    [contact.address.address1]      Address 1
+ * @apiParam    {String}    [contact.address.address2]      Address 2
+ * @apiParam    {String}    [contact.address.city]          City
+ * @apiParam    {String}    [contact.address.state]         State or Province
+ * @apiParam    {String}    [contact.address.postalCode]    Zipcode or postal code
+ * @apiParam    {String}    [contact.address.country]         Country name
  */
 
 // -----------

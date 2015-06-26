@@ -7,5 +7,6 @@ let router = require('koa-router')();
 require('./api/program')(router);
 require('./api/school')(router);
 require('./api/area-category')(router);
+require('./api/user')(router);
 
 module.exports = router;

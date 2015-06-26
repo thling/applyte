@@ -157,6 +157,21 @@ User.define('getPreferredName', function () {
 });
 
 /**
+ * Sets the password. Updates salt and store the hashed password with salt.
+ *
+ * @param   password    The new password to be set
+ */
+User.define('setPassword', function (password) {
+    this.password = {
+        salt: null,
+        hash: null
+    };
+
+    this.password.salt = bcrypt.genSaltSync(config.security.hashRounds);
+    this.password.hash = bcrypt.hashSync(password, this.password.salt);
+});
+
+/**
  * Update the entire object to match the properties.
  * The properties configuration will be validated, and
  * unwanted properties will be discarded.
@@ -169,8 +184,6 @@ User.define('getPreferredName', function () {
 User.define('update', function (properties) {
     // TODO: Add validation
 
-    // Check for new password
-    let newPassword = properties.newPassword;
     // Make sure we only retrieve what we want
     let data = _.pick(properties, _.keys(SCHEMA));
 
@@ -202,15 +215,6 @@ User.define('update', function (properties) {
         data = _.omit(data, 'contact');
     }
 
-    // If new password is set, generate a new hash
-    if (newPassword) {
-        if (!data.password.salt || data.pasword.salt === '') {
-            data.password.salt = bcrypt.genSaltSync(config.security.hashRounds);
-        }
-
-        data.password.hash = bcrypt.hashSync(newPassword, data.password.salt);
-    }
-
     _.assign(this, data);
 });
 
@@ -221,7 +225,12 @@ User.define('update', function (properties) {
  */
 User.pre('save', function (next) {
     this.created = this.created || r.now();
+    this.modified = r.now();
+    this.name.preferred = this.name.preferred || this.name.first;
+    this.name.middle = this.name.middle || '';
+    this.username = this.username || this.contact.email;
     this.accessRights = this.accessRights || 'user';
+    this.verified = this.verified || false;
     next();
 });
 
