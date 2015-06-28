@@ -15,6 +15,7 @@ module.exports = {
 
     // Security configurations
     security: {
+        sessionSecret: ['This is my secret'],  // Cookie signing keys, change in production
         hashRounds: 10  // Number of rounds to hash
     },
 

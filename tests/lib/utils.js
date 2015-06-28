@@ -343,5 +343,131 @@ describe('Library tests', function () {
                 assert.strictEqual(header, '');
             });
         });
+
+        describe('assertObjectSchema tests', function () {
+            let goodObject = {
+                a: 1,
+                b: {
+                    b1: 2,
+                    b2: 3
+                },
+                c: [4, 5, 6, 7],
+                d: 8
+            };
+
+            let noMissing = {
+                noMissing: true,
+                noExtra: false
+            };
+
+            let noExtra = {
+                noMissing: false,
+                noExtra: true
+            };
+
+            it('should detect missing field properly', function () {
+                try {
+                    let badObject = {
+                        a: 1,
+                        b: {
+                            b1: 2,
+                            b2: 3
+                        },
+                        c: [4, 5, 6, 7]
+                    };
+
+                    utils.assertObjectSchema(badObject, goodObject, noMissing);
+                    throw new Error('Should not have gotten here');
+                } catch (error) {
+                    assert.strictEqual(error.type, 'MissingPropertyError');
+                }
+            });
+
+            it('should detect missing nested field properly', function () {
+                try {
+                    let badObject = {
+                        a: 1,
+                        b: {
+                            b1: 2
+                        },
+                        c: [3, 4, 5]
+                    };
+
+                    utils.assertObjectSchema(badObject, goodObject, noMissing);
+                    throw new Error('Should not have gotten here');
+                } catch (error) {
+                    assert.strictEqual(error.type, 'MissingPropertyError');
+                }
+            });
+
+            it('should ignore extra field when only missing field is checked', function () {
+                let badObject = {
+                    a: 1,
+                    b: {
+                        b1: 2,
+                        b2: 3,
+                        b3: 4
+                    },
+                    c: [5, 6, 7, 8],
+                    d: 9
+                };
+
+                utils.assertObjectSchema(badObject, goodObject, noMissing);
+            });
+
+            it('should detect extra field properly', function () {
+                try {
+                    let badObject = {
+                        a: 1,
+                        b: {
+                            b1: 2,
+                            b2: 3
+                        },
+                        c: [4, 5, 6, 7],
+                        d: 8,
+                        e: 9
+                    };
+
+                    utils.assertObjectSchema(badObject, goodObject, noExtra);
+                    throw new Error('Should not have gotten here');
+                } catch (error) {
+                    assert.strictEqual(error.type, 'ExtraPropertyError');
+                }
+            });
+
+            it('should detect nested extra field properly', function () {
+                try {
+                    let badObject = {
+                        a: 1,
+                        b: {
+                            b1: 2,
+                            b2: 3,
+                            b3: 4,
+                            b4: 5
+                        },
+                        c: [6, 7, 8, 9, 10],
+                        d: 11
+                    };
+
+                    utils.assertObjectSchema(badObject, goodObject, noExtra);
+                    throw new Error('Should not have gotten here');
+                } catch (error) {
+                    assert.strictEqual(error.type, 'ExtraPropertyError');
+                }
+            });
+
+            it('should ignore missing field when only extra field is checked', function () {
+                let badObject = {
+                    a: 1,
+                    b: {
+                        b1: 2,
+                        b2: 3
+                    },
+                    d: 8
+                };
+
+                utils.assertObjectSchema(badObject, goodObject, noExtra);
+            });
+        });
     });
 });

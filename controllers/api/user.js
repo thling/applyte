@@ -173,6 +173,43 @@ module.exports.query = function *() {
 };
 
 /**
+ * @api {get}   /api/users/:id  Get user by ID
+ * @apiName     getUserById
+ * @apiGroup    Users
+ * @apiVersion  0.2.0
+ *
+ * @apiParam    {String}    id  The ID of the user to retrieve
+ *
+ * @apiUse      successUser
+ *
+ * @apiError    (404)   {json}  NotFound    The specified ID does not exist
+ * @apiUse      errors
+ */
+module.exports.getUserById = function *() {
+    let data = this.params;
+
+    if (!data.id) {
+        this.status = 400;
+        this.body = { message: 'Missing parameters: id' };
+    } else {
+        try {
+            let user = yield User.findById(data.id);
+            if (user) {
+                this.status = 200;
+                this.body = user;
+            } else {
+                this.status = 404;
+                this.body = { message: this.message };
+            }
+        } catch (error) {
+            console.error(error);
+            this.status = 500;
+            this.body = { message: this.message };
+        }
+    }
+};
+
+/**
  * @api {post}  /api/users  Create a new user
  * @apiName     createUser
  * @apiGroup    Users
@@ -197,7 +234,6 @@ module.exports.createUser = function *() {
             _.keys(data),
             ['id', 'created', 'modified', 'accessRights', 'verified', 'password']
     );
-
 
     // Check for missing fields
     let hasMissingFields = false;
@@ -232,6 +268,97 @@ module.exports.createUser = function *() {
             };
         } catch (error) {
             // If save failed, return server error
+            console.error(error);
+            this.status = 500;
+            this.body = { message: this.message };
+        }
+    }
+};
+
+/**
+ * @api {put} /api/users     Updates an existing school
+ * @apiName     updateUser
+ * @apiGroup    Users
+ * @apiVersion  0.2.0
+ *
+ * @apiDescription  Updates the User object in the database with
+ *                  the specified change. Invalid keys will be ignored and
+ *                  objects will be replaced as is. On success, the ID of the
+ *                  updated object and the changes (new value and old value)
+ *                  will be returned.
+ *
+ * @apiParam    {String}    id  The ID of the user to update
+ * @apiUse      paramUserOptional
+ *
+ * @apiSuccess  (200)   {String}    id      The ID of the updated object
+ * @apiSuccess  (200)   {Object}    new     The new values
+ * @apiSuccess  (200)   {Mixed}     new.UPDATED_PROPERTIES
+ *                                          New values of the updated properties only
+ * @apiSuccess  (200)   {Object}    old     The old values
+ * @apiSuccess  (200)   {Mixed}     old.CHANGED_PROPERTIES
+ *                                          Old values of the updated properties only
+ * @apiUse      errors
+ *
+ * @apiSuccessExample   {json}  Response Example (Success)
+ *          HTTP/1.1 200 OK
+ *          {
+ *              id: '103fa394-caca-4c1d-9374-f64d41dd52f6'
+ *              new: {
+ *                  name: {
+ *                      preferred: 'Joe'
+ *                  },
+ *                  address: {
+ *                      address1: 'Just want to update this only'
+ *                  }
+ *              },
+ *              old: {
+ *                  name: {
+ *                      preferred: 'Johnny'
+ *                  },
+ *                  address: {
+ *                      address1: '610 Purdue Mall',
+ *                  }
+ *              }
+ *          }
+ */
+module.exports.updateUser = function *() {
+    let data = this.request.body;
+
+    // Reject invalid input immediately
+    let invalid = _.intersection(
+            _.keys(data),
+            ['id', 'created', 'modified', 'accessRights', 'verified', 'password']
+    );
+
+    if (!_.isEmpty(invalid)) {
+        this.status = 400;
+        this.body = { message: 'Invalid request parameters' };
+    } else if (!data.id) {
+        this.status = 400;
+        this.body = { message: 'Missing parameters: id' };
+    } else {
+        try {
+            // Sanitize in case this is used as fabrication
+            let newData = _.omit(data, 'id');
+            let user = yield User.get(data.id);
+            let oldValue = _.pick(user, _.keys(newData));
+            
+            newData = _.pick(newData, _.keys(user));
+
+            // Need to set as saved before updating
+            user.setSaved();
+            user.update(newData);
+            yield user.save();
+
+            let newValue = _.pick(user, _.keys(newData));
+
+            this.status = 200;
+            this.body = {
+                id: user.id,
+                old: oldValue,
+                new: newValue
+            };
+        } catch (error) {
             console.error(error);
             this.status = 500;
             this.body = { message: this.message };

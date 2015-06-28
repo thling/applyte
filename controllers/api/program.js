@@ -300,7 +300,7 @@ module.exports.createProgram = function *() {
  *                  will be returned.
  *
  * @apiParam    {String}    id  The ID of the program to update
- * @apiUse      paramProgram
+ * @apiUse      paramProgramOptional
  *
  * @apiSuccess  (200)   {String}    id      The ID of the updated object
  * @apiSuccess  (200)   {Object}    new     The new values

@@ -30,6 +30,9 @@ module.exports = {
             port: process.env.RETHINKDB_PORT,
             db: process.env.RETHINKDB_DBNAME
         },
+        security: {
+            sessionSecret: (process.env.SESSION_SECRETS || '').split(',')
+        },
         port: process.env.PORT
     },
 

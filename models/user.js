@@ -5,6 +5,7 @@ let bcrypt  = require('bluebird').promisifyAll(require('bcrypt'));
 let config  = require(basedir + 'config');
 let schemas = require('./utils/schemas');
 let thinky  = require('./utils/thinky')();
+let utils   = require(basedir + 'lib/utils');
 
 let r = thinky.r;
 
@@ -136,6 +137,19 @@ User.defineStatic('query', function *(query) {
 });
 
 /**
+ * Validates the parameter against the schema of this model
+ *
+ * @param   properties  The properties to validate
+ */
+User.defineStatic('validate', function (properties) {
+    utils.assertObjectSchema(
+            properties,
+            SCHEMA,
+            { noMissing: false }
+    );
+});
+
+/**
  * Returns the full name of this user
  *
  * @return  Returns the full name of the user (first + middle + last)
@@ -182,7 +196,8 @@ User.define('setPassword', function (password) {
  * @param   properties  The new property to assign to this object
  */
 User.define('update', function (properties) {
-    // TODO: Add validation
+    // Validate the properties
+    User.validate(properties);
 
     // Make sure we only retrieve what we want
     let data = _.pick(properties, _.keys(SCHEMA));
@@ -194,6 +209,7 @@ User.define('update', function (properties) {
     // Filter names
     if (_.has(data, 'name')) {
         let newName = _.pick(data.name, _.keys(SCHEMA.name));
+
         _.assign(this.name, newName);
         data = _.omit(data, 'name');
     }

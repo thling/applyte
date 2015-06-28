@@ -86,7 +86,7 @@ describe('User model test', function () {
             after('clean up database', function *() {
                 yield user.delete();
             });
-            
+
             it('should create user and generate proper ID and password', function *() {
                 yield user.save();
                 let foundUser = yield User.findById(user.id);

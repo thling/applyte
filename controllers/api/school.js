@@ -426,7 +426,7 @@ module.exports.createSchool = function *() {
  *                  will be returned.
  *
  * @apiParam    {String}    id  The ID of the school to update
- * @apiUse      paramSchool
+ * @apiUse      paramSchoolOptional
  *
  * @apiSuccess  (200)   {String}    id      The ID of the updated object
  * @apiSuccess  (200)   {Object}    new     The new values
