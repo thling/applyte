@@ -34,7 +34,6 @@ describe('School API Routes', function () {
 
         after('clean up database', function *() {
             school = yield School.findById(createdId);
-            school.setSaved();
             yield school.delete();
         });
 
@@ -548,15 +547,22 @@ describe('School API Routes', function () {
         );
 
         it('should update the data with PUT request to /api/schools', function (done) {
-            let temp = master.school.template;
-            let newData = _.pick(temp, ['id', 'name', 'campus']);
+            let newData = _.pick(
+                    master.school.template,
+                    ['id', 'name', 'campus']
+            );
 
             newData.id = purdueWL.id;
             newData.name = 'Purrrrrdue University';
             newData.campus = 'Lafayette';
+            newData.address = {
+                address1: 'test'
+            };
 
             // Record the expected POST feedback
             let oldValue = _.pick(purdueWL, _.keys(_.omit(newData, 'id')));
+            oldValue.address = _.pick(purdueWL.address, _.keys(newData.address));
+
             let newValue = _.omit(newData, 'id');
             let changed = {
                 id: purdueWL.id,
@@ -575,7 +581,10 @@ describe('School API Routes', function () {
                     } else {
                         assert.deepEqual(res.body, changed);
 
-                        _.assign(temp, newData);
+                        let temp = master.school.template;
+                        _.assign(temp.address, newData.address);
+                        _.assign(temp, _.omit(newData, 'address'));
+
                         School.get(purdueWL.id)
                             .then(function (found) {
                                 master.school.assertEqual(found, temp);

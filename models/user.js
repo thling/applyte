@@ -1,16 +1,21 @@
 'use strict';
 
 let _       = require('lodash');
-let bcrypt  = require('bluebird').promisifyAll(require('bcrypt'));
+let Promise = require('bluebird');
+let bcrypt  = Promise.promisifyAll(require('bcrypt'));
 let config  = require(basedir + 'config');
+let errors  = require(basedir + 'lib/errors');
 let schemas = require('./utils/schemas');
 let thinky  = require('./utils/thinky')();
 let utils   = require(basedir + 'lib/utils');
 
 let r = thinky.r;
+let UserExistedError = errors.UserExistedError;
+let MissingPropertyError = errors.MissingPropertyError;
 
 const TABLE = 'user';
 const FULLNAME_INDEX = 'fullname';
+const EMAIL_INDEX = 'email';
 const SCHEMA = schemas[TABLE];
 
 let User = thinky.createModel(TABLE, SCHEMA, {
@@ -23,6 +28,10 @@ User.ensureIndex(FULLNAME_INDEX, function (doc) {
     return doc('name')('first')
             .add(doc('name')('middle'))
             .add(doc('name')('last'));
+});
+
+User.ensureIndex(EMAIL_INDEX, function (doc) {
+    return doc('contact')('email');
 });
 
 /**
@@ -199,39 +208,18 @@ User.define('update', function (properties) {
     // Validate the properties
     User.validate(properties);
 
-    // Make sure we only retrieve what we want
-    let data = _.pick(properties, _.keys(SCHEMA));
-
     // Filter internal date information
-    data = _.omit(data, ['created', 'verified', 'accessRights', 'password']);
-    data.modified = r.now();
+    let data = _.omit(
+            properties,
+            ['id', 'created', 'verified', 'accessRights', 'password']
+    );
 
-    // Filter names
-    if (_.has(data, 'name')) {
-        let newName = _.pick(data.name, _.keys(SCHEMA.name));
+    utils.assignDeep(this, data);
 
-        _.assign(this.name, newName);
-        data = _.omit(data, 'name');
+    // We will need to re-verify the user if the email is changed
+    if (_.has(data, 'contact.email')) {
+        this.verified = false;
     }
-
-    // Filter contacts and address
-    if (_.has(data, 'contact')) {
-        let newContact = _.pick(data.contact, _.keys(SCHEMA.contact));
-        if (_.has(newContact, 'address')) {
-            let newAddress = _.pick(
-                    newContact.address,
-                    _.keys(SCHEMA.contact.address)
-            );
-
-            _.assign(this.contact.address, newAddress);
-            newContact = _.omit(newContact, 'address');
-        }
-
-        _.assign(this.contact, newContact);
-        data = _.omit(data, 'contact');
-    }
-
-    _.assign(this, data);
 });
 
 /**
@@ -240,14 +228,45 @@ User.define('update', function (properties) {
  * @param   next    The function to be invoked after the hook.
  */
 User.pre('save', function (next) {
-    this.created = this.created || r.now();
-    this.modified = r.now();
-    this.name.preferred = this.name.preferred || this.name.first;
-    this.name.middle = this.name.middle || '';
-    this.username = this.username || this.contact.email;
-    this.accessRights = this.accessRights || 'user';
-    this.verified = this.verified || false;
-    next();
+    let _self = this;
+    let preprocess = function () {
+        // If everything's all right, do preprocessing
+        _self.created = _self.created || r.now();
+        _self.modified = r.now();
+        _self.name.preferred = _self.name.preferred || _self.name.first;
+        _self.name.middle = _self.name.middle || '';
+        _self.accessRights = _self.accessRights || 'user';
+        _self.verified = _self.verified || false;
+        next();
+    };
+
+    if (this.id && this.verified) {
+        // This is an update request
+        preprocess();
+    } else if (!this.contact.email) {
+        next(new MissingPropertyError('Email is missing from user'));
+    } else {
+        // Find any user with the same email address
+        User.getAll(this.contact.email, { index: EMAIL_INDEX })
+            .run()
+            .then(function (emails) {
+                if (emails.length > 1) {
+                    // We have a bigger problem, set up the system
+                    // to email admin!
+                    console.error('BIG PROBLEM!!!');
+                } else if (!_.isEmpty(emails) && emails[0].id !== _self.id) {
+                    throw new UserExistedError(
+                            'User with email '
+                            + _self.contact.email + ' '
+                            + 'already existed'
+                    );
+                }
+            })
+            .then(preprocess)
+            .catch(function (err) {
+                next(err);
+            });
+    }
 });
 
 module.exports = User;

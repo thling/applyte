@@ -34,7 +34,6 @@ describe('Program API Routes', function () {
 
         after('clean up database', function *() {
             program = yield Program.findById(createdId);
-            program.setSaved();
             yield program.delete();
         });
 

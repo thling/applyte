@@ -3,6 +3,7 @@
 let _       = require('lodash');
 let schemas = require('./utils/schemas');
 let thinky  = require('./utils/thinky')();
+let utils   = require(basedir + 'lib/utils');
 
 let r = thinky.r;
 
@@ -165,9 +166,12 @@ AreaCategory.defineStatic('query', function *(query) {
 AreaCategory.define('update', function (properties) {
     // TODO: Add validation
 
+    let data = _.omit(properties, 'id');
+    utils.assignDeep(this, data);
+
     // Make sure we only retrieve what we want
-    let data = _.pick(properties, _.keys(SCHEMA));
-    _.assign(this, data);
+    // let data = _.pick(properties, _.keys(SCHEMA));
+    // _.assign(this, data);
 });
 
 module.exports = AreaCategory;

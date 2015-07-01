@@ -9,14 +9,14 @@ module.exports = function (router) {
     router.get(apiBase, userApi.query);
 
     // Gets the school by school id
-    // router.get(apiBase + '/:id', userApi.getUserById);
+    router.get(apiBase + '/:id', userApi.getUserById);
 
     // Creates a new school, returns an ID
     router.post(apiBase, userApi.createUser);
 
     // Updates a school, returns changelog
-    // router.put(apiBase, userApi.updateUser);
+    router.put(apiBase, userApi.updateUser);
 
     // Deletes a school (needs admin), returns nothing
-    // router.delete(apiBase, userApi.deleteUser);
+    router.delete(apiBase, userApi.deleteUser);
 };

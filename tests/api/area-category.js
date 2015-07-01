@@ -33,7 +33,6 @@ describe('AreaCategory API Routes', function () {
 
         after('clean up database', function *() {
             category = yield AreaCategory.findById(createdId);
-            category.setSaved();
             yield category.delete();
         });
 

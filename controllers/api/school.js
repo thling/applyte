@@ -470,22 +470,18 @@ module.exports.updateSchool = function *() {
     } else {
         try {
             // Sanitize in case this is used as fabrication
-            let newData = _.omit(data, 'id');
             let school = yield School.get(data.id);
-            let oldValue = _.pick(school, _.keys(newData));
+            let changed = utils.diffObjects(data, school);
 
             // Need to set as saved before updating
-            school.setSaved();
-            school.update(newData);
+            school.update(data);
             yield school.save();
-
-            let newValue = _.pick(school, _.keys(newData));
 
             this.status = 200;
             this.body = {
                 id: school.id,
-                old: oldValue,
-                new: newValue
+                old: changed.old,
+                new: changed.new
             };
         } catch (error) {
             console.error(error);
@@ -534,7 +530,6 @@ module.exports.deleteSchool = function *() {
             let school = yield School.findById(data.id);
 
             // Need to set saved before delete
-            school.setSaved();
             yield school.delete();
 
             this.status = 204;

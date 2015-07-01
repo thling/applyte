@@ -63,6 +63,7 @@ describe('User model test', function () {
             template.contact.email = 'ling21@purdue.edu';
             template.contact.address.address1 = '320 S. Grant St.';
             template.contact.address.address2 = 'Apt. 424';
+            template.verified = false;
 
             master.user.assertEqual(user, template);
         });
@@ -70,14 +71,12 @@ describe('User model test', function () {
         it('should not be able update read-only fields', function () {
             user.update({
                 accessRights: 'admin',
-                verified: false,
+                verified: true,
                 created: 'hahaha',
                 modified: 'noooo'
             });
 
-            assert.strictEqual(user.accessRights, template.accessRights);
-            assert.strictEqual(user.verified, template.verified);
-            assert.strictEqual(user.created, template.created);
+            master.user.assertEqual(user, template);
         });
     });
 
@@ -91,6 +90,10 @@ describe('User model test', function () {
                 yield user.save();
                 let foundUser = yield User.findById(user.id);
                 master.user.assertEqual(foundUser, user);
+
+                // Set verified to true for testing purposes
+                user.verified = true;
+                yield user.save();
             });
 
             it('should update the database object properly', function *() {
@@ -101,6 +104,22 @@ describe('User model test', function () {
                 yield user.save();
                 let foundUser = yield User.findById(user.id);
                 master.user.assertEqual(foundUser, user);
+            });
+
+            it('should set veriified to false if email is updated', function *() {
+                assert.strictEqual(user.verified, true);
+
+                user.update({
+                    contact: {
+                        email: 'test@gmail.com'
+                    }
+                });
+
+                yield user.save();
+                assert.strictEqual(user.verified, false);
+
+                user.verified = true;
+                yield user.save();
             });
         });
 
@@ -120,18 +139,22 @@ describe('User model test', function () {
                 bruce.name.first = 'Bruce';
                 bruce.name.middle = '';
                 bruce.name.last = 'Weng';
+                bruce.contact.email = 'bruce@purdue.edu';
 
                 cyiu.name.first = 'Cyiu';
                 cyiu.name.middle = '';
                 cyiu.name.last = 'Chau';
+                cyiu.contact.email = 'cyiu@purdue.edu';
 
                 ellen.name.first = 'Ellen';
                 ellen.name.middle = '';
                 ellen.name.last = 'Lai';
+                ellen.contact.email = 'ellen@purdue.edu';
 
                 kane.name.first = 'Kane';
                 kane.name.middle = '';
                 kane.name.last = 'Yang';
+                kane.contact.email = 'kane@purdue.edu';
 
                 for (let user of users) {
                     yield user.save();
@@ -147,6 +170,22 @@ describe('User model test', function () {
             it('should list all users', function *() {
                 let foundUsers = yield User.getAllUsers();
                 master.listEquals(foundUsers, users);
+            });
+
+            it('should throw an error after creating a duplicated user', function *() {
+                let testUser = new User(master.user.template);
+                try {
+                    yield testUser.save();
+                } catch (error) {
+                    if (error) {
+                        assert.strictEqual(
+                                error.message,
+                                'User with email '
+                                        + testUser.contact.email + ' '
+                                        + 'already existed'
+                        );
+                    }
+                }
             });
         });
     });

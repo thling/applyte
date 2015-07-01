@@ -6,6 +6,7 @@ let User   = require(basedir + 'models/user');
 let utils  = require(basedir + 'lib/utils');
 
 let BadRequestError = errors.BadRequestError;
+let UserExistedError = errors.UserExistedError;
 
 /**
  * Parses the name supplied into a name object
@@ -98,8 +99,6 @@ let flattenName = function (query) {
  *                                          with <code>encodeURI</code>
  * @apiParam    {String}    [preferred]     The preferred name to search for. Must be encoded
  *                                          with <code>encodeURI</code>
- * @apiParam    {String}    [username]      The username to search for. Must be encoded
- *                                          with <code>encodeURI</code>
  * @apiParam    {String=user,admin} [assessRights=user]
  *                                          The access rights to filter.
  * @apiParam    {String}    [fields]    The fields to select from. Fields must
@@ -167,7 +166,6 @@ module.exports.query = function *() {
             console.error(error);
             this.status = 500;
             this.body = { message: 'Internal error' };
-
         }
     }
 };
@@ -237,7 +235,7 @@ module.exports.createUser = function *() {
 
     // Check for missing fields
     let hasMissingFields = false;
-    let requiredFields = ['username', 'name.first', 'name.last', 'contact.email'];
+    let requiredFields = ['name.first', 'name.last', 'contact.email'];
     for (let required of requiredFields) {
         if (!_.has(data, required)) {
             hasMissingFields = true;
@@ -267,10 +265,13 @@ module.exports.createUser = function *() {
                 id: user.id
             };
         } catch (error) {
-            // If save failed, return server error
-            console.error(error);
-            this.status = 500;
-            this.body = { message: this.message };
+            if (error instanceof UserExistedError) {
+                error.generateContext(this);
+            } else {
+                console.error(error);
+                this.status = 500;
+                this.body = { message: this.message };
+            }
         }
     }
 };
@@ -327,7 +328,7 @@ module.exports.updateUser = function *() {
     // Reject invalid input immediately
     let invalid = _.intersection(
             _.keys(data),
-            ['id', 'created', 'modified', 'accessRights', 'verified', 'password']
+            ['created', 'modified', 'accessRights', 'verified', 'password']
     );
 
     if (!_.isEmpty(invalid)) {
@@ -339,24 +340,74 @@ module.exports.updateUser = function *() {
     } else {
         try {
             // Sanitize in case this is used as fabrication
-            let newData = _.omit(data, 'id');
             let user = yield User.get(data.id);
-            let oldValue = _.pick(user, _.keys(newData));
-            
-            newData = _.pick(newData, _.keys(user));
+            let changed = utils.diffObjects(data, user);
 
             // Need to set as saved before updating
-            user.setSaved();
-            user.update(newData);
+            user.update(data);
             yield user.save();
-
-            let newValue = _.pick(user, _.keys(newData));
 
             this.status = 200;
             this.body = {
                 id: user.id,
-                old: oldValue,
-                new: newValue
+                old: changed.old,
+                new: changed.new
+            };
+        } catch (error) {
+            if (error instanceof UserExistedError) {
+                error.generateContext(this);
+            } else {
+                console.error(error);
+                this.status = 500;
+                this.body = { message: this.message };
+            }
+        }
+    }
+};
+
+/**
+ * @api {delete} /api/users     Delete an existing user
+ * @apiName     deleteUser
+ * @apiGroup    Users
+ * @apiVersion  0.2.0
+ *
+ * @apiDescription  Deletes an User with specified ID. During testing,
+ *                  any <code>access-token</code> will work; in production,
+ *                  this API will reject anything as it is still in test.
+ *
+ * @apiHeader   {String}    acccess-token   The access token to execute
+ *                                          delete action on the database
+ *
+ * @apiParam    {String}    id  The ID of the object to delete
+ *
+ * @apiSuccess  (204)   {String}    success     "deleted"
+ * @apiSuccess  (204)   {String}    id          The ID of the deleted object
+ * @apiError    (403)   {String}    error       "Permission denied"
+ * @apiUse      errors
+ */
+module.exports.deleteUser = function *() {
+    let data = this.request.body;
+    let header = this.request.headers;
+
+    // Implement apikey for critical things like this in the future
+    // Since this is experimental, we'll make sure this is never possible
+    // on production server
+    if (!header.access_token || process.env.NODE_ENV === 'production') {
+        this.status = 403;
+        this.body = { message: this.message };
+    } else if (!data.id) {
+        // Bad request
+        this.status = 400;
+        this.body = { message: 'Missing parameters: id' };
+    } else {
+        try {
+            let user = yield User.findById(data.id);
+            yield user.delete();
+
+            this.status = 204;
+            this.body = {
+                message: this.message,
+                id: data.id
             };
         } catch (error) {
             console.error(error);

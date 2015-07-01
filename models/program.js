@@ -4,6 +4,7 @@ let _       = require('lodash');
 let schemas = require('./utils/schemas');
 let School  = require('./school');
 let thinky  = require('./utils/thinky')();
+let utils   = require(basedir + 'lib/utils');
 
 let r = thinky.r;
 
@@ -403,34 +404,8 @@ Program.define('removeArea', function (name) {
 Program.define('update', function (properties) {
     // TODO: Add validation
 
-    // Make sure we only retrieve what we want
-    let data = _.pick(properties, _.keys(SCHEMA));
-
-    // Make sure the address only contain the fields we want
-    if (_.has(data, 'contact')) {
-        data.contact = _.pick(data.contact, _.keys(SCHEMA.contact));
-
-        if (_.has(data, 'contact.address')) {
-            let newAddress = _.pick(
-                    data.contact.address,
-                    _.keys(SCHEMA.contact.address)
-            );
-
-            _.assign(this.contact.address, newAddress);
-            data.contact = _.omit(data.contact, 'address');
-        }
-
-        _.assign(this.contact, data.contact);
-        data = _.omit(data, 'contact');
-    }
-
-    if (_.has(data, 'areas')) {
-        for (let area of data.areas) {
-            area = _.pick(area, _.keys(SCHEMA.areas[0]));
-        }
-    }
-
-    _.assign(this, data);
+    let data = _.omit(properties, 'id');
+    utils.assignDeep(this, data);
 });
 
 module.exports = Program;

@@ -180,7 +180,6 @@ module.exports.areaCategory = {
 module.exports.user = {
     get template() {
         return {
-            username: 'thling90',
             password: {
                 hash: null,
                 salt: null
@@ -191,7 +190,7 @@ module.exports.user = {
                 last: 'Ling',
                 preferred: 'Sam'
             },
-            birthday: 'Sun Nov 04 1990 00:00:00 GMT+08:00',
+            birthday: new Date(1990, 11, 4),
             contact: {
                 email: 'sam@thling.com',
                 phone: '+1 (765) 237-9196',
@@ -199,8 +198,8 @@ module.exports.user = {
             },
             accessRights: 'user',
             verified: true,
-            created: 'Thu Jun 25 2015 04:54:42 GMT+00:00',
-            modified: 'Thu Jun 25 2015 04:54:42 GMT+00:00'
+            created: new Date(2015, 6, 25, 4, 54, 42),
+            modified: new Date(2015, 6, 25, 4, 54, 42)
         };
     },
 
@@ -212,14 +211,13 @@ module.exports.user = {
      */
     assertEqual: function (user, test) {
         assert(_.isObject(user), 'User is not an object');
-        assert.strictEqual(user.username, test.username);
-        assert.strictEqual(user.birthday.toString(), test.birthday.toString());
-        assert.strictEqual(user.created.toString(), test.created.toString());
         assert.strictEqual(user.accessRights, test.accessRights);
         assert.strictEqual(user.verified, test.verified);
+        assert.deepEqual(user.birthday, test.birthday);
+        assert.deepEqual(user.created, test.created);
 
-        assert.deepEqual(user.password, test.password);
         assert.deepEqual(user.name, test.name);
+        assert.deepEqual(user.password, test.password);
         assert.deepEqual(user.contact, test.contact);
     }
 };

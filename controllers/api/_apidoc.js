@@ -410,7 +410,6 @@
  *            <https://applyte.io/api/users?start=36&length=3>; rel="next"
  *      [{
  *          "id": "random-user-identifier",
- *          "username": "purduepete",
  *          "name": {
  *              "first": "Purdue",
  *              "middle": "Boilermaker",
@@ -441,8 +440,6 @@
 
 /**
  * @apiDefine paramUser
- * @apiParam    {String}    [username]      The username. Default to
- *                                          <code>contact.email</code> if not supplied.
  * @apiParam    {String}    newPassword     New password for the user
  * @apiParam    {Object}    name    Name specs of the user
  * @apiParam    {String}    name.first      The firstname of the user
@@ -468,7 +465,6 @@
 
 /**
  * @apiDefine paramUserOptional
- * @apiParam    {String}    [username]      The username. Default to email if not supplied.
  * @apiParam    {String}    [newPassword]   New password for the user
  * @apiParam    {Object}    [name]  Name specs of the user
  * @apiParam    {String}    [name.first]    The firstname of the user

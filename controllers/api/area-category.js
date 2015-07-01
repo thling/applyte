@@ -202,22 +202,18 @@ module.exports.updateAreaCategory = function *() {
     } else {
         try {
             // Sanitize in case this is used as fabrication
-            let newData = _.omit(data, 'id');
             let category = yield AreaCategory.get(data.id);
-            let oldValue = _.pick(category, _.keys(newData));
+            let changed = utils.diffObjects(data, category);
 
             // Need to set as saved before updating
-            category.setSaved();
-            category.update(newData);
+            category.update(data);
             yield category.save();
-
-            let newValue = _.pick(category, _.keys(newData));
 
             this.status = 200;
             this.body = {
                 id: category.id,
-                new: newValue,
-                old: oldValue
+                new: changed.new,
+                old: changed.old
             };
         } catch (error) {
             console.error(error);
@@ -264,9 +260,6 @@ module.exports.deleteAreaCategory = function *() {
     } else {
         try {
             let category = yield AreaCategory.findById(data.id);
-
-            // Need to set saved before delete
-            category.setSaved();
             yield category.delete();
 
             this.status = 204;

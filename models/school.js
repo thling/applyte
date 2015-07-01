@@ -3,6 +3,7 @@
 let _       = require('lodash');
 let schemas = require('./utils/schemas');
 let thinky  = require('./utils/thinky')();
+let utils   = require(basedir + 'lib/utils');
 
 let r = thinky.r;
 
@@ -298,20 +299,11 @@ School.define('linksIter', function () {
  * @param   properties  The new property to assign to this object
  */
 School.define('update', function (properties) {
-    // TODO: Add validation
-
     // Make sure we only retrieve what we want
-    let data = _.pick(properties, _.keys(SCHEMA));
+    let data = _.omit(properties, 'id');
 
-    // Make sure the address only contain the fields we want
-    if (_.has(data, 'address')) {
-        let newAddress = _.pick(data.address, _.keys(SCHEMA.address));
-        _.assign(this.address, newAddress);
-
-        data = _.omit(data, 'address');
-    }
-
-    _.assign(this, data);
+    // Recursively assign data value
+    utils.assignDeep(this, data);
 });
 
 module.exports = School;

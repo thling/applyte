@@ -348,22 +348,18 @@ module.exports.updateProgram = function *() {
     } else {
         try {
             // Sanitize in case this is used as fabrication
-            let newData = _.omit(data, 'id');
             let program = yield Program.get(data.id);
-            let oldValue = _.pick(program, _.keys(newData));
+            let changed = utils.diffObjects(data, program);
 
             // Need to set as saved before updating
-            program.setSaved();
-            program.update(newData);
+            program.update(data);
             yield program.save();
-
-            let newValue = _.pick(program, _.keys(newData));
 
             this.status = 200;
             this.body = {
                 id: program.id,
-                new: newValue,
-                old: oldValue
+                new: changed.new,
+                old: changed.old
             };
         } catch (error) {
             console.error(error);
@@ -410,9 +406,6 @@ module.exports.deleteProgram = function *() {
     } else {
         try {
             let program = yield Program.findById(data.id);
-
-            // Need to set saved before delete
-            program.setSaved();
             yield program.delete();
 
             this.status = 204;
