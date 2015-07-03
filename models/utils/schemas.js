@@ -81,10 +81,7 @@ module.exports.area_category = {
 // User schema
 module.exports.user = {
     id: type.string(),  // Not user set by user, this is ID for internal use
-    password: {
-        hash: type.string(),
-        salt: type.string()
-    },
+    password: type.string().required(),
     name: {
         first: type.string(),
         middle: type.string(),

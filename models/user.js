@@ -12,6 +12,7 @@ let utils   = require(basedir + 'lib/utils');
 let r = thinky.r;
 let UserExistedError = errors.UserExistedError;
 let MissingPropertyError = errors.MissingPropertyError;
+let UserNotFoundError = errors.UserNotFoundError;
 
 const TABLE = 'user';
 const FULLNAME_INDEX = 'fullname';
@@ -55,6 +56,23 @@ User.defineStatic('findById', function *(id) {
     }
 
     return result;
+});
+
+User.defineStatic('findByUsername', function *(username) {
+    let result = null;
+    try {
+        result = yield User
+                .getAll(username, { index: EMAIL_INDEX })
+                .run();
+
+        if (result.length > 1) {
+            console.error('More than one matching emails');
+        }
+    } catch(error) {
+        console.error(error.message);
+    }
+
+    return result[0];
 });
 
 /**
@@ -159,6 +177,47 @@ User.defineStatic('validate', function (properties) {
 });
 
 /**
+ * Matches the database with username, then see if the password
+ * hash matches.
+ *
+ * @param   username    The username (email in our case) to search for
+ * @param   password    The password supplied by the username
+ * @return  The user object if the password matches
+ * @throws  UserNotFoundError if user does not exist or passwords do not match
+ */
+User.defineStatic('matchUser', function *(username, password) {
+    let authenticated = false, user;
+    
+    try {
+        user = yield User.findByUsername(username);
+        if (user) {
+            // TODO: check if login count > 5
+            authenticated = user.authenticate(password);
+        }
+    } catch (error) {
+        console.error(error.message);
+        if (user) {
+            // TODO: Add login count
+        }
+    }
+
+    if (!user || !authenticated) {
+        throw new UserNotFoundError('Username ' + username + 'does not exist');
+    }
+
+    return user;
+});
+
+/**
+ * Verifies whether the password matches the own password
+ * @param   password    The password to verify
+ * @return  True if passed and false if failed
+ */
+User.define('authenticate', function (password) {
+    return bcrypt.compareSync(password, this.password);
+});
+
+/**
  * Returns the full name of this user
  *
  * @return  Returns the full name of the user (first + middle + last)
@@ -179,19 +238,20 @@ User.define('getPreferredName', function () {
             this.name.preferred : this.name.first;
 });
 
+User.define('getUsername', function () {
+    return this.contact.email;
+});
+
 /**
  * Sets the password. Updates salt and store the hashed password with salt.
  *
  * @param   password    The new password to be set
  */
 User.define('setPassword', function (password) {
-    this.password = {
-        salt: null,
-        hash: null
-    };
+    this.password = null;
 
-    this.password.salt = bcrypt.genSaltSync(config.security.hashRounds);
-    this.password.hash = bcrypt.hashSync(password, this.password.salt);
+    let salt = bcrypt.genSaltSync(config.security.hashRounds);
+    this.password = bcrypt.hashSync(password, salt);
 });
 
 /**

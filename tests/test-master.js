@@ -180,10 +180,7 @@ module.exports.areaCategory = {
 module.exports.user = {
     get template() {
         return {
-            password: {
-                hash: null,
-                salt: null
-            },
+            password: null,
             name: {
                 first: 'Tzu',
                 middle: 'Hsuan',
@@ -213,11 +210,11 @@ module.exports.user = {
         assert(_.isObject(user), 'User is not an object');
         assert.strictEqual(user.accessRights, test.accessRights);
         assert.strictEqual(user.verified, test.verified);
+        assert.strictEqual(user.password, test.password);
+
         assert.deepEqual(user.birthday, test.birthday);
         assert.deepEqual(user.created, test.created);
-
         assert.deepEqual(user.name, test.name);
-        assert.deepEqual(user.password, test.password);
         assert.deepEqual(user.contact, test.contact);
     }
 };

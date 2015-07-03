@@ -1,16 +1,16 @@
 'use strict';
 
-let _        = require('lodash');
 let path     = require('path');
 let config   = require('./config');
 let defaults = require('./config-defaults');
+let utils    = require('../lib/utils');
 
 // Decide which environment this app runs on
 let nodeEnv = process.env.NODE_ENV;
 
 // If the node environment is not defined, kill process (need better way)
 // This SHOULD NOT happen
-if (_.isUndefined(nodeEnv)) {
+if (!nodeEnv) {
     console.error('Cannot find NODE_ENV environment variable; default to safemode');
     console.error('Please shutdown the app and set the NODE_ENV environment variable immediately');
     throw new Error('Cannot find NODE_ENV environment variable');
@@ -25,4 +25,4 @@ global.rootreq = function (reqPath) {
 };
 
 // Export the correct configuration)
-module.exports = _.assign(defaults, config[nodeEnv]);
+module.exports = utils.assignDeep(defaults, config[nodeEnv]);

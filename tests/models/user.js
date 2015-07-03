@@ -21,11 +21,10 @@ describe('User model test', function () {
 
         it('should proper set password', function () {
             user.setPassword(password);
-            assert.notStrictEqual(user.password.salt, null);
-            assert.notStrictEqual(user.password.hash, null);
+            assert.notStrictEqual(user.password, null);
 
-            let hashed = bcrypt.hashSync(password, user.password.salt);
-            assert.strictEqual(user.password.hash, hashed);
+            let passwordMatched = bcrypt.compareSync(password, user.password);
+            assert(passwordMatched, 'Password does not match');
             template.password = _.cloneDeep(user.password);
         });
 
@@ -77,6 +76,9 @@ describe('User model test', function () {
             });
 
             master.user.assertEqual(user, template);
+        });
+
+        it('should process authentication step properly', function () {
         });
     });
 
