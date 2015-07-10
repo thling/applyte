@@ -1,9 +1,11 @@
 'use strict';
 
-let _      = require('lodash');
-let errors = require(basedir + 'lib/errors');
-let User   = require(basedir + 'models/user');
-let utils  = require(basedir + 'lib/utils');
+let _       = require('lodash');
+let request = require('koa-request');
+let config  = require(basedir + 'config');
+let errors  = require(basedir + 'lib/errors');
+let User    = require(basedir + 'models/user');
+let utils   = require(basedir + 'lib/utils');
 
 let BadRequestError = errors.BadRequestError;
 let UserExistedError = errors.UserExistedError;
@@ -32,7 +34,7 @@ let parseNames = function (query) {
         name.preferred = query.preferred;
     }
 
-    if (!_.empty(name)) {
+    if (!_.isEmpty(name)) {
         query.name = name;
     }
 };
@@ -148,7 +150,6 @@ module.exports.query = function *() {
                 ['start', 'limit', 'sort', 'order', 'firstname',
                         'middlename', 'lastname', 'preferred']
         );
-
         let users = yield User.query(query);
         let headerLink = utils.composePaginationLinkHeader(
                 flattenName(query),  // Flatten the name object
@@ -217,6 +218,8 @@ module.exports.getUserById = function *() {
  *                  newly created object. The optional parameters may be
  *                  tightened in the future release.
  *
+ * @apiParam    {String}    [recaptcha]     The response from Google recaptcha.
+ *                                          Required for web client sign-ups.
  * @apiUse      paramUser
  *
  * @apiSuccess  (201) {String}  success     "created"
@@ -226,51 +229,89 @@ module.exports.getUserById = function *() {
  */
 module.exports.createUser = function *() {
     let data = this.request.body;
+    let recaptcha = data.recaptcha;
 
-    // Reject invalid input immediately
-    let invalid = _.intersection(
-            _.keys(data),
-            ['id', 'created', 'modified', 'accessRights', 'verified', 'password']
-    );
-
-    // Check for missing fields
-    let hasMissingFields = false;
-    let requiredFields = ['name.first', 'name.last', 'contact.email'];
-    for (let required of requiredFields) {
-        if (!_.has(data, required)) {
-            hasMissingFields = true;
-            break;
-        }
+    try {
+        this.assertCSRF();
+    } catch (error) {
+        this.status = 403;
+        this.body = {
+            message: error.message
+        };
     }
 
-    // Reject immediately for invalid requests
-    if (!_.isEmpty(invalid) || hasMissingFields) {
-        this.status = 400;
-        this.body = { message: 'Invalid request parameters' };
-    } else if (!data.newPassword) {
-        this.status = 400;
-        this.body = { message: 'Password not supplied' };
+    // Trying to see if the recaptcha passed
+    if (!recaptcha && config.mode !== 'test') {
+        this.status = 403;
+        this.body = {
+            message: 'Humanness was not verified'
+        };
     } else {
-        let userdata = _.omit(data, 'newPassword');
-
-        // Create a new school and try to save it
-        let user = new User(userdata);
-        user.setPassword(data.newPassword);
-
-        try {
-            yield user.save();
-            this.status = 201;
-            this.body = {
-                message: this.message,
-                id: user.id
+        let result;
+        if (config.mode === 'test') {
+            // Don't worry about humanness while testing
+            result = {};
+            result.success = true;
+        } else {
+            // Check for humanness (reCAPTCHA by Google)
+            let options = {
+                url: 'https://www.google.com/recaptcha/api/siteverify',
+                method: 'POST',
+                json: {
+                    secret: config.security.recaptchaSecret,
+                    response: recaptcha
+                }
             };
-        } catch (error) {
-            if (error instanceof UserExistedError) {
-                error.generateContext(this);
-            } else {
-                console.error(error);
-                this.status = 500;
-                this.body = { message: this.message };
+
+            result = yield request(options);
+            result = JSON.parse(result.body);
+        }
+
+        // Reject invalid input immediately
+        let invalid = _.intersection(
+                _.keys(data),
+                ['id', 'created', 'modified', 'accessRights', 'verified', 'password']
+        );
+
+        // Check for missing fields
+        let hasMissingFields = false;
+        let requiredFields = ['name.first', 'name.last', 'contact.email'];
+        for (let required of requiredFields) {
+            if (!_.has(data, required)) {
+                hasMissingFields = true;
+                break;
+            }
+        }
+
+        // Reject immediately for invalid requests
+        if (!_.isEmpty(invalid) || hasMissingFields) {
+            this.status = 400;
+            this.body = { message: 'Invalid request parameters' };
+        } else if (!data.newPassword) {
+            this.status = 400;
+            this.body = { message: 'Password not supplied' };
+        } else {
+            let userdata = _.omit(data, 'newPassword');
+
+            // Create a new school and try to save it
+            let user = new User(userdata);
+            user.setPassword(data.newPassword);
+
+            try {
+                yield user.save();
+                this.status = 201;
+                this.body = {
+                    message: this.message,
+                    id: user.id
+                };
+            } catch (error) {
+                if (error instanceof UserExistedError) {
+                    error.generateContext(this);
+                } else {
+                    console.error(error);
+                    this.status = 500;
+                    this.body = { message: this.message };
+                }
             }
         }
     }

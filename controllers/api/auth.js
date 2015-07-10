@@ -1,91 +1,49 @@
 'use strict';
 
-let _       = require('lodash');
-let request = require('koa-request');
-let auth    = require(basedir + 'lib/auth');
-let config  = require(basedir + 'config');
-let errors  = require(basedir + 'lib/errors');
-let User    = require(basedir + 'models/user');
-let utils   = require(basedir + 'lib/utils');
+let passport = require('koa-passport');
+let errors   = require(basedir + 'lib/errors');
 
-let UserExistedError = errors.UserExistedError;
+let BadRequestError = errors.BadRequestError;
 
-module.exports.createUser = function *() {
-    let data = this.request.body;
-    let recaptchaResponse = data.recatpchaResponse;
+/**
+ * Request token API
+ */
+module.exports.requestToken = function *() {
+    this.status = 200;
+    this.body = {
+        _csrf: this.csrf
+    };
+};
 
-    // Trying to see if the recaptcha passed
-    if (!recaptchaResponse) {
-        this.status = 403;
-        this.body = {
-            message: 'Humanness was not verified'
-        };
-    } else {
-        let options = {
-            url: 'https://www.google.com/recaptcha/api/siteverify',
-            method: 'POST',
-            json: {
-                secret: config.security.recaptchaSecret,
-                response: recaptchaResponse
+/**
+ * Login API
+ */
+module.exports.login = function *() {
+    try {
+        this.assertCSRF();
+        yield passport.authenticate('local', function *(err, user) {
+            if (err) {
+                throw err;
             }
+
+            if (!user) {
+                throw new BadRequestError('Bad login', 401);
+            }
+        });
+
+        this.status = 201;
+        this.body = {
+            // TODO: Create JWT
+            message: 'Logged in'
         };
-
-        let result = yield request(options);
-        result = JSON.parse(result.body);
-
-        if (!result.success) {
+    } catch (error) {
+        if (error.type === 'BadRequestError') {
+            error.generateContext(this);
+        } else {
             this.status = 403;
             this.body = {
-                message: 'Humanness was not verified'
+                message: error.message
             };
-        } else {
-            // Reject invalid input immediately
-            let invalid = _.intersection(
-                    _.keys(data),
-                    ['id', 'created', 'modified', 'accessRights', 'verified', 'password']
-            );
-
-            // Check for missing fields
-            let hasMissingFields = false;
-            let requiredFields = ['name.first', 'name.last', 'contact.email'];
-            for (let required of requiredFields) {
-                if (!_.has(data, required)) {
-                    hasMissingFields = true;
-                    break;
-                }
-            }
-
-            // Reject immediately for invalid requests
-            if (!_.isEmpty(invalid) || hasMissingFields) {
-                this.status = 400;
-                this.body = { message: 'Invalid request parameters' };
-            } else if (!data.newPassword) {
-                this.status = 400;
-                this.body = { message: 'Password not supplied' };
-            } else {
-                let userdata = _.omit(data, 'newPassword');
-
-                // Create a new school and try to save it
-                let user = new User(userdata);
-                user.setPassword(data.newPassword);
-
-                try {
-                    yield user.save();
-                    this.status = 201;
-                    this.body = {
-                        message: this.message,
-                        id: user.id
-                    };
-                } catch (error) {
-                    if (error instanceof UserExistedError) {
-                        error.generateContext(this);
-                    } else {
-                        console.error(error);
-                        this.status = 500;
-                        this.body = { message: this.message };
-                    }
-                }
-            }
         }
     }
 };

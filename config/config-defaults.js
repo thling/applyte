@@ -13,9 +13,15 @@ module.exports = {
         db: 'applyte'    // Default database name
     },
 
+    // Session related options (base on koa-generic-session)
+    sessionOptions: {
+        key: 'applyte.sid',
+        prefix: 'applyte:sess:'
+    },
+
     // Security configurations
     security: {
-        sessionSecret: ['This is my secret'],  // Cookie signing keys, change in production
+        appKeys: ['This is my secret'],  // Cookie signing keys, change in production
         hashRounds: 10  // Number of rounds to hash
     },
 

@@ -9,4 +9,6 @@ require('./api/school')(router);
 require('./api/area-category')(router);
 require('./api/user')(router);
 
+require('./api/auth')(router);
+
 module.exports = router;

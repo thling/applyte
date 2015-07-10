@@ -187,7 +187,6 @@ User.defineStatic('validate', function (properties) {
  */
 User.defineStatic('matchUser', function *(username, password) {
     let authenticated = false, user;
-    
     try {
         user = yield User.findByUsername(username);
         if (user) {

@@ -9,13 +9,15 @@
   },
   "dependencies": {
     "bcrypt": "^0.8.3",
-    "bluebird": "^2.9.30",
-    "co": "^4.5.4",
+    "bluebird": "^2.9.33",
+    "co": "^4.6.0",
     "co-body": "*",
     "co-views": "^1.0.0",
     "koa": "^0.21.0",
     "koa-bodyparser": "*",
     "koa-compress": "*",
+    "koa-csrf": "^2.3.0",
+    "koa-generic-session": "^1.9.0",
     "koa-helmet": "^0.1.0",
     "koa-json": "*",
     "koa-logger": "*",
@@ -23,12 +25,11 @@
     "koa-passport": "^1.1.6",
     "koa-request": "^1.0.0",
     "koa-router": "^5.1.2",
-    "koa-sess": "^0.4.1",
     "koa-static": "*",
     "lodash": "^3.10.0",
     "passport-local": "^1.0.0",
     "swig": "*",
-    "thinky": "^2.0.7"
+    "thinky": "*"
   },
   "devDependencies": {
     "assert": "*",

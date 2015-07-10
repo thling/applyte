@@ -15,7 +15,7 @@ let BadRequestError = errors.BadRequestError;
  */
 let assertNameCampus = function (query) {
     if (query.campus && !query.name) {
-        throw new BadRequestError(422, '\'name\' is required when specifying campus');
+        throw new BadRequestError('\'name\' is required when specifying campus', 422);
     }
 };
 
