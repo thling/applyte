@@ -21,6 +21,7 @@ module.exports = {
 
     // Security configurations
     security: {
+        jwtSecret: 'this is a crazy jwt secret',
         appKeys: ['This is my secret'],  // Cookie signing keys, change in production
         hashRounds: 10  // Number of rounds to hash
     },

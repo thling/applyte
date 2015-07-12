@@ -241,14 +241,14 @@ module.exports.createUser = function *() {
     }
 
     // Trying to see if the recaptcha passed
-    if (!recaptcha && config.mode !== 'test') {
+    if (!recaptcha && config.mode === 'production') {
         this.status = 403;
         this.body = {
             message: 'Humanness was not verified'
         };
     } else {
         let result;
-        if (config.mode === 'test') {
+        if (config.mode !== 'production') {
             // Don't worry about humanness while testing
             result = {};
             result.success = true;

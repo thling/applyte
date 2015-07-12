@@ -5,6 +5,7 @@ let compress   = require('koa-compress');
 let csrf       = require('koa-csrf');
 let helmet     = require('koa-helmet');
 let json       = require('koa-json');
+let jwt        = require('koa-jwt');
 let koa        = require('koa');
 let logger     = require('koa-logger');
 let passport   = require('koa-passport');
@@ -14,7 +15,8 @@ let session    = require('koa-generic-session');
 let config     = require('./config');
 let router     = require('./routes');
 
-require('./lib/auth');
+require('./lib/auth').passport();
+
 let app;
 module.exports = (function () {
     if (!app) {
@@ -23,12 +25,10 @@ module.exports = (function () {
 
         // JSON prettifier
         if (config.jsonPrettify.prettify === true) {
-            app.use(json(
-                {
+            app.use(json({
                     pretty: true,
                     spaces: config.jsonPrettify.indentWidth
-                }
-            ));
+            }));
         }
 
         app.use(helmet.defaults());
@@ -54,6 +54,13 @@ module.exports = (function () {
         // Activate passport middleware
         app.use(passport.initialize());
         app.use(passport.session());
+
+        // Activate JSON Web Token
+        app.use(jwt({
+            secret: config.security.jwtSecret,
+            passthrough: true,
+            debug: (config.mode !== 'production')
+        }));
 
         // Import routes
         app.use(router.routes());

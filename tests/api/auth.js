@@ -22,9 +22,9 @@ require('co-mocha');
  *      require HTTP requests tests. Also don't need to require app
  *      for tests that doesn't require client-server communications
  */
-let request = function () {
-    return superagent(app.listen());
-};
+// let request = function () {
+//     return superagent(app.listen());
+// };
 
 let agency = function () {
     return superagent.agent(app.listen());
@@ -72,28 +72,16 @@ describe('Authentication test', function () {
                 .post('/api/auth/signup')
                 .set('x-csrf-token', csrf)
                 .send(user)
-                .expect(301)
-                .expect('location', '/api/users')
+                .expect(201)
+                .expect('Content-Type', /json/)
                 .end(function (err, res) {
                     if (err) {
                         throw err;
                     }
 
-                    agent
-                        .post(res.header.location)
-                        .set('x-csrf-token', csrf)
-                        .send(user)
-                        .expect(201)
-                        .expect('Content-Type', /json/)
-                        .end(function (err, res) {
-                            if (err) {
-                                throw err;
-                            }
-
-                            assert(res.body.id);
-                            createdId = res.body.id;
-                            done();
-                        });
+                    assert(res.body.id);
+                    createdId = res.body.id;
+                    done();
                 });
         });
     });

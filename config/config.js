@@ -31,6 +31,7 @@ module.exports = {
             db: process.env.RETHINKDB_DBNAME
         },
         security: {
+            jwtSecret: process.env.JWT_SECRET,
             appKeys: (process.env.APP_KEYS || '').split(','),
             recaptchaSecret: process.env.RECAPTCHA_SECRET
         },

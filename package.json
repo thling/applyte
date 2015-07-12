@@ -20,6 +20,7 @@
     "koa-generic-session": "^1.9.0",
     "koa-helmet": "^0.1.0",
     "koa-json": "*",
+    "koa-jwt": "^1.1.0",
     "koa-logger": "*",
     "koa-mount": "*",
     "koa-passport": "^1.1.6",
