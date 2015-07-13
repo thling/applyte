@@ -1,18 +1,21 @@
 'use strict';
 
-let r = require('../models/utils/thinky')().r;
+let co = require('co');
+let r  = require('../models/utils/thinky')().r;
 
 let TABLE = 'area_category';
 let NAME_INDEX = 'name';
 
 exports.up = function (next) {
-    r.tableCreate(TABLE)
-        .run()
-        .then(function () {
-            r.table(TABLE)
-                .indexCreate(NAME_INDEX)
-                .run(next);
-        });
+    co(function *() {
+        yield r.tableCreate(TABLE).run();
+        yield r.table(TABLE).indexCreate(NAME_INDEX).run();
+    })
+    .then(next)
+    .catch(function (error) {
+        console.error(error);
+    });
+
 };
 
 exports.down = function (next) {
