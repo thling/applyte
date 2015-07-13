@@ -13,6 +13,7 @@ let app        = require('../../app');
 let master     = require('../test-master');
 let Program    = require('../../models/program');
 let School     = require('../../models/school');
+let User       = require('../../models/user');
 let utils      = require('../../lib/utils');
 
 require('co-mocha');
@@ -26,6 +27,10 @@ require('co-mocha');
  */
 let request = function () {
     return superagent(app.listen());
+};
+
+let agency = function () {
+    return superagent.agent(app.listen());
 };
 
 describe('Program API Routes', function () {
@@ -433,59 +438,130 @@ describe('Program API Routes', function () {
                 }
         );
 
-        it('should update the data with PUT request to /api/programs', function (done) {
-            let temp = master.program.template;
-            let newData = _.pick(temp, ['id', 'name', 'areas']);
+        describe('Authentication based tests', function () {
+            let agent, csrf, token, user, userId;
 
-            temp.schoolId = purdue.id;
+            before('Set up environment', function (done) {
+                agent = agency();
+                user = master.user.template;
+                user.newPassword = 'this is password';
+                user = _.omit(
+                        user,
+                        ['created', 'modified', 'accessRights', 'verified', 'password']
+                );
 
-            newData.id = compsci.id;
-            newData.name = 'Test Science';
-            newData.areas.push({
-                    name: 'Systems Development',
-                    categories: ['Systems', 'Security']
+                // Get CSRF token
+                agent.get('/api/auth/tokens')
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        }
+
+                        // Signup with the CSRF token
+                        csrf = res.body._csrf;
+                        agent.post('/api/auth/signup')
+                            .set('x-csrf-token', csrf)
+                            .send(user)
+                            .end(function (err, res) {
+                                if (err) {
+                                    throw err;
+                                }
+
+                                userId = res.body.id;
+                                agent.put('/api/users/' + userId + '/makeAdmin')
+                                    .end(function (err) {
+                                        if (err) {
+                                            throw err;
+                                        }
+
+                                        agent.put('/api/users/' + userId + '/verify')
+                                            .end(function (err) {
+                                                if (err) {
+                                                    throw err;
+                                                }
+
+                                                // Login and obtain access token
+                                                agent.post('/api/auth/login')
+                                                    .set('x-csrf-token', csrf)
+                                                    .send({
+                                                        username: user.contact.email,
+                                                        password: 'this is password'
+                                                    })
+                                                    .end(function (err, res) {
+                                                        if (err) {
+                                                            throw err;
+                                                        }
+
+                                                        token = res.body.accessToken;
+                                                        done();
+                                                    });
+                                            });
+                                    });
+                            });
+                    });
             });
 
-            // Record the expected POST feedback
-            let oldValue = _.pick(compsci, _.keys(_.omit(newData, 'id')));
-            let newValue = _.omit(newData, 'id');
-            let changed = {
-                id: compsci.id,
-                old: oldValue,
-                new: newValue
-            };
+            after('Clean up database', function *() {
+                let foundUser = yield User.findById(userId);
+                yield foundUser.delete();
+            });
 
-            request()
-                .put('/api/programs')
-                .send(newData)
-                .expect(200)
-                .expect('Content-Type', /json/)
-                .end(function (err, res) {
-                    if (err) {
-                        throw err;
-                    } else {
-                        assert.deepEqual(res.body, changed);
-                        _.assign(temp, newData);
+            it('should update the data with PUT request to /api/programs', function (done) {
+                let temp = master.program.template;
+                let newData = _.pick(temp, ['id', 'name', 'areas']);
 
-                        Program.get(compsci.id)
-                            .then(function (found) {
-                                master.program.assertEqual(found, temp);
-                            }).catch(function (error) {
-                                done(error);
-                            });
-                    }
+                temp.schoolId = purdue.id;
 
-                    done();
+                newData.id = compsci.id;
+                newData.name = 'Test Science';
+                newData.areas.push({
+                        name: 'Systems Development',
+                        categories: ['Systems', 'Security']
                 });
+
+                // Record the expected POST feedback
+                let oldValue = _.pick(compsci, _.keys(_.omit(newData, 'id')));
+                let newValue = _.omit(newData, 'id');
+                let changed = {
+                    id: compsci.id,
+                    old: oldValue,
+                    new: newValue
+                };
+
+                request()
+                    .put('/api/programs')
+                    .set('Authorization', 'Bearer ' + token)
+                    .send(newData)
+                    .expect(200)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        } else {
+                            assert.deepEqual(res.body, changed);
+                            _.assign(temp, newData);
+
+                            Program.get(compsci.id)
+                                .then(function (found) {
+                                    master.program.assertEqual(found, temp);
+                                }).catch(function (error) {
+                                    done(error);
+                                });
+                        }
+
+                        done();
+                    });
+            });
+
+            it('should delete the program', function (done) {
+                agent
+                    .delete('/api/programs')
+                    .set('Authorization', 'Bearer ' + token)
+                    .send({ id: compsci.id })
+                    .expect(204, done);
+            });
         });
 
-        it('should be able to delete a program with proper prvilege', function (done) {
-            request()
-                .delete('/api/programs')
-                .set('access_token', 'anythingfortest')
-                .send({ id: compsci.id, apiKey: 'test' })
-                .expect(204, done);
-        });
 
         describe('Error tests', function () {
             it('should produce error because of bad start criteria', function (done) {

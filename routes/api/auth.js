@@ -7,21 +7,19 @@ let userApi = require(basedir + 'controllers/api/user');
 let apiBase = '/api/auth';
 
 module.exports = function (router) {
-    // Return a CSRF token for get requests
-    router.get(apiBase + '/signup', authApi.requestToken);
-
     // For post request to signup, we will redirect
     // to User.createUser
     router.post(apiBase + '/signup', userApi.createUser);
 
-    // Return a CSRF token for get requests
-    router.get(apiBase + '/login', authApi.requestToken);
-
     // Authenticate on login
     router.post(apiBase + '/login', authApi.login);
 
-    // Refresh token
-    router.put(apiBase + '/refresh-token', authApi.refreshToken);
+    // Return a CSRF token for get requests
+    router.get(apiBase + '/tokens', authApi.requestToken);
 
-    router.get(apiBase + '/token-test', authApi.tokenTest);
+    // Refresh token
+    router.put(apiBase + '/tokens/refresh', authApi.refreshToken);
+
+    // For testing token
+    router.post(apiBase + '/tokens/test', authApi.testToken);
 };

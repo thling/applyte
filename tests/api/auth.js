@@ -7,12 +7,12 @@
 process.env.NODE_ENV = 'test';
 
 let _          = require('lodash');
-let assert     = require('assert');
 let superagent = require('supertest');
 let app        = require('../../app');
 let master     = require('../test-master');
 let User       = require('../../models/user');
 
+require('chai').should();
 require('co-mocha');
 
 /**
@@ -31,19 +31,26 @@ let agency = function () {
 };
 
 describe('Authentication test', function () {
-    let createdId;
+    let agent;
+    let createdId, csrf, token;
+    let password = 'this is a password';
+    let username = 'sam@thling.com';
+
+    before('Set up', function () {
+        agent = agency();
+    });
+
     after('Clean up database', function *() {
         let foundUser = yield User.findById(createdId);
         yield foundUser.delete();
     });
 
     describe('Signup request', function () {
-        let agent, csrf, user;
+        let user;
 
         before('Set up data', function () {
-            agent = agency();
             user = master.user.template;
-            user.newPassword = 'this is a password';
+            user.newPassword = password;
             user = _.omit(
                     user,
                     ['created', 'modified', 'accessRights', 'verified', 'password']
@@ -53,7 +60,7 @@ describe('Authentication test', function () {
 
         it('should obtain a csrf token', function (done) {
             agent
-                .get('/api/auth/signup')
+                .get('/api/auth/tokens')
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -61,7 +68,7 @@ describe('Authentication test', function () {
                         throw err;
                     }
 
-                    assert(res.body._csrf);
+                    res.body.should.have.property('_csrf');
                     csrf = res.body._csrf;
                     done();
                 });
@@ -79,7 +86,7 @@ describe('Authentication test', function () {
                         throw err;
                     }
 
-                    assert(res.body.id);
+                    res.body.should.have.property('id');
                     createdId = res.body.id;
                     done();
                 });
@@ -87,32 +94,13 @@ describe('Authentication test', function () {
     });
 
     describe('Login request', function () {
-        let agent = agency();
-        let csrf;
-
-        it('should generate a proper csrf token', function (done) {
-            agent
-                .get('/api/auth/login')
-                .expect(200)
-                .expect('Content-Type', /json/)
-                .end(function (err, res) {
-                    if (err) {
-                        throw err;
-                    }
-
-                    assert(res.body._csrf);
-                    csrf = res.body._csrf;
-                    done();
-                });
-        });
-
         it('should be able to login using the CSRF token', function (done) {
             agent
                 .post('/api/auth/login')
                 .set('x-csrf-token', csrf)
                 .send({
-                    username: 'sam@thling.com',
-                    password: 'this is a password'
+                    username: username,
+                    password: password
                 })
                 .expect(201)
                 .expect('Content-Type', /json/)
@@ -121,7 +109,9 @@ describe('Authentication test', function () {
                         throw err;
                     }
 
-                    assert.strictEqual(res.body.message, 'Logged in');
+                    res.body.should.have.property('accessToken');
+                    res.body.should.have.property('message', 'Logged in');
+                    token = res.body.accessToken;
                     done();
                 });
         });
@@ -137,9 +127,20 @@ describe('Authentication test', function () {
                         throw err;
                     }
 
-                    assert.strictEqual(res.body.message, 'invalid csrf token');
+                    res.body.should.have.property('message', 'invalid csrf token');
                     done();
                 });
+        });
+
+        it('should respond 401 if username does not exist', function (done) {
+            agent
+                .post('/api/auth/login')
+                .set('x-csrf-token', csrf)
+                .send({
+                    username: 'random@user.com',
+                    password: password
+                })
+                .expect(401, done);
         });
 
         it('should respond 401 if password is wrong', function (done) {
@@ -147,10 +148,57 @@ describe('Authentication test', function () {
                 .post('/api/auth/login')
                 .set('x-csrf-token', csrf)
                 .send({
-                    username: 'sam@thling.com',
+                    username: username,
                     password: 'bad password'
                 })
                 .expect(401, done);
         });
+    });
+
+    describe('Token tests', function () {
+        it('should extend token TTL with /api/auth/tokens/refresh', function (done) {
+            agent
+                .put('/api/auth/tokens/refresh')
+                .set('Authorization', 'Bearer ' + token)
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    res.body.should.have.property('accessToken');
+
+                    let jwt = require('koa-jwt');
+                    try {
+                        let decodedOrig = jwt.decode(token);
+                        let decodedNew = jwt.decode(res.body.accessToken);
+                        decodedNew.exp.should.be.at.least(decodedOrig.exp);
+                    } catch (error) {
+                        throw new Error('new token was not extended');
+                    }
+
+                    done();
+                });
+        });
+
+        it('should receive 200 from /api/auth/tokens/refresh if we have a valid token',
+            function (done) {
+                agent
+                    .post('/api/auth/tokens/test')
+                    .set('Authorization', 'Bearer ' + token)
+                    .expect(200)
+                    .expect('Content-Type', /json/)
+                    .end(function (err, res) {
+                        if (err) {
+                            throw err;
+                        }
+
+                        res.body.should.have.property('message', 'Authorized');
+                        res.body.should.be.an('object').with.property('user');
+                        done();
+                    });
+            }
+        );
     });
 });

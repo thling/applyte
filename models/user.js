@@ -237,8 +237,38 @@ User.define('getPreferredName', function () {
             this.name.preferred : this.name.first;
 });
 
+/**
+ * Returns the username of this user (i.e. the email)
+ *
+ * @return  The email address of the user
+ */
 User.define('getUsername', function () {
     return this.contact.email;
+});
+
+/**
+ * Sets the user as verified
+ */
+User.define('setVerified', function () {
+    this.verified = true;
+});
+
+/**
+ * Changes the access rights of the user
+ *
+ * @param   accessRights    The new access right. Currently only
+ *                          single string value is accepted; might
+ *                          allow array in the future
+ * @return  True if successfully set; False otherwise
+ */
+User.define('setAccessRights', function (accessRights) {
+    let rightsList = ['user', 'admin'];
+    if (rightsList.indexOf(accessRights) < 0) {
+        return false;
+    }
+    
+    this.accessRights = accessRights;
+    return true;
 });
 
 /**
@@ -313,6 +343,11 @@ User.pre('save', function (next) {
                     // We have a bigger problem, set up the system
                     // to email admin!
                     console.error('BIG PROBLEM!!!');
+                    throw new UserExistedError(
+                            'User with email '
+                            + _self.contact.email + ' '
+                            + 'already existed'
+                    );
                 } else if (!_.isEmpty(emails) && emails[0].id !== _self.id) {
                     throw new UserExistedError(
                             'User with email '

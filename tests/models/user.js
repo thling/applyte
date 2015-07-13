@@ -108,7 +108,7 @@ describe('User model test', function () {
                 master.user.assertEqual(foundUser, user);
             });
 
-            it('should set veriified to false if email is updated', function *() {
+            it('should set verified to false if email is updated', function *() {
                 assert.strictEqual(user.verified, true);
 
                 user.update({

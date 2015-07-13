@@ -8,7 +8,7 @@ let errors   = require(basedir + 'lib/errors');
 let BadRequestError = errors.BadRequestError;
 
 /**
- * @api {get}   /api/auth/login     Request login token
+ * @api {get}   /api/auth/tokens     Request login token
  * @apiName     Request login CSRF token
  * @apiGroup    Authentication
  * @apiVersion  0.2.0
@@ -82,6 +82,7 @@ module.exports.login = function *() {
         // Generate JWT payload
         let claim = {
             userId: user.id,
+            verified: user.verified,
             accessRights: user.accessRights
         };
 
@@ -108,7 +109,7 @@ module.exports.login = function *() {
 };
 
 /**
- * @api {put}   /api/auth/refresh-token     Request to refresh token
+ * @api {put}   /api/auth/tokens/refresh    Request to refresh token
  * @apiName     Refresh access token
  * @apiGroup    Authentication
  * @apiVersion  0.2.0
@@ -155,7 +156,7 @@ module.exports.refreshToken = function *() {
 };
 
 /**
- * @api {get}   /api/auth/test-token    Test authorization header
+ * @api {post}  /api/auth/tokens/test   Test authorization header
  * @apiName     Test Authorization Header
  * @apiGroup    Authentication
  * @apiVersion  0.2.0
@@ -177,31 +178,36 @@ module.exports.refreshToken = function *() {
  * @apiError    (403)   {String} message    Error message
  * @apiError    (403)   {String} user       "undefined"
  */
-module.exports.tokenTest = function *() {
-    let message, user;
+module.exports.testToken = function *() {
+    let user;
 
-    // Check if authorization header exists
-    if (this.header.authorization) {
-        let parts = this.header.authorization.split(' ');
-        if (parts[0] === 'Bearer') {
-            try {
-                user = jwt.verify(parts[1], config.security.jwtSecret);
-            } catch (error) {
-                this.status = 403;
-                message = error.message;
-            }
-        } else {
-            this.status = 403;
-            message = 'unsupported authorization scheme';
+    try {
+        if (!this.header.authorization) {
+            throw new BadRequestError('no authorization header was found', 403);
         }
-    } else {
-        this.status = 403;
-        message = 'no authorization header was found';
-    }
 
-    this.status = this.status || 200;
-    this.body = {
-        message: message || 'Authorized',
-        user: user || 'undefined'
-    };
+        // We only support Bearer authorization scheme
+        let parts = this.header.authorization.split(' ');
+        if (parts[0] !== 'Bearer') {
+            throw new BadRequestError('unsupported authorization scheme', 403);
+        }
+
+        try {
+            user = jwt.verify(parts[1], config.security.jwtSecret);
+        } catch (error) {
+            throw new BadRequestError(error.message, 403);
+        }
+
+        this.status = 200;
+        this.body = {
+            message: 'Authorized',
+            user: user
+        };
+    } catch (error) {
+        if (error.type === 'BadRequestError') {
+            error.generateContext(this);
+        } else {
+            new BadRequestError().generateContext(this);
+        }
+    }
 };

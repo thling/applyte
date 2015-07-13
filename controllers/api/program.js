@@ -391,15 +391,8 @@ module.exports.updateProgram = function *() {
  */
 module.exports.deleteProgram = function *() {
     let data = this.request.body;
-    let header = this.request.headers;
 
-    // Implement apikey for critical things like this in the future
-    // Since this is experimental, we'll make sure this is never possible
-    // on production server
-    if (!header.access_token || process.env.NODE_ENV === 'production') {
-        this.status = 403;
-        this.body = { message: this.message };
-    } else if (!data.id) {
+    if (!data.id) {
         // Bad request
         this.status = 400;
         this.body = { message: 'Missing parameters: id' };

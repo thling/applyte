@@ -1,7 +1,9 @@
 'use strict';
 
 // Routing for programs
+let auth       = require(basedir + 'lib/auth').authenticator;
 let programApi = require(basedir + 'controllers/api/program');
+
 let apiBase = '/api/programs';
 
 module.exports = function (router) {
@@ -27,8 +29,8 @@ module.exports = function (router) {
     router.post(apiBase, programApi.createProgram);
 
     // Update existing program, returns changelog
-    router.put(apiBase, programApi.updateProgram);
+    router.put(apiBase, auth.admin, programApi.updateProgram);
 
     // Delete existing (need admin), returns nothing
-    router.delete(apiBase, programApi.deleteProgram);
+    router.delete(apiBase, auth.admin, programApi.deleteProgram);
 };

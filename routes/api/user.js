@@ -2,6 +2,7 @@
 
 // Routing for programs
 let userApi = require(basedir + 'controllers/api/user');
+let config  = require(basedir + 'config');
 let apiBase = '/api/users';
 
 module.exports = function (router) {
@@ -19,4 +20,25 @@ module.exports = function (router) {
 
     // Deletes a user (needs admin), returns nothing
     router.delete(apiBase, userApi.deleteUser);
+
+    // Only open this on development or test environment
+    if (config.mode === 'test' || config.mode === 'development') {
+        router.put(apiBase + '/:id/verify', function *() {
+            let User = require(basedir + 'models/user');
+            let user = yield User.findById(this.params.id);
+            user.setVerified();
+
+            yield user.save();
+            this.status = 200;
+        });
+
+        router.put(apiBase + '/:id/makeAdmin', function *() {
+            let User = require(basedir + 'models/user');
+            let user = yield User.findById(this.params.id);
+            user.setAccessRights('admin');
+
+            yield user.save();
+            this.status = 200;
+        });
+    }
 };
