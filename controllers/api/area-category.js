@@ -11,7 +11,7 @@ let BadRequestError = errors.BadRequestError;
  * @api {get}   /api/area-categories    Query with complex conditions
  * @apiName     query
  * @apiGroup    AreaCategories
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  The mega query function that allows query strings,
  *                  filtering, sorting by field, sorting order, fields
@@ -82,7 +82,7 @@ module.exports.query = function *() {
  * @api {get} /api/area-categories/:id     Get area category by ID
  * @apiName     getAreaCategoryById
  * @apiGroup    AreaCategories
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiParam    {String} id     The ID of the area category
  *
@@ -120,7 +120,11 @@ module.exports.getAreaCategoryById = function *() {
  * @api {post}  /api/area-categories   Create a new area category
  * @apiName     createAreaCategory
  * @apiGroup    AreaCategories
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
+ * @apiPermission   Admin
+ *
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiDescription  Creates a new area category and returns the ID of the
  *                  newly created object. The optional parameters may be
@@ -161,13 +165,17 @@ module.exports.createAreaCategory = function *() {
  * @api {put}   /api/area-categories   Updates an existing area category
  * @apiName     updateAreaCategory
  * @apiGroup    AreaCategories
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
+ * @apiPermission   Admin
  *
  * @apiDescription  Updates the AreaCategory object in the database with
  *                  the specified change. Invalid keys will be ignored and
  *                  objects will be replaced as is. On success, the ID of the
  *                  updated object and the changes (new value and old value)
  *                  will be returned.
+ *
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiParam    {string}    id  ID of the object to be updated
  * @apiUse      paramAreaCategoryOptional
@@ -227,14 +235,15 @@ module.exports.updateAreaCategory = function *() {
  * @api {delete}    /api/area-categories   Deletes an existing area category
  * @apiName     deleteAreaCategory
  * @apiGroup    AreaCategories
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
+ * @apiPermission   Admin
  *
  * @apiDescription  Deletes an AreaCategory with specified ID. During testing,
  *                  any <code>access-token</code> will work; in production,
  *                  this API will reject anything as it is still in test.
  *
- * @apiHeader   {String}    acccess-token   The access token to execute
- *                                          delete action on the database
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiParam    {String}    id  The ID of the object to delete
  *
@@ -245,15 +254,8 @@ module.exports.updateAreaCategory = function *() {
  */
 module.exports.deleteAreaCategory = function *() {
     let data = this.request.body;
-    let header = this.request.headers;
 
-    // Implement apikey for critical things like this in the future
-    // Since this is experimental, we'll make sure this is never possible
-    // on production server
-    if (!header.access_token || process.env.NODE_ENV === 'production') {
-        this.status = 403;
-        this.body = { message: this.message };
-    } else if (!data.id) {
+    if (!data.id) {
         // Bad request
         this.status = 400;
         this.body = { message: 'Missing parameters: id' };

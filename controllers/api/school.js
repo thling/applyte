@@ -86,7 +86,7 @@ let flattenAddress = function (query) {
  * @api {get}   /api/schools    Query with complex conditions
  * @apiName     query
  * @apiGroup    Schools
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  The mega query function that allows query strings,
  *                  filtering, sorting by field, sorting order, fields
@@ -179,7 +179,7 @@ module.exports.query = function *() {
  * @api {get}   /api/schools/:id  Get school by ID
  * @apiName     getSchoolById
  * @apiGroup    Schools
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiParam    {String}    id  The ID of the school to retrieve
  *
@@ -216,7 +216,7 @@ module.exports.getSchoolById = function *() {
  * @api {get}   /api/schools/:name/:campus  Get school by name and campus
  * @apiName     getSchoolByNameCampus
  * @apiGroup    Schools
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  This API will return single object as <code>name</code>
  *                  and <code>campus</code> can uniquely identify a school.
@@ -264,7 +264,7 @@ module.exports.getSchoolByNameCampus = function *() {
  * @api {get}   /api/schools/location/:country/:state/:city  Get schools by location
  * @apiName     getSchoolsByLocation
  * @apiGroup    Schools
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  Find schools by specified country, state, or city. Any subset
  *                  of preceding elements are permetted (e.g. <code>[country, state]
@@ -317,7 +317,7 @@ module.exports.getSchoolsByLocation = function *() {
  * @api {get}   /api/schools/:id/programs    Get all the program the school has
  * @apiName     getProgramsBySchoolId
  * @apiGroup    Schools
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiParam    {String}    id  The ID of the school to get all its programs
  *
@@ -329,7 +329,7 @@ module.exports.getSchoolsByLocation = function *() {
  * @api {get}   /api/school/:name/:campus/programs    Get all the program the school has
  * @apiName     getProgramsBySchooNameCampus
  * @apiGroup    Schools
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiParam    {String}    name    The name of the school to search with.
  *                                  This parameter must be encoded
@@ -375,11 +375,15 @@ module.exports.getSchoolPrograms = function *() {
  * @api {post}  /api/schools  Create a new school
  * @apiName     createSchool
  * @apiGroup    Schools
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
+ * @apiPermission   Admin
  *
  * @apiDescription  Creates a new school and returns the ID of the
  *                  newly created object. The optional parameters may be
  *                  tightened in the future release.
+ *
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiUse      paramSchool
  *
@@ -417,13 +421,17 @@ module.exports.createSchool = function *() {
  * @api {put} /api/schools     Updates an existing school
  * @apiName     updateSchool
  * @apiGroup    Schools
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
+ * @apiPermission   Admin
  *
  * @apiDescription  Updates the School object in the database with
  *                  the specified change. Invalid keys will be ignored and
  *                  objects will be replaced as is. On success, the ID of the
  *                  updated object and the changes (new value and old value)
  *                  will be returned.
+ *
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiParam    {String}    id  The ID of the school to update
  * @apiUse      paramSchoolOptional
@@ -495,14 +503,15 @@ module.exports.updateSchool = function *() {
  * @api {delete} /api/schools    Delete an existing school
  * @apiName     deleteSchool
  * @apiGroup    Schools
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
+ * @apiPermission   Admin
  *
  * @apiDescription  Deletes an School with specified ID. During testing,
  *                  any <code>access-token</code> will work; in production,
  *                  this API will reject anything as it is still in test.
  *
- * @apiHeader   {String}    acccess-token   The access token to execute
- *                                          delete action on the database
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiParam    {String}    id  The ID of the object to delete
  *
@@ -513,15 +522,8 @@ module.exports.updateSchool = function *() {
  */
 module.exports.deleteSchool = function *() {
     let data = this.request.body;
-    let header = this.request.headers;
 
-    // Implement apikey for critical things like this in the future
-    // Since this is experimental, we'll make sure this is never possible
-    // on production server
-    if (!header.access_token || process.env.NODE_ENV === 'production') {
-        this.status = 403;
-        this.body = { message: this.message };
-    } else if (!data.id) {
+    if (!data.id) {
         // Bad request
         this.status = 400;
         this.body = { message: 'Missing parameters: id' };

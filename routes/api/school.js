@@ -1,6 +1,7 @@
 'use strict';
 
 // Routing for programs
+let auth      = require(basedir + 'lib/auth').authenticator;
 let schoolApi = require(basedir + 'controllers/api/school');
 let apiBase = '/api/schools';
 
@@ -27,11 +28,11 @@ module.exports = function (router) {
     );
 
     // Creates a new school, returns an ID
-    router.post(apiBase, schoolApi.createSchool);
+    router.post(apiBase, auth.admin, schoolApi.createSchool);
 
     // Updates a school, returns changelog
-    router.put(apiBase, schoolApi.updateSchool);
+    router.put(apiBase, auth.admin, schoolApi.updateSchool);
 
     // Deletes a school (needs admin), returns nothing
-    router.delete(apiBase, schoolApi.deleteSchool);
+    router.delete(apiBase, auth.admin, schoolApi.deleteSchool);
 };

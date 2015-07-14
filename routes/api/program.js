@@ -26,7 +26,7 @@ module.exports = function (router) {
     );
 
     // Add new program, returns id
-    router.post(apiBase, programApi.createProgram);
+    router.post(apiBase, auth.admin, programApi.createProgram);
 
     // Update existing program, returns changelog
     router.put(apiBase, auth.admin, programApi.updateProgram);

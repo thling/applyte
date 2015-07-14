@@ -4,7 +4,7 @@
 
 /**
  * @apiDefine currentVersion
- * @apiVersion 0.2.0
+ * @apiVersion 0.2.1
  */
 
 /**

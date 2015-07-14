@@ -6,14 +6,16 @@
 // this line
 process.env.NODE_ENV = 'test';
 
-let _          = require('lodash');
-let assert     = require('assert');
-let superagent = require('supertest');
-let app        = require('../../app');
-let master     = require('../test-master');
-let Program    = require('../../models/program');
-let School     = require('../../models/school');
-let utils      = require('../../lib/utils');
+let _            = require('lodash');
+let assert       = require('assert');
+let AreaCategory = require('../../models/area-category');
+let superagent   = require('supertest');
+let app          = require('../../app');
+let master       = require('../test-master');
+let Program      = require('../../models/program');
+let School       = require('../../models/school');
+let User         = require('../../models/user');
+let utils        = require('../../lib/utils');
 
 require('co-mocha');
 
@@ -28,7 +30,34 @@ let request = function () {
     return superagent(app.listen());
 };
 
+let agency = function () {
+    return superagent.agent(app.listen());
+};
+
 describe('School API Routes', function () {
+    let agent, token, userId;
+
+    before('Set up environment', function *(done) {
+        // Setup user token - need an admin token
+        agent = agency();
+        master.getTestToken(agent, function (tok, id) {
+            userId = id;
+            master.setVerified(agent, id, function () {
+                master.makeAdmin(agent, id, function () {
+                    master.refreshToken(agent, tok, function (newToken) {
+                        token = newToken;
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
+    after('clean up area categories and user', function *() {
+        let foundUser = yield User.findById(userId);
+        yield foundUser.delete();
+    });
+
     describe('Basic API access test', function () {
         let createdId, school, template = master.school.template;
 
@@ -40,6 +69,7 @@ describe('School API Routes', function () {
         it('should create a new School with POST request to /api/schools', function (done) {
             request()
                 .post('/api/schools')
+                .set('Authorization', 'Bearer ' + token)
                 .send(template)
                 .expect(201)
                 .expect('Content-Type', /json/)
@@ -168,6 +198,18 @@ describe('School API Routes', function () {
             yield emerson.save();
             yield mit.save();
 
+            let programTemp = master.program.template;
+            for (let area of programTemp.areas) {
+                for (let cat of area.categories) {
+                    let category = new AreaCategory({
+                        name: cat,
+                        desc: 'test'
+                    });
+
+                    yield category.save();
+                }
+            }
+
             schools = [bu, emerson, mit, purdueCal, purdueWL, uiuc, umich];
 
             compsci = new Program(master.program.template);
@@ -204,6 +246,14 @@ describe('School API Routes', function () {
 
             for (let sch of schools) {
                 yield sch.delete();
+            }
+
+            let temp = master.program.template;
+            for (let area of temp.areas) {
+                for (let cat of area.categories) {
+                    let category = yield AreaCategory.findByName(cat);
+                    yield category.delete();
+                }
             }
         });
 
@@ -572,6 +622,7 @@ describe('School API Routes', function () {
 
             request()
                 .put('/api/schools')
+                .set('Authorization', 'Bearer ' + token)
                 .send(newData)
                 .expect(200)
                 .expect('Content-Type', /json/)
@@ -600,7 +651,7 @@ describe('School API Routes', function () {
         it('should be able to delete a school with proper prvilege', function (done) {
             request()
                 .delete('/api/schools')
-                .set('access_token', 'anythingfortest')
+                .set('Authorization', 'Bearer ' + token)
                 .send({ id: purdueWL.id, apiKey: 'test' })
                 .expect(204, done);
         });
@@ -693,7 +744,7 @@ describe('School API Routes', function () {
                 request()
                     .delete('/api/schools')
                     .send({ id: purdueWL.id })
-                    .expect(403, done);
+                    .expect(401, done);
             });
         });
     });

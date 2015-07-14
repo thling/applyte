@@ -266,7 +266,7 @@ User.define('setAccessRights', function (accessRights) {
     if (rightsList.indexOf(accessRights) < 0) {
         return false;
     }
-    
+
     this.accessRights = accessRights;
     return true;
 });
@@ -326,6 +326,18 @@ User.pre('save', function (next) {
         _self.name.middle = _self.name.middle || '';
         _self.accessRights = _self.accessRights || 'user';
         _self.verified = _self.verified || false;
+
+        // Validate by parsing
+        let bday = _self.birthday;
+        if (bday) {
+            let day = new Date(bday.year, bday.month - 1, bday.day);
+            _self.birthday = {
+                year: day.getFullYear(),
+                month: day.getMonth() + 1,
+                day: day.getDate()
+            };
+        }
+
         next();
     };
 

@@ -1,6 +1,7 @@
 'use strict';
 
 let _       = require('lodash');
+let co      = require('co');
 let schemas = require('./utils/schemas');
 let thinky  = require('./utils/thinky')();
 let utils   = require(basedir + 'lib/utils');
@@ -50,14 +51,14 @@ AreaCategory.defineStatic('findByName', function *(name) {
     let result = null;
 
     try {
-        result = yield AreaCategory
+        let categories = yield AreaCategory
                 .filter(
                     r.row('name').match('.*' + name + '.*')
                 )
                 .run();
 
-        if (!_.isEmpty(result)) {
-            result = result[0];
+        if (!_.isEmpty(categories)) {
+            result = categories[0];
         }
     } catch (error) {
         console.error(error);
@@ -168,10 +169,27 @@ AreaCategory.define('update', function (properties) {
 
     let data = _.omit(properties, 'id');
     utils.assignDeep(this, data);
+});
 
-    // Make sure we only retrieve what we want
-    // let data = _.pick(properties, _.keys(SCHEMA));
-    // _.assign(this, data);
+/**
+ * Need to make sure the name does not already exist
+ */
+AreaCategory.pre('save', function (next) {
+    let _self = this;
+    co(function *() {
+        let results = AreaCategory
+            .getAll(_self.name, { index: NAME_INDEX })
+            .run();
+
+        if (results.length > 0) {
+            console.log(results, results.length);
+            throw new Error('Area cateogry ' + _self.name + ' already existed');
+        }
+    })
+    .then(next)
+    .catch(function (error) {
+        next(error);
+    });
 });
 
 module.exports = AreaCategory;

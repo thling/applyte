@@ -249,6 +249,10 @@ module.exports.getProgramsByAreaCategories = function *() {
  * @apiName     createProgram
  * @apiGroup    Programs
  * @apiVersion  0.1.0
+ * @apiPermission   Admin
+ *
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiDescription  Creates a new program and returns the ID of the
  *                  newly created object. The optional parameters may be
@@ -292,12 +296,16 @@ module.exports.createProgram = function *() {
  * @apiName     updateProgram
  * @apiGroup    Programs
  * @apiVersion  0.1.0
+ * @apiPermission   Admin
  *
  * @apiDescription  Updates the Program object in the database with
  *                  the specified change. Invalid keys will be ignored and
  *                  objects will be replaced as is. On success, the ID of the
  *                  updated object and the changes (new value and old value)
  *                  will be returned.
+ *
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiParam    {String}    id  The ID of the program to update
  * @apiUse      paramProgramOptional
@@ -374,13 +382,14 @@ module.exports.updateProgram = function *() {
  * @apiName     deleteProgram
  * @apiGroup    Programs
  * @apiVersion  0.1.0
+ * @apiPermission   Admin
  *
  * @apiDescription  Deletes an Program with specified ID. During testing,
  *                  any <code>access-token</code> will work; in production,
  *                  this API will reject anything as it is still in test.
  *
- * @apiHeader   {String}    acccess-token   The access token to execute
- *                                          delete action on the database
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiParam    {String}    id  The ID of the object to delete
  *

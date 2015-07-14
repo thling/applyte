@@ -1,10 +1,12 @@
 'use strict';
 
-let _       = require('lodash');
-let schemas = require('./utils/schemas');
-let School  = require('./school');
-let thinky  = require('./utils/thinky')();
-let utils   = require(basedir + 'lib/utils');
+let _            = require('lodash');
+let co           = require('co');
+let AreaCategory = require('./area-category');
+let schemas      = require('./utils/schemas');
+let School       = require('./school');
+let thinky       = require('./utils/thinky')();
+let utils        = require(basedir + 'lib/utils');
 
 let r = thinky.r;
 
@@ -406,6 +408,30 @@ Program.define('update', function (properties) {
 
     let data = _.omit(properties, 'id');
     utils.assignDeep(this, data);
+});
+
+/**
+ * We need to make sure that the area category is already
+ * in the database for reference
+ */
+Program.pre('save', function (next) {
+    if (this.areas) {
+        let _self = this;
+        co(function *() {
+            for (let area of _self.areas) {
+                for (let category of area.categories) {
+                    let cat = yield AreaCategory.findByName(category);
+                    if (!cat) {
+                        throw new Error('category ' + category + ' does not exist');
+                    }
+                }
+            }
+        })
+        .then(next)
+        .catch(function (error) {
+            next(error);
+        });
+    }
 });
 
 module.exports = Program;

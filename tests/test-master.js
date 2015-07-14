@@ -187,7 +187,11 @@ module.exports.user = {
                 last: 'Ling',
                 preferred: 'Sam'
             },
-            birthday: new Date(1990, 11, 4),
+            birthday: {
+                year: 1990,
+                month: 11,
+                day: 4
+            },
             contact: {
                 email: 'sam@thling.com',
                 phone: '+1 (765) 237-9196',
@@ -217,4 +221,123 @@ module.exports.user = {
         assert.deepEqual(user.name, test.name);
         assert.deepEqual(user.contact, test.contact);
     }
+};
+
+/**
+ * Get a test token for testing authentication related operations
+ *
+ * @param   agent   The supertest.agent instance
+ * @param   cb      The callback function to receive the token and user id
+ */
+module.exports.getTestToken = function (agent, email, cb) {
+    let csrf, token, user, userId;
+    user = this.user.template;
+
+    if (_.isFunction(email)) {
+        cb = email;
+        email = user.contact.email;
+    } else {
+        user.contact.email = email;
+    }
+
+    user.newPassword = 'this is password';
+    user = _.omit(
+            user,
+            ['created', 'modified', 'accessRights', 'verified', 'password']
+    );
+
+    // Get CSRF token
+    agent.get('/api/auth/tokens')
+        .end(function (err, res) {
+            if (err) {
+                throw err;
+            }
+
+            // Signup with the CSRF token
+            csrf = res.body._csrf;
+            agent.post('/api/auth/signup')
+                .set('x-csrf-token', csrf)
+                .send(user)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    userId = res.body.id;
+
+                    // Login and obtain access token
+                    agent.post('/api/auth/login')
+                        .set('x-csrf-token', csrf)
+                        .send({
+                            username: user.contact.email,
+                            password: 'this is password'
+                        })
+                        .end(function (err, res) {
+                            if (err) {
+                                throw err;
+                            }
+
+                            token = res.body.accessToken;
+                            cb(token, userId);
+                        });
+                });
+        });
+};
+
+/**
+ * Refresh the token. Generally used after setting the user
+ * to be verified or admin.
+ *
+ * @param   agent   The agent instance to use
+ * @param   token   The old token
+ * @param   cb      The callback function, accepts one parameter
+ *                  which is the new token
+ */
+module.exports.refreshToken = function (agent, token, cb) {
+    agent.put('/api/auth/tokens/refresh')
+        .set('Authorization', 'Bearer ' + token)
+        .end(function (err, res) {
+            if (err) {
+                console.log(res.body.message);
+                throw err;
+            }
+
+            cb(res.body.accessToken);
+        });
+};
+
+/**
+ * Set the user with ID userId to be an admin.
+ *
+ * @param   agent   The agent instance to use
+ * @param   userId  The user to make admin
+ * @param   cb      The callback function, accepts nothing
+ */
+module.exports.makeAdmin = function (agent, userId, cb) {
+    agent.put('/api/users/' + userId + '/makeAdmin')
+        .end(function (err) {
+            if (err) {
+                throw err;
+            }
+
+            cb();
+        });
+};
+
+/**
+ * Set the user with ID userId to be a verified user.
+ *
+ * @param   agent   The agent instance to use
+ * @param   userId  The user to set verified
+ * @param   cb      The callback function, accepts nothing
+ */
+module.exports.setVerified = function (agent, userId, cb) {
+    agent.put('/api/users/' + userId + '/verify')
+        .end(function (err) {
+            if (err) {
+                throw err;
+            }
+
+            cb();
+        });
 };

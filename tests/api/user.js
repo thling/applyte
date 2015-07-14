@@ -8,6 +8,7 @@ process.env.NODE_ENV = 'test';
 
 let _          = require('lodash');
 let assert     = require('assert');
+let co         = require('co');
 let superagent = require('supertest');
 let app        = require('../../app');
 let master     = require('../test-master');
@@ -26,22 +27,46 @@ let request = function () {
     return superagent(app.listen());
 };
 
+let agency = function () {
+    return superagent.agent(app.listen());
+};
+
 describe('User API Routes', function () {
     const OMIT_FIELDS = ['created', 'modified', 'accessRights', 'verified', 'password'];
+    let adminId, adminToken, agent, token, userId;
+
+    before('Set up environment', function *(done) {
+        // Setup user token - need an admin token
+        agent = agency();
+
+        // Generate test admin id and token
+        master.getTestToken(agent, 'test@example.com', function (tok, id) {
+            adminId = id;
+            master.setVerified(agent, id, function () {
+                master.makeAdmin(agent, id, function () {
+                    master.refreshToken(agent, tok, function (newToken) {
+                        adminToken = newToken;
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
+    after('clean up area categories and user', function *() {
+        let adminUser = yield User.findById(adminId);
+        yield adminUser.delete();
+    });
 
     describe('Basic API access test', function () {
-        let createdId;
         let user;
-
-        after('clean up database', function *() {
-            yield user.delete();
-        });
 
         it('should create a new User with POST request to /api/users', function (done) {
             let temp = master.user.template;
             temp.newPassword = 'this is my secret';
             temp = _.omit(temp, OMIT_FIELDS);
 
+            // Create a normal user
             request()
                 .post('/api/users')
                 .send(temp)
@@ -56,16 +81,40 @@ describe('User API Routes', function () {
                             throw new Error('Response body does not contain ID of the created');
                         }
 
-                        createdId = res.body.id;
-                        User.get(createdId)
-                        .then(function (data) {
-                            user = data;
-                            user.verified = true;
-                            user.save();
+                        userId = res.body.id;
+                        co(function *() {
+                            // Make sure that the user is verified
+                            user = yield User.findById(userId);
+                            user.setVerified();
+                            yield user.save();
                         });
-                    }
 
-                    done();
+                        // Try to login to obtain access token
+                        let loginAgent = agency();
+                        loginAgent
+                            .get('/api/auth/tokens')
+                            .end(function (err, res) {
+                                if (err) {
+                                    throw err;
+                                }
+
+                                loginAgent
+                                    .post('/api/auth/login')
+                                    .set('x-csrf-token', res.body._csrf)
+                                    .send({
+                                        username: temp.contact.email,
+                                        password: 'this is my secret'
+                                    })
+                                    .end(function (err, res) {
+                                        if (err) {
+                                            throw err;
+                                        }
+
+                                        token = res.body.accessToken;
+                                        done();
+                                    });
+                            });
+                    }
                 });
         });
 
@@ -134,7 +183,8 @@ describe('User API Routes', function () {
 
         it('should get the user by id', function (done) {
             request()
-                .get('/api/users/' + createdId)
+                .get('/api/users/' + userId)
+                .set('Authorization', 'Bearer ' + token)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
@@ -143,7 +193,6 @@ describe('User API Routes', function () {
                         throw err;
                     } else {
                         let temp = master.user.template;
-                        temp.birthday = temp.birthday.toJSON();
                         temp.password = user.password;
                         temp.created = user.created.toJSON();
 
@@ -154,18 +203,36 @@ describe('User API Routes', function () {
                 });
         });
 
-        it('should update user properly with PUT request', function *(done) {
-            if (!user) {
-                user = yield User.findById(createdId);
-            }
+        it('should not get user by id if user id is not the same', function (done) {
+            request()
+                .get('/api/users/' + userId)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(403)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        console.error(res.body);
+                        throw err;
+                    } else {
+                        assert.strictEqual(res.body.message, 'Forbidden');
+                    }
 
+                    done();
+                });
+        });
+
+        it('should update user properly with PUT request', function *(done) {
             let update = {
                 id: user.id,
                 name: {
                     first: 'Tom',
                     preferred: 'John'
                 },
-                birthday: new Date(1991, 1, 3, 23, 34, 1).toJSON()
+                birthday: {
+                    year: 1991,
+                    month: 2,
+                    day: 3
+                }
             };
 
             let expected = {
@@ -176,12 +243,13 @@ describe('User API Routes', function () {
                         first: user.name.first,
                         preferred: user.name.preferred
                     },
-                    birthday: user.birthday.toJSON()
+                    birthday: user.birthday
                 }
             };
 
             request()
                 .put('/api/users')
+                .set('Authorization', 'Bearer ' + token)
                 .send(update)
                 .expect(200)
                 .expect('Content-Type', /json/)
@@ -209,6 +277,7 @@ describe('User API Routes', function () {
 
             request()
                 .put('/api/users')
+                .set('Authorization', 'Bearer ' + token)
                 .send(update)
                 .expect(400)
                 .expect('Content-Type', /json/)
@@ -233,6 +302,7 @@ describe('User API Routes', function () {
 
             request()
                 .put('/api/users')
+                .set('Authorization', 'Bearer ' + token)
                 .send(update)
                 .expect(400)
                 .expect('Content-Type', /json/)
@@ -248,18 +318,44 @@ describe('User API Routes', function () {
                 });
         });
 
+        it('should reject PUT request if the user id is not the same', function (done) {
+            let update = {
+                id: user.id,
+                name: {
+                    first: 'Sam'
+                }
+            };
+
+            request()
+                .put('/api/users')
+                .set('Authorization', 'Bearer ' + adminToken)
+                .send(update)
+                .expect(403)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        console.error(res.body);
+                        throw err;
+                    } else {
+                        assert.deepEqual(res.body.message, 'Forbidden');
+                    }
+
+                    done();
+                });
+        });
+
         it('should not be able to delete a user without privilege', function (done) {
             request()
                 .delete('/api/users')
                 .send({ id: user.id })
-                .expect(403, done);
+                .expect(401, done);
         });
 
         it('should be able to delete a user with proper prvilege', function (done) {
             request()
                 .delete('/api/users')
-                .set('access_token', 'anythingfortest')
-                .send({ id: user.id, apiKey: 'test' })
+                .set('Authorization', 'Bearer ' + adminToken)
+                .send({ id: user.id })
                 .expect(204, done);
         });
     });

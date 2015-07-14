@@ -1,25 +1,26 @@
 'use strict';
 
 // Routing for programs
+let auth    = require(basedir + 'lib/auth').authenticator;
 let userApi = require(basedir + 'controllers/api/user');
 let config  = require(basedir + 'config');
 let apiBase = '/api/users';
 
 module.exports = function (router) {
     // Gets the list of all users
-    router.get(apiBase, userApi.query);
+    // router.get(apiBase, userApi.query);
 
     // Gets the school by user id
-    router.get(apiBase + '/:id', userApi.getUserById);
+    router.get(apiBase + '/:id', auth.user, userApi.getUserById);
 
     // Creates a new user, returns an ID
     router.post(apiBase, userApi.createUser);
 
     // Updates a user, returns changelog
-    router.put(apiBase, userApi.updateUser);
+    router.put(apiBase, auth.user, userApi.updateUser);
 
     // Deletes a user (needs admin), returns nothing
-    router.delete(apiBase, userApi.deleteUser);
+    router.delete(apiBase, auth.admin, userApi.deleteUser);
 
     // Only open this on development or test environment
     if (config.mode === 'test' || config.mode === 'development') {

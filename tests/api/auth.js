@@ -22,9 +22,6 @@ require('co-mocha');
  *      require HTTP requests tests. Also don't need to require app
  *      for tests that doesn't require client-server communications
  */
-// let request = function () {
-//     return superagent(app.listen());
-// };
 
 let agency = function () {
     return superagent.agent(app.listen());
@@ -88,6 +85,7 @@ describe('Authentication test', function () {
 
                     res.body.should.have.property('id');
                     createdId = res.body.id;
+
                     done();
                 });
         });

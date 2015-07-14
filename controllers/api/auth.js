@@ -4,6 +4,7 @@ let jwt      = require('koa-jwt');
 let passport = require('koa-passport');
 let config   = require(basedir + 'config');
 let errors   = require(basedir + 'lib/errors');
+let User     = require(basedir + 'models/user');
 
 let BadRequestError = errors.BadRequestError;
 
@@ -11,7 +12,7 @@ let BadRequestError = errors.BadRequestError;
  * @api {get}   /api/auth/tokens     Request login token
  * @apiName     Request login CSRF token
  * @apiGroup    Authentication
- * @apiVersion  0.2.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  This request will return a CSRF token for further login use
  *
@@ -32,7 +33,7 @@ module.exports.requestToken = function *() {
  * @api {post}  /api/auth/login     Request to login
  * @apiName     Login user
  * @apiGroup    Authentication
- * @apiVersion  0.2.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  This API will attempt to login a user
  *
@@ -112,7 +113,7 @@ module.exports.login = function *() {
  * @api {put}   /api/auth/tokens/refresh    Request to refresh token
  * @apiName     Refresh access token
  * @apiGroup    Authentication
- * @apiVersion  0.2.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  This API will extend the TTL of the token
  *
@@ -120,7 +121,7 @@ module.exports.login = function *() {
  *
  * @apiParamExample {URL}  Request Examples
  *          <!-- PUT to -->
- *          https://applyte.io/api/auth/refresh-token
+ *          https://applyte.io/api/auth/tokens/refresh
  *
  *          <!-- Header -->
  *          Authorization: Bearer ajwieofjaiweo.ajweifajwoief.awjeiofwjoiaef
@@ -137,9 +138,12 @@ module.exports.refreshToken = function *() {
             message: 'Unauthorized'
         };
     } else {
+        let user = yield User.findById(this.state.user.userId);
+
         let newClaim = {
             userId: this.state.user.userId,
-            accessRights: this.state.user.accessRights
+            accessRights: user.accessRights,
+            verified: user.verified
         };
 
         // Extend by 7 days from now
@@ -159,15 +163,15 @@ module.exports.refreshToken = function *() {
  * @api {post}  /api/auth/tokens/test   Test authorization header
  * @apiName     Test Authorization Header
  * @apiGroup    Authentication
- * @apiVersion  0.2.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  For testing if your application is using the authorization header correctly.
  *
  * @apiHeader   {String}    Authorization   The token using Bearer scheme
  *
  * @apiParamExample {URL}  Request Examples
- *          <!-- GET to -->
- *          https://applyte.io/api/auth/test-token
+ *          <!-- POST to -->
+ *          https://applyte.io/api/auth/tokens/test
  *
  *          <!-- Header -->
  *          Authorization: Bearer ajwieofjaiweo.ajweifajwoief.awjeiofwjoiaef

@@ -17,10 +17,28 @@ describe('Program model tests', function () {
         school = new School(master.school.template);
         yield school.save();
         template.schoolId = school.id;
+
+        for (let area of template.areas) {
+            for (let cat of area.categories) {
+                let category = new AreaCategory({
+                    name: cat,
+                    desc: 'test'
+                });
+
+                yield category.save();
+            }
+        }
     });
 
     after('cleaning database', function *() {
         yield school.delete();
+
+        for (let area of template.areas) {
+            for (let cat of area.categories) {
+                let category = yield AreaCategory.findByName(cat);
+                yield category.delete();
+            }
+        }
     });
 
     describe('Program object instantiation test', function () {

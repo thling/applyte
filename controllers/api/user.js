@@ -84,10 +84,11 @@ let flattenName = function (query) {
 };
 
 /**
+ * @apiIgnore
  * @api {get}   /api/users    Query with complex conditions
  * @apiName     query
  * @apiGroup    Users
- * @apiVersion  0.2.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  The mega query function that allows query strings,
  *                  filtering, sorting by field, sorting order, fields
@@ -136,6 +137,10 @@ let flattenName = function (query) {
  * @apiUse  errors
  */
 module.exports.query = function *() {
+    this.status = 418;
+    this.body = { message: this.message };
+    return;
+
     try {
         let query = this.query;
         utils.formatQueryPagination(query);
@@ -175,7 +180,11 @@ module.exports.query = function *() {
  * @api {get}   /api/users/:id  Get user by ID
  * @apiName     getUserById
  * @apiGroup    Users
- * @apiVersion  0.2.0
+ * @apiVersion  0.2.1
+ * @apiPermission   User
+ *
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiParam    {String}    id  The ID of the user to retrieve
  *
@@ -190,6 +199,9 @@ module.exports.getUserById = function *() {
     if (!data.id) {
         this.status = 400;
         this.body = { message: 'Missing parameters: id' };
+    } else if (this.state.user.userId !== data.id) {
+        this.status = 403;
+        this.body = { message: this.message };
     } else {
         try {
             let user = yield User.findById(data.id);
@@ -209,15 +221,17 @@ module.exports.getUserById = function *() {
 };
 
 /**
- * @api {post}  /api/users  Create a new user
+ * @api {post}  /api/auth/signup    Create a new user
  * @apiName     createUser
  * @apiGroup    Users
- * @apiVersion  0.2.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  Creates a new user and returns the ID of the
  *                  newly created object. The optional parameters may be
  *                  tightened in the future release.
  *
+ * @apiHeader   {String}    x-csrf-token    The CSRF token obtained by GET request
+ *                                          to /api/auth/token
  * @apiParam    {String}    [recaptcha]     The response from Google recaptcha.
  *                                          Required for web client sign-ups.
  * @apiUse      paramUser
@@ -231,8 +245,12 @@ module.exports.createUser = function *() {
     let data = this.request.body;
     let recaptcha = data.recaptcha;
 
+    // Allow test and development environment to pass our tests
+    let csrfTest = (config.mode === 'test' || config.mode === 'development');
+
     try {
         this.assertCSRF();
+        csrfTest = true;
     } catch (error) {
         this.status = 403;
         this.body = {
@@ -240,77 +258,79 @@ module.exports.createUser = function *() {
         };
     }
 
-    // Trying to see if the recaptcha passed
-    if (!recaptcha && config.mode === 'production') {
-        this.status = 403;
-        this.body = {
-            message: 'Humanness was not verified'
-        };
-    } else {
-        let result;
-        if (config.mode !== 'production') {
-            // Don't worry about humanness while testing
-            result = {};
-            result.success = true;
-        } else {
-            // Check for humanness (reCAPTCHA by Google)
-            let options = {
-                url: 'https://www.google.com/recaptcha/api/siteverify',
-                method: 'POST',
-                json: {
-                    secret: config.security.recaptchaSecret,
-                    response: recaptcha
-                }
+    if (csrfTest) {
+        if (!recaptcha && config.mode === 'production') {
+            // Trying to see if the recaptcha passed
+            this.status = 403;
+            this.body = {
+                message: 'Humanness was not verified'
             };
-
-            result = yield request(options);
-            result = JSON.parse(result.body);
-        }
-
-        // Reject invalid input immediately
-        let invalid = _.intersection(
-                _.keys(data),
-                ['id', 'created', 'modified', 'accessRights', 'verified', 'password']
-        );
-
-        // Check for missing fields
-        let hasMissingFields = false;
-        let requiredFields = ['name.first', 'name.last', 'contact.email'];
-        for (let required of requiredFields) {
-            if (!_.has(data, required)) {
-                hasMissingFields = true;
-                break;
-            }
-        }
-
-        // Reject immediately for invalid requests
-        if (!_.isEmpty(invalid) || hasMissingFields) {
-            this.status = 400;
-            this.body = { message: 'Invalid request parameters' };
-        } else if (!data.newPassword) {
-            this.status = 400;
-            this.body = { message: 'Password not supplied' };
         } else {
-            let userdata = _.omit(data, 'newPassword');
-
-            // Create a new school and try to save it
-            let user = new User(userdata);
-            user.setPassword(data.newPassword);
-
-            try {
-                yield user.save();
-                this.status = 201;
-                this.body = {
-                    message: this.message,
-                    id: user.id
+            let result;
+            if (config.mode !== 'production') {
+                // Don't worry about humanness while testing
+                result = {};
+                result.success = true;
+            } else {
+                // Check for humanness (reCAPTCHA by Google)
+                let options = {
+                    url: 'https://www.google.com/recaptcha/api/siteverify',
+                    method: 'POST',
+                    json: {
+                        secret: config.security.recaptchaSecret,
+                        response: recaptcha
+                    }
                 };
-            } catch (error) {
-                if (error instanceof UserExistedError) {
-                    error.generateContext(this);
-                } else {
-                    console.error(error);
-                    this.status = 500;
-                    this.body = { message: this.message };
+
+                result = yield request(options);
+                result = JSON.parse(result.body);
+            }
+
+            // Reject invalid input immediately
+            let invalid = _.intersection(
+                    _.keys(data),
+                    ['id', 'created', 'modified', 'accessRights', 'verified', 'password']
+            );
+
+            // Check for missing fields
+            let hasMissingFields = false;
+            let requiredFields = ['name.first', 'name.last', 'contact.email'];
+            for (let required of requiredFields) {
+                if (!_.has(data, required)) {
+                    hasMissingFields = true;
+                    break;
+                }
+            }
+
+            // Reject immediately for invalid requests
+            if (!_.isEmpty(invalid) || hasMissingFields) {
+                this.status = 400;
+                this.body = { message: 'Invalid request parameters' };
+            } else if (!data.newPassword) {
+                this.status = 400;
+                this.body = { message: 'Password not supplied' };
+            } else {
+                let userdata = _.omit(data, 'newPassword');
+
+                // Create a new school and try to save it
+                let user = new User(userdata);
+                user.setPassword(data.newPassword);
+
+                try {
+                    yield user.save();
+                    this.status = 201;
+                    this.body = {
+                        message: this.message,
+                        id: user.id
+                    };
+                } catch (error) {
+                    if (error instanceof UserExistedError) {
+                        error.generateContext(this);
+                    } else {
+                        console.error(error);
+                        this.status = 500;
+                        this.body = { message: this.message };
+                    }
                 }
             }
         }
@@ -321,13 +341,17 @@ module.exports.createUser = function *() {
  * @api {put} /api/users     Updates an existing school
  * @apiName     updateUser
  * @apiGroup    Users
- * @apiVersion  0.2.0
+ * @apiVersion  0.2.1
+ * @apiPermission   User
  *
  * @apiDescription  Updates the User object in the database with
  *                  the specified change. Invalid keys will be ignored and
  *                  objects will be replaced as is. On success, the ID of the
  *                  updated object and the changes (new value and old value)
  *                  will be returned.
+ *
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiParam    {String}    id  The ID of the user to update
  * @apiUse      paramUserOptional
@@ -378,6 +402,9 @@ module.exports.updateUser = function *() {
     } else if (!data.id) {
         this.status = 400;
         this.body = { message: 'Missing parameters: id' };
+    } else if (data.id !== this.state.user.userId) {
+        this.status = 403;
+        this.body = { message: this.message };
     } else {
         try {
             // Sanitize in case this is used as fabrication
@@ -410,14 +437,15 @@ module.exports.updateUser = function *() {
  * @api {delete} /api/users     Delete an existing user
  * @apiName     deleteUser
  * @apiGroup    Users
- * @apiVersion  0.2.0
+ * @apiVersion  0.2.1
+ * @apiPermission   Admin
  *
  * @apiDescription  Deletes an User with specified ID. During testing,
  *                  any <code>access-token</code> will work; in production,
  *                  this API will reject anything as it is still in test.
  *
- * @apiHeader   {String}    acccess-token   The access token to execute
- *                                          delete action on the database
+ * @apiHeader   {String}    Authorization   The access token received after
+ *                                          logging in. The scheme is "Bearer".
  *
  * @apiParam    {String}    id  The ID of the object to delete
  *
@@ -428,15 +456,8 @@ module.exports.updateUser = function *() {
  */
 module.exports.deleteUser = function *() {
     let data = this.request.body;
-    let header = this.request.headers;
 
-    // Implement apikey for critical things like this in the future
-    // Since this is experimental, we'll make sure this is never possible
-    // on production server
-    if (!header.access_token || process.env.NODE_ENV === 'production') {
-        this.status = 403;
-        this.body = { message: this.message };
-    } else if (!data.id) {
+    if (!data.id) {
         // Bad request
         this.status = 400;
         this.body = { message: 'Missing parameters: id' };

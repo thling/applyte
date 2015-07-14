@@ -88,7 +88,11 @@ module.exports.user = {
         last: type.string(),
         preferred: type.string()
     },
-    birthday: type.date().required(),
+    birthday: {
+        year: type.number().min(1900).max(2015),
+        month: type.number().min(1).max(12),
+        day: type.number().min(1).max(31)
+    },
     contact: {
         email: type.string().email(),
         phone: type.string(),

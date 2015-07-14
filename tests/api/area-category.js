@@ -12,6 +12,7 @@ let superagent   = require('supertest');
 let app          = require('../../app');
 let AreaCategory = require('../../models/area-category');
 let master       = require('../test-master');
+let User         = require('../../models/user');
 let utils        = require('../../lib/utils');
 
 require('co-mocha');
@@ -27,7 +28,34 @@ let request = function () {
     return superagent(app.listen());
 };
 
+let agency = function () {
+    return superagent.agent(app.listen());
+};
+
 describe('AreaCategory API Routes', function () {
+    let agent, token, userId;
+
+    before('Set up environment', function *(done) {
+        // Setup user token - need an admin token
+        agent = agency();
+        master.getTestToken(agent, function (tok, id) {
+            userId = id;
+            master.setVerified(agent, id, function () {
+                master.makeAdmin(agent, id, function () {
+                    master.refreshToken(agent, tok, function (newToken) {
+                        token = newToken;
+                        done();
+                    });
+                });
+            });
+        });
+    });
+
+    after('clean up area categories and user', function *() {
+        let foundUser = yield User.findById(userId);
+        yield foundUser.delete();
+    });
+
     describe('Basic API access test', function () {
         let category, createdId, template = master.areaCategory.template;
 
@@ -39,6 +67,7 @@ describe('AreaCategory API Routes', function () {
         it('should create a new area category with POST request to /api/area-categories', function (done) {
             request()
                 .post('/api/area-categories')
+                .set('Authorization', 'Bearer ' + token)
                 .send(template)
                 .expect(201)
                 .expect('Content-Type', /json/)
@@ -299,6 +328,7 @@ describe('AreaCategory API Routes', function () {
 
             request()
                 .put('/api/area-categories')
+                .set('Authorization', 'Bearer ' + token)
                 .send(newData)
                 .expect(200)
                 .expect('Content-Type', /json/)
@@ -324,7 +354,7 @@ describe('AreaCategory API Routes', function () {
         it('should be able to delete an area category with proper prvilege', function (done) {
             request()
                 .delete('/api/area-categories')
-                .set('access_token', 'anythingfortest')
+                .set('Authorization', 'Bearer ' + token)
                 .send({ id: security.id, apiKey: 'test' })
                 .expect(204, done);
         });
@@ -398,7 +428,7 @@ describe('AreaCategory API Routes', function () {
                 request()
                     .delete('/api/area-categories')
                     .send({ id: security.id })
-                    .expect(403, done);
+                    .expect(401, done);
             });
         });
     });
