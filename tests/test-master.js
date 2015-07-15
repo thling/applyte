@@ -120,6 +120,18 @@ module.exports.program = {
                     categories: ['Security']
                 }
             ],
+            ranking: {
+                source: 'QS',
+                rank: 1
+            },
+            tuition: 30000,
+            deadlines: [{
+                semester: 'Fall 2015',
+                deadline: new Date(2014, 11, 12).toISOString()
+            }, {
+                semester: 'Spring 2016',
+                deadline: new Date(2015, 6, 8).toISOString()
+            }],
             contact: {
                 fax: '+1 (765) 494-0739',
                 phone: '+1 (765) 494-6010',
@@ -144,7 +156,10 @@ module.exports.program = {
         assert.strictEqual(prog.schoolId, test.schoolId);
         assert.strictEqual(prog.department, test.department);
         assert.strictEqual(prog.faculty, test.faculty);
+        assert.strictEqual(prog.tuition, test.tuition);
 
+        assert.deepEqual(prog.ranking, test.ranking);
+        assert.deepEqual(prog.deadlines, test.deadlines);
         assert.deepEqual(prog.areas, test.areas);
         assert.deepEqual(prog.contact, test.contact);
     }
@@ -199,8 +214,8 @@ module.exports.user = {
             },
             accessRights: 'user',
             verified: true,
-            created: new Date(2015, 6, 25, 4, 54, 42),
-            modified: new Date(2015, 6, 25, 4, 54, 42)
+            created: new Date(2015, 6, 25, 4, 54, 42).toISOString(),
+            modified: new Date(2015, 6, 25, 4, 54, 42).toISOString()
         };
     },
 
@@ -260,6 +275,7 @@ module.exports.getTestToken = function (agent, email, cb) {
                 .send(user)
                 .end(function (err, res) {
                     if (err) {
+                        console.log(err.message);
                         throw err;
                     }
 

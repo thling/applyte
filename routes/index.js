@@ -7,7 +7,8 @@ router.use(function *(next) {
     try {
         yield next;
     } catch (error) {
-        if (error.type === 'UserNotAuthorizedError') {
+        if (error.type === 'UserNotAuthorizedError'
+                || error.type === 'BadRequestError') {
             error.generateContext(this);
         } else {
             throw error;

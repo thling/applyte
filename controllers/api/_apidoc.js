@@ -440,7 +440,8 @@
 
 /**
  * @apiDefine paramUser
- * @apiParam    {String}    newPassword     New password for the user
+ * @apiParam    {String}    newPassword     New password for the user. Must be hashed
+ *                                          with the <code>SHA256</code> hashing algorithm
  * @apiParam    {Object}    name    Name specs of the user
  * @apiParam    {String}    name.first      The firstname of the user
  * @apiParam    {String}    [name.middle]   The middle name of the user.

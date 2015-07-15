@@ -114,22 +114,6 @@ describe('Authentication test', function () {
                 });
         });
 
-        it('should fail logging in if CSRF token is invalid', function (done) {
-            agent
-                .post('/api/auth/login')
-                .set('x-csrf-token', csrf + 'lala')
-                .expect(403)
-                .expect('Content-Type', /json/)
-                .end(function (err, res) {
-                    if (err) {
-                        throw err;
-                    }
-
-                    res.body.should.have.property('message', 'invalid csrf token');
-                    done();
-                });
-        });
-
         it('should respond 401 if username does not exist', function (done) {
             agent
                 .post('/api/auth/login')

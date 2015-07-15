@@ -11,7 +11,7 @@ let BadRequestError = errors.BadRequestError;
  * @api {get}   /api/programs    Query with complex conditions
  * @apiName     query
  * @apiGroup    Programs
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiDescription  The mega query function that allows query strings,
  *                  filtering, sorting by field, sorting order, fields
@@ -73,8 +73,21 @@ module.exports.query = function *() {
     try {
         let query = this.query;
 
-        utils.formatQueryPagination(query);
+        utils.formatQueryPagination(query, ['name', 'rank']);
         utils.formatQueryLists(query, ['fields', 'areas']);
+        utils.formatRangeConditions(
+                query,
+                [{
+                    name: 'tuition',
+                    parser: parseFloat
+                }, {
+                    name: 'deadline',
+                    parser: function (param) {
+                        return new Date(param).toISOString();
+                    }
+                }]
+        );
+
         query.school = (query.school === 'true');
         query = _.omit(query, ['start', 'limit', 'sort', 'order']);
 
@@ -104,7 +117,7 @@ module.exports.query = function *() {
  * @api {get}   /api/programs/:id      Get program by ID
  * @apiName     getProgramById
  * @apiGroup    Programs
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiParam    {String}    id  The ID of the program to retrieve
  *
@@ -141,7 +154,7 @@ module.exports.getProgramById = function *() {
  * @api {get}   /api/programs/level/:level   Get programs by level
  * @apiName     getProgramsByLevel
  * @apiGroup    Programs
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiParam    {String="Undergraduate","Graduate"} level
  *              The level to search for. This parameter must be encoded
@@ -175,7 +188,7 @@ module.exports.getProgramsByLevel = function *() {
  * @api {get}   /api/programs/area/:areaName     Get programs by area name
  * @apiName     getProgramsByAreaName
  * @apiGroup    Programs
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiParam    {String}    areaName
  *              The area to search for. This parameter must be encoded
@@ -209,7 +222,7 @@ module.exports.getProgramByAreaName = function *() {
  * @api {get}   /api/programs/categories/:categories     Get programs by categories
  * @apiName     getProgramsByCategories
  * @apiGroup    Programs
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  *
  * @apiParam    {String}    categories  The categories to search for. Multiple
  *                                      categories should be separated with
@@ -248,7 +261,7 @@ module.exports.getProgramsByAreaCategories = function *() {
  * @api {post}  /api/programs     Create a new program
  * @apiName     createProgram
  * @apiGroup    Programs
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  * @apiPermission   Admin
  *
  * @apiHeader   {String}    Authorization   The access token received after
@@ -295,7 +308,7 @@ module.exports.createProgram = function *() {
  * @api {put}   /api/programs     Updates an existing program
  * @apiName     updateProgram
  * @apiGroup    Programs
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  * @apiPermission   Admin
  *
  * @apiDescription  Updates the Program object in the database with
@@ -381,7 +394,7 @@ module.exports.updateProgram = function *() {
  * @api {delete}    /api/programs     Deletes an existing program
  * @apiName     deleteProgram
  * @apiGroup    Programs
- * @apiVersion  0.1.0
+ * @apiVersion  0.2.1
  * @apiPermission   Admin
  *
  * @apiDescription  Deletes an Program with specified ID. During testing,

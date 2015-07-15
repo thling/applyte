@@ -43,7 +43,7 @@ module.exports = (function () {
         app.use(bodyParser());
 
         // Serve static files
-        app.use(serve(path.join(__dirname, 'public')));
+        // app.use(serve(path.join(__dirname, 'public')));
 
         // Activates session
         app.use(session(config.sessionOptions));

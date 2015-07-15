@@ -63,6 +63,15 @@ module.exports.program = {
             categories: [type.string()]
         }
     ],
+    ranking: {
+        source: type.string(),
+        rank: type.number()
+    },
+    tuition: type.number(),
+    deadlines: [{
+        semester: type.string(),
+        deadline: type.date()
+    }],
     contact: {
         fax: type.string(),
         phone: type.string(),

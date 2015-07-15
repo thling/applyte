@@ -14,6 +14,7 @@ const TABLE  = 'program';
 const LEVEL_INDEX = 'level';
 const NAME_INDEX = 'name';
 const SCHOOL_ID_INDEX = 'schoolId';
+const RANKING_INDEX = 'rank';
 const SCHEMA = schemas[TABLE];
 
 let Program = thinky.createModel(TABLE, SCHEMA, {
@@ -25,6 +26,9 @@ let Program = thinky.createModel(TABLE, SCHEMA, {
 Program.ensureIndex(LEVEL_INDEX);
 Program.ensureIndex(NAME_INDEX);
 Program.ensureIndex(SCHOOL_ID_INDEX);
+Program.ensureIndex(RANKING_INDEX, function (doc) {
+    return doc('ranking')('rank');
+});
 
 // Enforce relationship
 Program.belongsTo(School, 'school', 'schoolId', 'id');
@@ -269,6 +273,7 @@ Program.defineStatic('query', function *(query) {
     let q = r.table(TABLE);
     let pagination = query.pagination;
     let school = query.school;
+    let deadline = query.deadline;
     let tempQuery = _.pick(query, _.keys(SCHEMA));
     let areas;
 
@@ -280,6 +285,10 @@ Program.defineStatic('query', function *(query) {
     // Determine the desired sorting index
     let queryChained = false, useIndex;
     switch (pagination.sort) {
+        case 'rank':
+            useIndex = (pagination.order === 'desc') ?
+                    r.desc(RANKING_INDEX) : RANKING_INDEX;
+            break;
         default:
             useIndex = (pagination.order === 'desc') ?
                     r.desc(NAME_INDEX) : NAME_INDEX;
@@ -298,6 +307,55 @@ Program.defineStatic('query', function *(query) {
 
     // Filter using the information we have
     if (tempQuery.length !== 0) {
+        // Filter tuition range
+        let tuition = tempQuery.tuition;
+        if (_.isPlainObject(tuition)) {
+            if (tuition.lt) {
+                q = q.filter(r.row('tuition').lt(tuition.lt));
+            }
+
+            if (tuition.le) {
+                q = q.filter(r.row('tuition').le(tuition.le));
+            }
+
+            if (tuition.gt) {
+                q = q.filter(r.row('tuition').gt(tuition.gt));
+            }
+
+            if (tuition.ge) {
+                q = q.filter(r.row('tuition').ge(tuition.ge));
+            }
+
+            tempQuery = _.omit(tempQuery, 'tuition');
+        }
+
+        // Filter deadline range
+        if (_.isPlainObject(deadline)) {
+            if (deadline.lt) {
+                q = q.filter(r.row('deadlines').contains(function (lst) {
+                    return r.ISO8601(lst('deadline')).lt(r.ISO8601(deadline.lt));
+                }));
+            }
+
+            if (deadline.le) {
+                q = q.filter(r.row('deadlines').contains(function (lst) {
+                    return r.ISO8601(lst('deadline')).le(r.ISO8601(deadline.le));
+                }));
+            }
+
+            if (deadline.gt) {
+                q = q.filter(r.row('deadlines').contains(function (lst) {
+                    return r.ISO8601(lst('deadline')).gt(r.ISO8601(deadline.gt));
+                }));
+            }
+
+            if (deadline.ge) {
+                q = q.filter(r.row('deadlines').contains(function (lst) {
+                    return (lst('deadline')).ge(r.ISO8601(deadline.ge));
+                }));
+            }
+        }
+
         q = q.filter(tempQuery);
     }
 
@@ -418,6 +476,13 @@ Program.pre('save', function (next) {
     if (this.areas) {
         let _self = this;
         co(function *() {
+            if (_self.schoolId) {
+                let foundSchool = yield School.findById(_self.schoolId);
+                if (!foundSchool) {
+                    throw new Error('schoolId ' + _self.schoolId + ' does not exist');
+                }
+            }
+
             for (let area of _self.areas) {
                 for (let category of area.categories) {
                     let cat = yield AreaCategory.findByName(category);

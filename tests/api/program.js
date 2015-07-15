@@ -80,10 +80,21 @@ describe('Program API Routes', function () {
 
     describe('Basic API access test', function () {
         let createdId, program, template = master.program.template;
+        let schoolId;
+
+        before('set up school', function *() {
+            let school = master.school.template;
+            yield School.save(school);
+            schoolId = school.id;
+            template.schoolId = schoolId;
+        });
 
         after('clean up database', function *() {
             program = yield Program.findById(createdId);
             yield program.delete();
+
+            let school = yield School.findById(schoolId);
+            yield school.delete();
         });
 
         it('should create a new program with POST request to /api/programs', function (done) {
@@ -129,7 +140,7 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/programs?name=Computer%20Science&school=false'
+                    '<https://applyte.io/api/programs?name=Computer%20Science&school=false'
                             + '&start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
@@ -171,6 +182,43 @@ describe('Program API Routes', function () {
             management.schoolId = purdue.id;
             philosophy.schoolId = purdue.id;
 
+            compsci.ranking.rank = 1;
+            mecheng.ranking.rank = 2;
+            indseng.ranking.rank = 3;
+            management.ranking.rank = 4;
+            philosophy.ranking.rank = 5;
+
+            compsci.tuition = 10000;
+            mecheng.tuition = 50000;
+            indseng.tuition = 30000;
+            management.tuition = 20000;
+            philosophy.tuition = 15400;
+
+            compsci.deadlines = [{
+                semester: 'Spring 2016',
+                deadline: new Date(2015, 10, 1).toISOString()
+            }];
+
+            mecheng.deadlines = [{
+                semester: 'Spring 2016',
+                deadline: new Date(2015, 6, 1).toISOString()
+            }];
+
+            indseng.deadlines = [{
+                semester: 'Spring 2016',
+                deadline: new Date(2015, 7, 1).toISOString()
+            }];
+
+            management.deadlines = [{
+                semester: 'Spring 2016',
+                deadline: new Date(2015, 1, 1).toISOString()
+            }];
+
+            philosophy.deadlines = [{
+                semester: 'Spring 2016',
+                deadline: new Date(2015, 11, 1).toISOString()
+            }];
+
             management.level = 'Undergraduate';
             management.degree = 'Bachelor of Business Administration';
             management.faculty = 'School of Engineering';
@@ -205,7 +253,7 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/programs?school=false&'
+                    '<https://applyte.io/api/programs?school=false&'
                             + 'start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
@@ -240,7 +288,7 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/programs?school=true&start=1&limit=10&sort=name&order=asc>; rel="self"'
+                    '<https://applyte.io/api/programs?school=true&start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
                     if (err) {
@@ -328,7 +376,7 @@ describe('Program API Routes', function () {
                         .expect('Content-Type', /json/)
                         .expect(
                             'Link',
-                            '<http://applyte.io/api/programs?'
+                            '<https://applyte.io/api/programs?'
                                     + 'areas=Databases%7C%7CInformation%20Security%20and%20Assurance&'
                                     + 'school=false&start=1&limit=10&sort=name&order=asc>; '
                                     + 'rel="self"'
@@ -368,9 +416,9 @@ describe('Program API Routes', function () {
                         .expect('Content-Type', /json/)
                         .expect(
                             'Link',
-                            '<http://applyte.io/api/programs?school=false&'
+                            '<https://applyte.io/api/programs?school=false&'
                                     + 'start=1&limit=3&sort=name&order=asc>; rel="prev", '
-                                    + '<http://applyte.io/api/programs?school=false&'
+                                    + '<https://applyte.io/api/programs?school=false&'
                                     + 'start=3&limit=3&sort=name&order=asc>; rel="self"'
                         )
                         .end(function (err, res) {
@@ -406,9 +454,9 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/programs?school=false&'
+                    '<https://applyte.io/api/programs?school=false&'
                             + 'start=1&limit=3&sort=name&order=desc>; rel="self", '
-                            + '<http://applyte.io/api/programs?school=false'
+                            + '<https://applyte.io/api/programs?school=false'
                             + '&start=4&limit=3&sort=name&order=desc>; rel="next"'
                 )
                 .end(function (err, res) {
@@ -418,6 +466,70 @@ describe('Program API Routes', function () {
                         master.listEquals(res.body, [philosophy, mecheng, management]);
                     }
 
+                    done();
+                });
+        });
+
+        it('should sort by ranking', function (done) {
+            request()
+                .get('/api/programs?sort=rank&order=desc')
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    master.listEquals(res.body, [philosophy, management, indseng, mecheng, compsci]);
+                    done();
+                });
+        });
+
+        it('should sort by ranking for computer science only', function (done) {
+            let name = encodeURI('Computer Science');
+            request()
+                .get('/api/programs?sort=rank&order=desc&name=' + name)
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    master.listEquals(res.body, [compsci]);
+                    done();
+                });
+        });
+
+        it('should return those tuition > 10000 and < 30000', function (done) {
+            request()
+                .get('/api/programs?tuition.gt=10000&tuition.lt=30000')
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    master.listEquals(res.body, [management, philosophy]);
+                    done();
+                });
+        });
+
+        it('should return those deadline between 2015 05 01 and 2015 10 01', function (done) {
+            let may = encodeURI(new Date(2015, 4, 1).toISOString());
+            let oct = encodeURI(new Date(2015, 9, 1).toISOString());
+
+            request()
+                .get('/api/programs?deadline.gt=' + may + '&deadline.lt=' + oct)
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    master.listEquals(res.body, [mecheng, indseng]);
                     done();
                 });
         });
@@ -444,11 +556,11 @@ describe('Program API Routes', function () {
                         .expect('Content-Type', /json/)
                         .expect(
                             'Link',
-                            '<http://applyte.io/api/programs?fields=name%7C%7CschoolId'
+                            '<https://applyte.io/api/programs?fields=name%7C%7CschoolId'
                                     + '&areas=Databases&level=Undergraduate'
                                     + '&faculty=School%20of%20Engineering&school=true'
                                     + '&start=1&limit=10&sort=name&order=desc>; rel="prev", '
-                                    + '<http://applyte.io/api/programs?fields=name%7C%7CschoolId'
+                                    + '<https://applyte.io/api/programs?fields=name%7C%7CschoolId'
                                     + '&areas=Databases&level=Undergraduate'
                                     + '&faculty=School%20of%20Engineering&school=true'
                                     + '&start=2&limit=10&sort=name&order=desc>; rel="self"'
@@ -491,6 +603,11 @@ describe('Program API Routes', function () {
 
             newData.id = compsci.id;
             newData.name = 'Test Science';
+            newData.tuition = 40000;
+            newData.deadlines = [{
+                semester: 'Spring 2016',
+                deadline: new Date(2015, 11, 5).toISOString()
+            }];
             newData.areas.push({
                     name: 'Systems Development',
                     categories: ['Systems', 'Security']

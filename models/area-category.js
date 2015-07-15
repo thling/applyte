@@ -192,4 +192,25 @@ AreaCategory.pre('save', function (next) {
     });
 });
 
+AreaCategory.pre('delete', function (next) {
+    let name = this.name;
+
+    // Require here to avoid circular require
+    let Program = require('./program');
+
+    co(function *() {
+        let foundPrograms = yield Program.findByAreaCategories(name);
+        if (!_.isEmpty(foundPrograms)) {
+            throw new Error(
+                    'one or more programs still refer to the area category \''
+                    + name + '\''
+            );
+        }
+    })
+    .then(next)
+    .catch(function (error) {
+        next(error);
+    });
+});
+
 module.exports = AreaCategory;

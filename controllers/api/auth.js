@@ -9,16 +9,16 @@ let User     = require(basedir + 'models/user');
 let BadRequestError = errors.BadRequestError;
 
 /**
- * @api {get}   /api/auth/tokens     Request login token
- * @apiName     Request login CSRF token
+ * @api {get}   /api/auth/tokens     Request CSRF token
+ * @apiName     Request CSRF token
  * @apiGroup    Authentication
  * @apiVersion  0.2.1
  *
- * @apiDescription  This request will return a CSRF token for further login use
+ * @apiDescription  This request will return a CSRF token for further use
  *
  * @apiParamExample {URL}  Request Examples
  *      <!-- Get token -->
- *      https://applyte.io/api/auth/login
+ *      https://applyte.io/api/auth/tokens
  *
  * @apiSuccess  (200) {String}  _csrf   The CSRF token to be included
  */
@@ -40,7 +40,8 @@ module.exports.requestToken = function *() {
  * @apiHeader   {String}    x-csrf-token    The CSRF token by a GET request to this resource
  *
  * @apiParam    {String}    username    The username of the user (email)
- * @apiParam    {String}    password    The hashed password
+ * @apiParam    {String}    password    The hashed password. Must be hashed
+ *                                      with the <code>SHA256</code> hashing algorithm
  *
  * @apiParamExample {URL}  Request Examples
  *          <!-- POST to -->
@@ -63,9 +64,6 @@ module.exports.requestToken = function *() {
  */
 module.exports.login = function *() {
     try {
-        // Check if CSRF token is valid
-        this.assertCSRF();
-
         // Attempts to authenticate the user
         let user;
         yield passport.authenticate('local', function *(err, usr) {

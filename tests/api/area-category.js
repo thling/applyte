@@ -107,7 +107,7 @@ describe('AreaCategory API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/area-categories?name=Security'
+                    '<https://applyte.io/api/area-categories?name=Security'
                             + '&start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
@@ -161,7 +161,7 @@ describe('AreaCategory API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/area-categories?start=1'
+                    '<https://applyte.io/api/area-categories?start=1'
                             + '&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
@@ -196,11 +196,11 @@ describe('AreaCategory API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/area-categories?start=1'
+                    '<https://applyte.io/api/area-categories?start=1'
                             + '&limit=3&sort=name&order=asc>; rel="prev", '
-                            + '<http://applyte.io/api/area-categories?start=2'
+                            + '<https://applyte.io/api/area-categories?start=2'
                             + '&limit=3&sort=name&order=asc>; rel="self", '
-                            + '<http://applyte.io/api/area-categories?start=5'
+                            + '<https://applyte.io/api/area-categories?start=5'
                             + '&limit=3&sort=name&order=asc>; rel="next"'
                 )
                 .end(function (err, res) {
@@ -248,9 +248,9 @@ describe('AreaCategory API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/area-categories?start=1'
+                    '<https://applyte.io/api/area-categories?start=1'
                             + '&limit=3&sort=name&order=desc>; rel="prev", '
-                            + '<http://applyte.io/api/area-categories?start=3'
+                            + '<https://applyte.io/api/area-categories?start=3'
                             + '&limit=3&sort=name&order=desc>; rel="self"'
                 )
                 .end(function (err, res) {
@@ -274,7 +274,7 @@ describe('AreaCategory API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/area-categories?fields=name%7C%7Cid'
+                    '<https://applyte.io/api/area-categories?fields=name%7C%7Cid'
                             + '&start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
