@@ -13,18 +13,6 @@ module.exports = function (router) {
     // Fetch a particular one given ID
     router.get(apiBase + '/:id', programApi.getProgramById);
 
-    // Fetch all programs by level
-    router.get(apiBase + '/level/:level', programApi.getProgramsByLevel);
-
-    // Find all programs with certain area
-    router.get(apiBase + '/area/:area', programApi.getProgramByAreaName);
-
-    // Gets all programs with areas that fall into the specified categories
-    router.get(
-            apiBase + '/categories/:categories',
-            programApi.getProgramsByAreaCategories
-    );
-
     // Add new program, returns id
     router.post(apiBase, auth.admin, programApi.createProgram);
 

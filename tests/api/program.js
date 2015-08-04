@@ -306,68 +306,8 @@ describe('Program API Routes', function () {
                 });
         });
 
-        it('should find programs from undergrad degree', function (done) {
-            let level = encodeURI('Undergraduate');
-
-            request()
-                .get('/api/programs/level/' + level)
-                .expect(200)
-                .expect('Content-Type', /json/)
-                .end(function (err, res) {
-                    if (err) {
-                        throw err;
-                    } else {
-                        master.listEquals(res.body, [mecheng, management]);
-                    }
-
-                    done();
-                });
-        });
-
-        it('should find programs with \'Database\' area', function (done) {
-            let area = encodeURI('Database');
-            request()
-                .get('/api/programs/area/' + area)
-                .expect(200)
-                .expect('Content-Type', /json/)
-                .end(function (err, res) {
-                    if (err) {
-                        throw err;
-                    } else {
-                        master.listEquals(
-                                res.body,
-                                [compsci, mecheng, management]
-                        );
-                    }
-
-                    done();
-                });
-        });
-
-        it('should find programs that have areas in both [Database, Systems] categories',
-                function (done) {
-                    let categories = encodeURI('Database||Systems');
-                    request()
-                        .get('/api/programs/categories/' + categories)
-                        .expect(200)
-                        .expect('Content-Type', /json/)
-                        .end(function (err, res) {
-                            if (err) {
-                                throw err;
-                            } else {
-                                master.listEquals(
-                                        res.body,
-                                        [compsci, mecheng, management]
-                                );
-                            }
-
-                            done();
-                        });
-                }
-        );
-
         it('should list programs that have \'Databases\' '
-                + 'or \'Information Security and Assurance areas\'',
+                + 'or \'Information Security and Assurance\' areas',
                 function (done) {
                     let areas = encodeURI('Databases||Information Security and Assurance');
                     request()

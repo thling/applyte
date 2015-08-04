@@ -21,12 +21,6 @@ module.exports = function (router) {
     // Gets the school by its name and campus
     router.get(apiBase + '/:name/:campus/programs', schoolApi.getSchoolPrograms);
 
-    // Gets the school by location of school
-    router.get(
-            apiBase + '/location/:country?/:state?/:city?/',
-            schoolApi.getSchoolsByLocation
-    );
-
     // Creates a new school, returns an ID
     router.post(apiBase, auth.admin, schoolApi.createSchool);
 

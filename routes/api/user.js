@@ -10,6 +10,7 @@ let apiBase = '/api/users';
 
 module.exports = function (router) {
     // Gets the list of all users
+    // Currently blocking this query
     router.get(apiBase, function *() {
         this.status = 418;
         this.body = { message: this.message };
@@ -30,6 +31,7 @@ module.exports = function (router) {
 
     // Only open this on development or test environment
     if (config.mode === 'test' || config.mode === 'development') {
+        // Set user as verified
         router.put(apiBase + '/:id/verify', function *() {
             let User = require(basedir + 'models/user');
             let user = yield User.findById(this.params.id);
@@ -39,6 +41,7 @@ module.exports = function (router) {
             this.status = 200;
         });
 
+        // Make the user as administrator
         router.put(apiBase + '/:id/makeAdmin', function *() {
             let User = require(basedir + 'models/user');
             let user = yield User.findById(this.params.id);
