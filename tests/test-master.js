@@ -109,15 +109,15 @@ module.exports.program = {
             areas: [
                 {
                     name: 'Databases',
-                    categories: ['Database', 'Systems']
+                    desc: 'This is database'
                 },
                 {
                     name: 'Distributed System',
-                    categories: ['Systems']
+                    desc: 'This is distributed systems'
                 },
                 {
                     name: 'Information Security and Assurance',
-                    categories: ['Security']
+                    desc: 'This is infosec'
                 }
             ],
             ranking: {
@@ -137,7 +137,8 @@ module.exports.program = {
                 phone: '+1 (765) 494-6010',
                 email: 'grad-info@cs.purdue.edu',
                 address: _.cloneDeep(address)
-            }
+            },
+            tags: ['security', 'systems']
         };
     },
 

@@ -2,7 +2,6 @@
 
 let _            = require('lodash');
 let assert       = require('assert');
-let AreaCategory = require('../../models/area-category');
 let master       = require('../test-master');
 let Program      = require('../../models/program');
 let School       = require('../../models/school');
@@ -125,18 +124,6 @@ describe('School model test', function () {
                 umich = new School(master.school.template);
 
             before('Adding multiple programs', function *() {
-                let programTemp = master.program.template;
-                for (let area of programTemp.areas) {
-                    for (let cat of area.categories) {
-                        let category = new AreaCategory({
-                            name: cat,
-                            desc: 'test'
-                        });
-
-                        yield category.save();
-                    }
-                }
-
                 program1.schoolId = school.id;
 
                 program2.update({
@@ -230,14 +217,6 @@ describe('School model test', function () {
 
                 for (let testSchool of [purdue, purdueCal, uiuc, umich, bu, mit]) {
                     yield testSchool.delete();
-                }
-
-                let temp = master.program.template;
-                for (let area of temp.areas) {
-                    for (let cat of area.categories) {
-                        let category = yield AreaCategory.findByName(cat);
-                        yield category.delete();
-                    }
                 }
             });
 

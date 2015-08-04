@@ -60,7 +60,7 @@ module.exports.program = {
     areas: [
         {
             name: type.string(),
-            categories: [type.string()]
+            desc: type.string()
         }
     ],
     ranking: {
@@ -77,14 +77,8 @@ module.exports.program = {
         phone: type.string(),
         email: type.string().email(),
         address: address
-    }
-};
-
-// AreaCategory schema
-module.exports.area_category = {
-    id: type.string(),
-    name: type.string().required(),
-    desc: type.string()
+    },
+    tags: [ type.string() ]
 };
 
 // User schema

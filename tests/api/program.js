@@ -10,7 +10,7 @@ let _            = require('lodash');
 let assert       = require('assert');
 let superagent   = require('supertest');
 let app          = require('../../app');
-let AreaCategory = require('../../models/area-category');
+// let AreaCategory = require('../../models/area-category');
 let master       = require('../test-master');
 let Program      = require('../../models/program');
 let School       = require('../../models/school');
@@ -39,16 +39,16 @@ describe('Program API Routes', function () {
 
     before('Set up environment', function *(done) {
         let temp = master.program.template;
-        for (let area of temp.areas) {
-            for (let cat of area.categories) {
-                let category = new AreaCategory({
-                    name: cat,
-                    desc: 'test'
-                });
-
-                yield category.save();
-            }
-        }
+        // for (let area of temp.areas) {
+        //     for (let cat of area.categories) {
+        //         let category = new AreaCategory({
+        //             name: cat,
+        //             desc: 'test'
+        //         });
+        //
+        //         yield category.save();
+        //     }
+        // }
 
         // Setup user token - need an admin token
         agent = agency();
@@ -67,12 +67,12 @@ describe('Program API Routes', function () {
 
     after('clean up area categories and user', function *() {
         let temp = master.program.template;
-        for (let area of temp.areas) {
-            for (let cat of area.categories) {
-                let category = yield AreaCategory.findByName(cat);
-                yield category.delete();
-            }
-        }
+        // for (let area of temp.areas) {
+        //     for (let cat of area.categories) {
+        //         let category = yield AreaCategory.findByName(cat);
+        //         yield category.delete();
+        //     }
+        // }
 
         let foundUser = yield User.findById(userId);
         yield foundUser.delete();
@@ -550,7 +550,7 @@ describe('Program API Routes', function () {
             }];
             newData.areas.push({
                     name: 'Systems Development',
-                    categories: ['Systems', 'Security']
+                    desc: 'This is sys dev'
             });
 
             // Record the expected POST feedback

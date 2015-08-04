@@ -8,7 +8,6 @@ process.env.NODE_ENV = 'test';
 
 let _            = require('lodash');
 let assert       = require('assert');
-let AreaCategory = require('../../models/area-category');
 let superagent   = require('supertest');
 let app          = require('../../app');
 let master       = require('../test-master');
@@ -198,18 +197,6 @@ describe('School API Routes', function () {
             yield emerson.save();
             yield mit.save();
 
-            let programTemp = master.program.template;
-            for (let area of programTemp.areas) {
-                for (let cat of area.categories) {
-                    let category = new AreaCategory({
-                        name: cat,
-                        desc: 'test'
-                    });
-
-                    yield category.save();
-                }
-            }
-
             schools = [bu, emerson, mit, purdueCal, purdueWL, uiuc, umich];
 
             compsci = new Program(master.program.template);
@@ -246,14 +233,6 @@ describe('School API Routes', function () {
 
             for (let sch of schools) {
                 yield sch.delete();
-            }
-
-            let temp = master.program.template;
-            for (let area of temp.areas) {
-                for (let cat of area.categories) {
-                    let category = yield AreaCategory.findByName(cat);
-                    yield category.delete();
-                }
             }
         });
 
