@@ -261,59 +261,6 @@ module.exports.getSchoolByNameCampus = function *() {
 };
 
 /**
- * @api {get}   /api/schools/location/:country/:state/:city  Get schools by location
- * @apiName     getSchoolsByLocation
- * @apiGroup    Schools
- * @apiVersion  0.2.1
- *
- * @apiDescription  Find schools by specified country, state, or city. Any subset
- *                  of preceding elements are permetted (e.g. <code>[country, state]
- *                  </code> is permitted but not <code>[state, city]</code>).
- *                  Location must be specified in that order.
- *
- * @apiParam    {String}    [country]   The country to search with.
- *                                      This parameter must be encoded
- *                                      with <code>encodeURI</code>.
- * @apiParam    {String}    [state]     The state to search with.
- *                                      This parameter must be encoded
- *                                      with <code>encodeURI</code>.
- * @apiParam    {String}    [city]      The city to search with.
- *                                      This parameter must be encoded
- *                                      with <code>encodeURI</code>.
- *
- * @apiUse      successSchoolArray
- * @apiUse      errors
- *
- * @apiParamExample {URL}   Request Example:
- *      https://applyte.io/api/schools/location/Canada
- *      https://applyte.io/api/schools/location/Canada/Ontario
- *      https://applyte.io/api/schools/location/Canada/Ontario/University%20of%20Waterloo
- */
-module.exports.getSchoolsByLocation = function *() {
-    let data = _.omit(
-        _.pick(this.params, ['city', 'state', 'country']),
-        function (item) {
-            return (!item || item === 'null');
-        }
-    );
-
-    if (!data || _.isEmpty(data)) {
-        this.status = 400;
-        this.body = { message: 'Missing parameters: one or more of city, state, and country' };
-    } else {
-        try {
-            let schools = yield School.findByLocation(data);
-            this.status = 200;
-            this.body = schools;
-        } catch (error) {
-            console.error(error);
-            this.status = 500;
-            this.body = { message: this.message };
-        }
-    }
-};
-
-/**
  * @api {get}   /api/schools/:id/programs    Get all the program the school has
  * @apiName     getProgramsBySchoolId
  * @apiGroup    Schools

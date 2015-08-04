@@ -482,26 +482,6 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should find schools in Boston, MA, US (/country/state/city)', function (done) {
-            let country = encodeURI(bu.address.country);
-            let state = encodeURI(bu.address.state);
-            let city = encodeURI(bu.address.city);
-
-            request()
-                .get('/api/schools/location/' + country + '/' + state + '/' + city)
-                .expect(200)
-                .expect('Content-Type', /json/)
-                .end(function (err, res) {
-                    if (err) {
-                        throw err;
-                    } else {
-                        master.listEquals(res.body, [bu, emerson]);
-                    }
-
-                    done();
-                });
-        });
-
         it('should return all programs Purdue has (by ID)', function (done) {
             request()
                 .get('/api/schools/' + purdueWL.id + '/programs')
