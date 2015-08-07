@@ -2,7 +2,6 @@
 
 let _            = require('lodash');
 let assert       = require('assert');
-let AreaCategory = require('../../models/area-category');
 let master       = require('../test-master');
 let Program      = require('../../models/program');
 let School       = require('../../models/school');
@@ -17,28 +16,10 @@ describe('Program model tests', function () {
         school = new School(master.school.template);
         yield school.save();
         template.schoolId = school.id;
-
-        for (let area of template.areas) {
-            for (let cat of area.categories) {
-                let category = new AreaCategory({
-                    name: cat,
-                    desc: 'test'
-                });
-
-                yield category.save();
-            }
-        }
     });
 
     after('cleaning database', function *() {
         yield school.delete();
-
-        for (let area of template.areas) {
-            for (let cat of area.categories) {
-                let category = yield AreaCategory.findByName(cat);
-                yield category.delete();
-            }
-        }
     });
 
     describe('Program object instantiation test', function () {
@@ -67,7 +48,7 @@ describe('Program model tests', function () {
             program.removeArea(toRemove.name);
             master.program.assertEqual(program, newTemp);
 
-            program.addArea(toRemove.name, toRemove.categories);
+            program.addArea(toRemove.name, toRemove.desc);
             master.program.assertEqual(program, template);
         });
     });
@@ -107,9 +88,9 @@ describe('Program model tests', function () {
                 newTemp.name = 'Management';
                 newTemp.contact.email = 'mba@purdue.edu';
                 newTemp.areas = [
-                    { name: 'Information Technology Management', categories: [] },
-                    { name: 'Product Management', categories: [] },
-                    { name: 'Supply Chain Management', categories: [] }
+                    { name: 'Information Technology Management', desc: 'This is test update' },
+                    { name: 'Product Management', desc: 'This is test update' },
+                    { name: 'Supply Chain Management', desc: 'This is test update' }
                 ];
 
                 program.update(newTemp);
@@ -128,10 +109,6 @@ describe('Program model tests', function () {
                 management = new Program(master.program.template),
                 mecheng = new Program(master.program.template),
                 philosophy = new Program(master.program.template);
-
-            let database = new AreaCategory(master.areaCategory.template),
-                security = new AreaCategory(master.areaCategory.template),
-                systems = new AreaCategory(master.areaCategory.template);
 
             let testPrograms = [compsci, mecheng, indseng, management, philosophy];
 
@@ -163,15 +140,6 @@ describe('Program model tests', function () {
                 yield umich.save();
                 yield mit.save();
 
-                // Setup area categories
-                security.name = 'Security';
-                database.name = 'Database';
-                systems.name = 'Systems';
-
-                yield security.save();
-                yield database.save();
-                yield systems.save();
-
                 // Setup programs
                 compsci.schoolId = purdueWL.id;
 
@@ -198,7 +166,8 @@ describe('Program model tests', function () {
                     areas: [
                         {
                             name: 'Database Security',
-                            categories: [security.name, systems.name, database.name]
+                            desc: 'This is database security'
+                            // categories: [security.name, systems.name, database.name]
                         }
                     ],
                     schoolId: umich.id
@@ -212,6 +181,12 @@ describe('Program model tests', function () {
 
                 philosophy.removeArea('Information Security and Assurance');
 
+                compsci.tags = ['computer', 'databases'];
+                mecheng.tags = ['computer', 'engineering'];
+                indseng.tags = ['databases', 'security'];
+                management.tags = ['computer', 'databases'];
+                philosophy.tags = ['philosophy'];
+
                 yield compsci.save();
                 yield mecheng.save();
                 yield indseng.save();
@@ -223,10 +198,6 @@ describe('Program model tests', function () {
                 // Don't need those in database anymore, clean up now
                 for (let testProg of testPrograms) {
                     yield testProg.delete();
-                }
-
-                for (let cat of [security, systems, database]) {
-                    yield cat.delete();
                 }
 
                 for (let school of [purdueWL, umich, mit]) {
@@ -290,14 +261,14 @@ describe('Program model tests', function () {
                 master.listEquals(foundPrograms, [compsci, mecheng, management]);
             });
 
-            it('should be able to search by single areaCategory ("Database")', function *() {
-                let foundPrograms = yield Program.findByAreaCategories('Database');
-                master.listEquals(foundPrograms, [compsci, mecheng, management, philosophy]);
+            it('should return programs with tag \'databases\'', function *() {
+                let foundPrograms = yield Program.findByTags('databases');
+                master.listEquals(foundPrograms, [compsci, indseng, management]);
             });
 
-            it('should be able to search by categories ("Database" and "Security")', function *() {
-                let foundPrograms = yield Program.findByAreaCategories(['Database', 'Security']);
-                master.listEquals(foundPrograms, [management]);
+            it('should return programs with tag \'computer\' and \'databases\'', function *() {
+                let foundPrograms = yield Program.findByTags(['computer', 'databases']);
+                master.listEquals(foundPrograms, [compsci, management]);
             });
 
             describe('Pagination test', function () {

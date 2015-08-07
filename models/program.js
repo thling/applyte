@@ -2,7 +2,6 @@
 
 let _            = require('lodash');
 let co           = require('co');
-let AreaCategory = require('./area-category');
 let schemas      = require('./utils/schemas');
 let School       = require('./school');
 let thinky       = require('./utils/thinky')();
@@ -14,6 +13,7 @@ const TABLE  = 'program';
 const LEVEL_INDEX = 'level';
 const NAME_INDEX = 'name';
 const SCHOOL_ID_INDEX = 'schoolId';
+const TAGS_INDEX = 'tags';
 const RANKING_INDEX = 'rank';
 const SCHEMA = schemas[TABLE];
 
@@ -26,6 +26,7 @@ let Program = thinky.createModel(TABLE, SCHEMA, {
 Program.ensureIndex(LEVEL_INDEX);
 Program.ensureIndex(NAME_INDEX);
 Program.ensureIndex(SCHOOL_ID_INDEX);
+Program.ensureIndex(TAGS_INDEX, { multi: true });
 Program.ensureIndex(RANKING_INDEX, function (doc) {
     return doc('ranking')('rank');
 });
@@ -107,40 +108,6 @@ Program.defineStatic('findByAreaName', function *(areaName) {
 });
 
 /**
- * Find programs with areas that fall into the specified categories
- *
- * @param   categories  Name of the category/categories. Can be a string
- *                      or an array of strings
- * @return  An array of programs with areas that fall into the
- *          specified categories
- */
-Program.defineStatic('findByAreaCategories', function *(categories) {
-    if (_.isString(categories)) {
-        // Wrap as array if it is a single string
-        categories = [categories];
-    }
-
-    let result = [];
-
-    try {
-        result = yield Program
-                .filter(function (prog) {
-                    // Return all programs whose categories field has what we want
-                    return prog('areas')('categories').contains(function (cat) {
-                        // r.args will generate a special object for
-                        // ReQL functions that accept variable arguments
-                        return cat.contains(r.args(categories));
-                    });
-                })
-                .run();
-    } catch (error) {
-        console.error(error);
-    }
-
-    return result;
-});
-
-/**
  * Return all programs of the specified level
  *
  * @param   level   The leve of the programs to find
@@ -155,6 +122,35 @@ Program.defineStatic('findByLevel', function *(level) {
                 .run();
     } catch (error) {
         console.error(error);
+    }
+
+    return result;
+});
+
+/**
+ * Return all programs of the specified tag
+ *
+ * @param   tags    The tag to search for
+ * @return  Array of programs of the tag
+ */
+Program.defineStatic('findByTags', function *(tags) {
+    let result = [];
+
+    try {
+        if (_.isArray(tags)) {
+            // Filter using traditional query if there are multiple tags
+            result = yield Program
+                    .filter(function (program) {
+                        return program('tags').contains(r.args(tags));
+                    })
+                    .run();
+        } else {
+            result = yield Program
+                    .getAll(tags, { index: TAGS_INDEX })
+                    .run();
+        }
+    } catch (error) {
+        console.log(error);
     }
 
     return result;
@@ -257,6 +253,8 @@ Program.defineStatic('getProgramsByRange', function *(start, length, desc) {
 
     return result;
 });
+
+// let addRangeFilters(field, )
 
 /**
  * Mega query composer for complex data filtering. Supports pagination.
@@ -429,18 +427,16 @@ Program.define('areasIter', function () {
  * Add an area to this program
  *
  * @param   name        The name of the new area
- * @param   categories  The categories this area may fall into.
- *                      Each category must already exist in the
- *                      area_categories table in database (will be verified).
+ * @param   desc        The description of this area
  */
-Program.define('addArea', function (name, categories) {
+Program.define('addArea', function (name, desc) {
     if (!_.isArray(this.areas)) {
         this.areas = [];
     }
 
     this.areas.push({
         name: name,
-        categories: categories
+        desc: desc
     });
 });
 
@@ -469,34 +465,23 @@ Program.define('update', function (properties) {
 });
 
 /**
- * We need to make sure that the area category is already
+ * We need to make sure that the schoolId exists in the school table
  * in the database for reference
  */
 Program.pre('save', function (next) {
-    if (this.areas) {
-        let _self = this;
-        co(function *() {
-            if (_self.schoolId) {
-                let foundSchool = yield School.findById(_self.schoolId);
-                if (!foundSchool) {
-                    throw new Error('schoolId ' + _self.schoolId + ' does not exist');
-                }
+    let _self = this;
+    co(function *() {
+        if (_self.schoolId) {
+            let foundSchool = yield School.findById(_self.schoolId);
+            if (!foundSchool) {
+                throw new Error('schoolId ' + _self.schoolId + ' does not exist');
             }
-
-            for (let area of _self.areas) {
-                for (let category of area.categories) {
-                    let cat = yield AreaCategory.findByName(category);
-                    if (!cat) {
-                        throw new Error('category ' + category + ' does not exist');
-                    }
-                }
-            }
-        })
-        .then(next)
-        .catch(function (error) {
-            next(error);
-        });
-    }
+        }
+    })
+    .then(next)
+    .catch(function (error) {
+        next(error);
+    });
 });
 
 module.exports = Program;

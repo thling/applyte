@@ -60,7 +60,7 @@ module.exports.program = {
     areas: [
         {
             name: type.string(),
-            categories: [type.string()]
+            desc: type.string()
         }
     ],
     ranking: {
@@ -77,19 +77,13 @@ module.exports.program = {
         phone: type.string(),
         email: type.string().email(),
         address: address
-    }
-};
-
-// AreaCategory schema
-module.exports.area_category = {
-    id: type.string(),
-    name: type.string().required(),
-    desc: type.string()
+    },
+    tags: [ type.string() ]
 };
 
 // User schema
 module.exports.user = {
-    id: type.string(),  // Not user set by user, this is ID for internal use
+    id: type.string(),  // Not set by user, this is ID for internal use
     password: type.string().required(),
     name: {
         first: type.string(),
@@ -107,7 +101,7 @@ module.exports.user = {
         phone: type.string(),
         address: address
     },
-    accessRights: type.string().enum('user', 'admin'),
+    accessRights: type.string().enum('user', 'admin', 'developer'),
     verified: type.boolean(),
     created: type.date(),
     modified: type.date()

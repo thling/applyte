@@ -10,7 +10,7 @@ let _            = require('lodash');
 let assert       = require('assert');
 let superagent   = require('supertest');
 let app          = require('../../app');
-let AreaCategory = require('../../models/area-category');
+// let AreaCategory = require('../../models/area-category');
 let master       = require('../test-master');
 let Program      = require('../../models/program');
 let School       = require('../../models/school');
@@ -38,18 +38,6 @@ describe('Program API Routes', function () {
     let agent, token, userId;
 
     before('Set up environment', function *(done) {
-        let temp = master.program.template;
-        for (let area of temp.areas) {
-            for (let cat of area.categories) {
-                let category = new AreaCategory({
-                    name: cat,
-                    desc: 'test'
-                });
-
-                yield category.save();
-            }
-        }
-
         // Setup user token - need an admin token
         agent = agency();
         master.getTestToken(agent, function (tok, id) {
@@ -66,14 +54,6 @@ describe('Program API Routes', function () {
     });
 
     after('clean up area categories and user', function *() {
-        let temp = master.program.template;
-        for (let area of temp.areas) {
-            for (let cat of area.categories) {
-                let category = yield AreaCategory.findByName(cat);
-                yield category.delete();
-            }
-        }
-
         let foundUser = yield User.findById(userId);
         yield foundUser.delete();
     });
@@ -140,7 +120,7 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<https://applyte.io/api/programs?name=Computer%20Science&school=false'
+                    '<http://applyte.io/api/programs?name=Computer%20Science&school=false'
                             + '&start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
@@ -253,7 +233,7 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<https://applyte.io/api/programs?school=false&'
+                    '<http://applyte.io/api/programs?school=false&'
                             + 'start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
@@ -288,7 +268,7 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<https://applyte.io/api/programs?school=true&start=1&limit=10&sort=name&order=asc>; rel="self"'
+                    '<http://applyte.io/api/programs?school=true&start=1&limit=10&sort=name&order=asc>; rel="self"'
                 )
                 .end(function (err, res) {
                     if (err) {
@@ -316,7 +296,7 @@ describe('Program API Routes', function () {
                         .expect('Content-Type', /json/)
                         .expect(
                             'Link',
-                            '<https://applyte.io/api/programs?'
+                            '<http://applyte.io/api/programs?'
                                     + 'areas=Databases%7C%7CInformation%20Security%20and%20Assurance&'
                                     + 'school=false&start=1&limit=10&sort=name&order=asc>; '
                                     + 'rel="self"'
@@ -356,9 +336,9 @@ describe('Program API Routes', function () {
                         .expect('Content-Type', /json/)
                         .expect(
                             'Link',
-                            '<https://applyte.io/api/programs?school=false&'
+                            '<http://applyte.io/api/programs?school=false&'
                                     + 'start=1&limit=3&sort=name&order=asc>; rel="prev", '
-                                    + '<https://applyte.io/api/programs?school=false&'
+                                    + '<http://applyte.io/api/programs?school=false&'
                                     + 'start=3&limit=3&sort=name&order=asc>; rel="self"'
                         )
                         .end(function (err, res) {
@@ -394,9 +374,9 @@ describe('Program API Routes', function () {
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<https://applyte.io/api/programs?school=false&'
+                    '<http://applyte.io/api/programs?school=false&'
                             + 'start=1&limit=3&sort=name&order=desc>; rel="self", '
-                            + '<https://applyte.io/api/programs?school=false'
+                            + '<http://applyte.io/api/programs?school=false'
                             + '&start=4&limit=3&sort=name&order=desc>; rel="next"'
                 )
                 .end(function (err, res) {
@@ -496,11 +476,11 @@ describe('Program API Routes', function () {
                         .expect('Content-Type', /json/)
                         .expect(
                             'Link',
-                            '<https://applyte.io/api/programs?fields=name%7C%7CschoolId'
+                            '<http://applyte.io/api/programs?fields=name%7C%7CschoolId'
                                     + '&areas=Databases&level=Undergraduate'
                                     + '&faculty=School%20of%20Engineering&school=true'
                                     + '&start=1&limit=10&sort=name&order=desc>; rel="prev", '
-                                    + '<https://applyte.io/api/programs?fields=name%7C%7CschoolId'
+                                    + '<http://applyte.io/api/programs?fields=name%7C%7CschoolId'
                                     + '&areas=Databases&level=Undergraduate'
                                     + '&faculty=School%20of%20Engineering&school=true'
                                     + '&start=2&limit=10&sort=name&order=desc>; rel="self"'
@@ -550,7 +530,7 @@ describe('Program API Routes', function () {
             }];
             newData.areas.push({
                     name: 'Systems Development',
-                    categories: ['Systems', 'Security']
+                    desc: 'This is sys dev'
             });
 
             // Record the expected POST feedback
