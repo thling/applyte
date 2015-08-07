@@ -42,7 +42,7 @@ let BadRequestError = errors.BadRequestError;
  *
  * @apiParam    {Number}        [start=1]   The starting index
  * @apiParam    {Number{1-100}} [limit=10]  Number of items per page
- * @apiParam    {String=name} [sort=name]   The sorting attribute
+ * @apiParam    {String=name}   [sort=name] The sorting attribute
  * @apiParam    {String=asc,desc}   [order=asc]
  *                                          The order to sort
  *
@@ -234,11 +234,11 @@ module.exports.createProgram = function *() {
  *                  areas: [
  *                      {
  *                          name: 'Distributed Systems',
- *                          categories: ['Cloud Computing', 'Systems']
+ *                          desc: 'This is destributed system'
  *                      },
  *                      {
  *                          name: 'Information Security',
- *                          categories: ['Security']
+ *                          desc: 'This is infosec'
  *                      }
  *                  ]
  *              },
@@ -247,7 +247,7 @@ module.exports.createProgram = function *() {
  *                  areas: [
  *                      {
  *                          name: 'Databases'
- *                          categories: ['Databases', 'Systems']
+ *                          desc: 'This is databases'
  *                      }
  *                  ]
  *              }

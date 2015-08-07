@@ -38,18 +38,6 @@ describe('Program API Routes', function () {
     let agent, token, userId;
 
     before('Set up environment', function *(done) {
-        let temp = master.program.template;
-        // for (let area of temp.areas) {
-        //     for (let cat of area.categories) {
-        //         let category = new AreaCategory({
-        //             name: cat,
-        //             desc: 'test'
-        //         });
-        //
-        //         yield category.save();
-        //     }
-        // }
-
         // Setup user token - need an admin token
         agent = agency();
         master.getTestToken(agent, function (tok, id) {
@@ -66,14 +54,6 @@ describe('Program API Routes', function () {
     });
 
     after('clean up area categories and user', function *() {
-        let temp = master.program.template;
-        // for (let area of temp.areas) {
-        //     for (let cat of area.categories) {
-        //         let category = yield AreaCategory.findByName(cat);
-        //         yield category.delete();
-        //     }
-        // }
-
         let foundUser = yield User.findById(userId);
         yield foundUser.delete();
     });

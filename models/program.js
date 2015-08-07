@@ -128,6 +128,35 @@ Program.defineStatic('findByLevel', function *(level) {
 });
 
 /**
+ * Return all programs of the specified tag
+ *
+ * @param   tags    The tag to search for
+ * @return  Array of programs of the tag
+ */
+Program.defineStatic('findByTags', function *(tags) {
+    let result = [];
+
+    try {
+        if (_.isArray(tags)) {
+            // Filter using traditional query if there are multiple tags
+            result = yield Program
+                    .filter(function (program) {
+                        return program('tags').contains(r.args(tags));
+                    })
+                    .run();
+        } else {
+            result = yield Program
+                    .getAll(tags, { index: TAGS_INDEX })
+                    .run();
+        }
+    } catch (error) {
+        console.log(error);
+    }
+
+    return result;
+});
+
+/**
  * Get all the programs. Use of this function is not recommended.
  *
  * @return  Array of program objects
@@ -224,6 +253,8 @@ Program.defineStatic('getProgramsByRange', function *(start, length, desc) {
 
     return result;
 });
+
+// let addRangeFilters(field, )
 
 /**
  * Mega query composer for complex data filtering. Supports pagination.
@@ -434,25 +465,23 @@ Program.define('update', function (properties) {
 });
 
 /**
- * We need to make sure that the area category is already
+ * We need to make sure that the schoolId exists in the school table
  * in the database for reference
  */
 Program.pre('save', function (next) {
-    if (this.areas) {
-        let _self = this;
-        co(function *() {
-            if (_self.schoolId) {
-                let foundSchool = yield School.findById(_self.schoolId);
-                if (!foundSchool) {
-                    throw new Error('schoolId ' + _self.schoolId + ' does not exist');
-                }
+    let _self = this;
+    co(function *() {
+        if (_self.schoolId) {
+            let foundSchool = yield School.findById(_self.schoolId);
+            if (!foundSchool) {
+                throw new Error('schoolId ' + _self.schoolId + ' does not exist');
             }
-        })
-        .then(next)
-        .catch(function (error) {
-            next(error);
-        });
-    }
+        }
+    })
+    .then(next)
+    .catch(function (error) {
+        next(error);
+    });
 });
 
 module.exports = Program;

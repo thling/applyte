@@ -181,6 +181,12 @@ describe('Program model tests', function () {
 
                 philosophy.removeArea('Information Security and Assurance');
 
+                compsci.tags = ['computer', 'databases'];
+                mecheng.tags = ['computer', 'engineering'];
+                indseng.tags = ['databases', 'security'];
+                management.tags = ['computer', 'databases'];
+                philosophy.tags = ['philosophy'];
+
                 yield compsci.save();
                 yield mecheng.save();
                 yield indseng.save();
@@ -253,6 +259,16 @@ describe('Program model tests', function () {
             it('should be able to search by area name ("Security")', function *() {
                 let foundPrograms = yield Program.findByAreaName('Security');
                 master.listEquals(foundPrograms, [compsci, mecheng, management]);
+            });
+
+            it('should return programs with tag \'databases\'', function *() {
+                let foundPrograms = yield Program.findByTags('databases');
+                master.listEquals(foundPrograms, [compsci, indseng, management]);
+            });
+
+            it('should return programs with tag \'computer\' and \'databases\'', function *() {
+                let foundPrograms = yield Program.findByTags(['computer', 'databases']);
+                master.listEquals(foundPrograms, [compsci, management]);
             });
 
             describe('Pagination test', function () {

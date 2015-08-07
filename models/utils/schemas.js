@@ -83,7 +83,7 @@ module.exports.program = {
 
 // User schema
 module.exports.user = {
-    id: type.string(),  // Not user set by user, this is ID for internal use
+    id: type.string(),  // Not set by user, this is ID for internal use
     password: type.string().required(),
     name: {
         first: type.string(),
@@ -101,7 +101,7 @@ module.exports.user = {
         phone: type.string(),
         address: address
     },
-    accessRights: type.string().enum('user', 'admin'),
+    accessRights: type.string().enum('user', 'admin', 'developer'),
     verified: type.boolean(),
     created: type.date(),
     modified: type.date()
