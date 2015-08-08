@@ -60,7 +60,8 @@ module.exports.program = {
     areas: [
         {
             name: type.string(),
-            desc: type.string()
+            desc: type.string(),
+            faculties: [ type.string() ]
         }
     ],
     ranking: {
@@ -79,6 +80,29 @@ module.exports.program = {
         address: address
     },
     tags: [ type.string() ]
+};
+
+// Faculty schema
+module.exports.faculty = {
+    id: type.string(),
+    name: {
+        first: type.string(),
+        middle: type.string(),
+        last: type.string(),
+        prefix: type.string()
+    },
+    title: type.string(),
+    department: type.string(),
+    bio: type.string(),
+    homepage: type.string(),
+    contact: {
+        email: type.string().email(),
+        phone: type.string(),
+        office: {
+            building: type.string(),
+            room: type.string()
+        }
+    }
 };
 
 // User schema

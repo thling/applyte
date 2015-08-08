@@ -109,15 +109,18 @@ module.exports.program = {
             areas: [
                 {
                     name: 'Databases',
-                    desc: 'This is database'
+                    desc: 'This is database',
+                    faculties: []
                 },
                 {
                     name: 'Distributed System',
-                    desc: 'This is distributed systems'
+                    desc: 'This is distributed systems',
+                    faculties: []
                 },
                 {
                     name: 'Information Security and Assurance',
-                    desc: 'This is infosec'
+                    desc: 'This is infosec',
+                    faculties: []
                 }
             ],
             ranking: {
@@ -167,26 +170,46 @@ module.exports.program = {
 };
 
 /**
- * For tests on AreaCategory module
+ * For tests on Faculty module
  */
-module.exports.areaCategory = {
+module.exports.faculty = {
     get template() {
         return {
-            name: 'Security',
-            desc: 'Research of security'
+            name: {
+                first: 'Sammy',
+                last: 'Beast',
+                prefix: 'Jr.'
+            },
+            title: 'Head of Department of Beast Studies',
+            department: 'Department of Beast Studies',
+            bio: 'Graduated from University of Beastapolis',
+            homepage: 'http://thling.com',
+            contact: {
+                email: 'sam@thling.com',
+                phone: '+1 (123) 456-7890',
+                office: {
+                    building: 'Beasto Facilities',
+                    room: '123A'
+                }
+            }
         };
     },
 
     /**
-     * Validates the category against the template
+     * Validates the program against the template
      *
-     * @param   cat     The category objecto validate
+     * @param   prog    The prog to validate
      * @throws  AssertionError if not valid
      */
-    assertEqual: function (cat, test) {
-        assert(_.isObject(cat), 'AreaCategory is not an object');
-        assert.strictEqual(cat.name, test.name);
-        assert.strictEqual(cat.desc, test.desc);
+    assertEqual: function (faculty, test) {
+        assert(_.isObject(faculty), 'Faculty is not a object');
+        assert.strictEqual(faculty.title, test.title);
+        assert.strictEqual(faculty.department, test.department);
+        assert.strictEqual(faculty.bio, test.bio);
+        assert.strictEqual(faculty.homepage, test.homepage);
+
+        assert.deepEqual(faculty.name, test.name);
+        assert.deepEqual(faculty.contact, test.contact);
     }
 };
 

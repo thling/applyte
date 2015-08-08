@@ -2,6 +2,7 @@
 
 let _       = require('lodash');
 let errors  = require(basedir + 'lib/errors');
+let Faculty = require(basedir + 'models/faculty');
 let Program = require(basedir + 'models/program');
 let utils   = require(basedir + 'lib/utils');
 
@@ -150,6 +151,63 @@ module.exports.getProgramById = function *() {
     }
 };
 
+module.exports.getProgramAreas = function *() {
+    let data = this.params;
+
+    if (!data.id) {
+        this.status = 400;
+        this.body = { message: 'Missing parameters: id' };
+    } else {
+        try {
+            let program = yield Program.get(data.id);
+            // program.getAllAreas
+        } catch (error) {
+            this.status = 400;
+            this.body = { message: 'Program with id ' + data.id + ' does not exist' };
+        }
+    }
+};
+
+/**
+ * Updates or insert faculty in the newly created or updated program
+ *
+ * @param   program     The program that contains the faculty information
+ */
+let upsertFaculties = function *(program) {
+    // Save faculty information for each area
+    for (let area of program.areas) {
+        if (area.faculties) {
+            let facultyIds = null;
+            for (let faculty of area.faculties) {
+                if (_.isPlainObject(faculty)) {
+                    let facultyToSave;
+                    if (faculty.id) {
+                        // If faculty ID existed, updated it
+                        facultyToSave = yield Faculty.get(faculty.id);
+                        facultyToSave.update(faculty);
+                    } else {
+                        // Otherwise, create it
+                        facultyToSave = new Faculty(faculty);
+                    }
+
+                    // Save the updated or created faculty
+                    yield facultyToSave.save();
+                    if (facultyIds === null) {
+                        facultyIds = [];
+                    }
+                    facultyIds.push(facultyToSave.id);
+                }
+            }
+
+            // If the list was never updated, use the original
+            if (facultyIds !== null) {
+                area.faculties = facultyIds;
+            }
+        }
+    }
+
+};
+
 /**
  * @api {post}  /api/programs     Create a new program
  * @apiName     createProgram
@@ -178,10 +236,13 @@ module.exports.createProgram = function *() {
         this.status = 400;
         this.body = { message: 'Request will not be idempotent' };
     } else {
-        // Create a new program and try to save it
-        let program = new Program(this.request.body);
-
         try {
+            // Create a new program and try to save it
+            let program = new Program(this.request.body);
+
+            // Update or insert faculties
+            yield upsertFaculties(program);
+
             yield program.save();
             this.status = 201;
             this.body = {
@@ -265,8 +326,10 @@ module.exports.updateProgram = function *() {
             let program = yield Program.get(data.id);
             let changed = utils.diffObjects(data, program);
 
-            // Need to set as saved before updating
             program.update(data);
+
+            // Update or insert faculties
+            yield upsertFaculties(program);
             yield program.save();
 
             this.status = 200;

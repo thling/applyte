@@ -2,6 +2,7 @@
 
 let _            = require('lodash');
 let assert       = require('assert');
+let Faculty      = require('../../models/faculty');
 let master       = require('../test-master');
 let Program      = require('../../models/program');
 let School       = require('../../models/school');
@@ -112,7 +113,16 @@ describe('Program model tests', function () {
 
             let testPrograms = [compsci, mecheng, indseng, management, philosophy];
 
+            let donny = new Faculty(master.faculty.template),
+                sammy = new Faculty(master.faculty.template);
+
             before('Adding multiple programs', function *() {
+                donny.name.first = 'Donny';
+                donny.name.last = 'Joe';
+
+                yield sammy.save();
+                yield donny.save();
+
                 // Setup schools
                 purdueWL = new School(master.school.template);
                 umich = new School(master.school.template);
@@ -166,8 +176,8 @@ describe('Program model tests', function () {
                     areas: [
                         {
                             name: 'Database Security',
-                            desc: 'This is database security'
-                            // categories: [security.name, systems.name, database.name]
+                            desc: 'This is database security',
+                            faculties: [ sammy.id, donny.id ]
                         }
                     ],
                     schoolId: umich.id
@@ -203,6 +213,10 @@ describe('Program model tests', function () {
                 for (let school of [purdueWL, umich, mit]) {
                     yield school.delete();
                 }
+
+                for (let faculty of [donny, sammy]) {
+                    yield faculty.delete();
+                }
             });
 
             // Might want to delete in the future
@@ -214,32 +228,35 @@ describe('Program model tests', function () {
                 );
             });
 
-            it('should return all programs with its school', function *() {
-                let tempCompsci = _.omit(_.cloneDeep(compsci), 'schoolId');
-                let tempMecheng = _.omit(_.cloneDeep(mecheng), 'schoolId');
-                let tempIndseng = _.omit(_.cloneDeep(indseng), 'schoolId');
-                let tempManagement = _.omit(_.cloneDeep(management), 'schoolId');
-                let tempPhilosophy = _.omit(_.cloneDeep(philosophy), 'schoolId');
+            it('should return all programs with its school and faculties in each area',
+                    function *() {
+                        let tempCompsci = _.omit(_.cloneDeep(compsci), 'schoolId');
+                        let tempMecheng = _.omit(_.cloneDeep(mecheng), 'schoolId');
+                        let tempIndseng = _.omit(_.cloneDeep(indseng), 'schoolId');
+                        let tempManagement = _.omit(_.cloneDeep(management), 'schoolId');
+                        let tempPhilosophy = _.omit(_.cloneDeep(philosophy), 'schoolId');
 
-                tempCompsci.school = purdueWL;
-                tempMecheng.school = purdueWL;
-                tempIndseng.school = purdueWL;
-                tempManagement.school = umich;
-                tempPhilosophy.school = umich;
+                        tempCompsci.school = purdueWL;
+                        tempMecheng.school = purdueWL;
+                        tempIndseng.school = purdueWL;
+                        tempManagement.school = umich;
+                        tempManagement.areas[0].faculties = [sammy, donny];
+                        tempPhilosophy.school = umich;
 
-                let foundPrograms = yield Program.getAllProgramsWithSchool();
+                        let foundPrograms = yield Program.getAllProgramsFull();
 
-                master.listEquals(
-                        foundPrograms,
-                        [
-                            tempCompsci,
-                            tempMecheng,
-                            tempIndseng,
-                            tempManagement,
-                            tempPhilosophy
-                        ]
-                );
-            });
+                        master.listEquals(
+                                foundPrograms,
+                                [
+                                    tempCompsci,
+                                    tempMecheng,
+                                    tempIndseng,
+                                    tempManagement,
+                                    tempPhilosophy
+                                ]
+                        );
+                    }
+            );
 
             it('should return all graduate programs', function *() {
                 let programs = yield Program.findByLevel('Graduate');
@@ -270,6 +287,24 @@ describe('Program model tests', function () {
                 let foundPrograms = yield Program.findByTags(['computer', 'databases']);
                 master.listEquals(foundPrograms, [compsci, management]);
             });
+
+            it('should return management program with full school and faculty information',
+                    function *() {
+                        let fullProgram = yield Program.getProgramFull(management.id);
+                        let expected = _.cloneDeep(management);
+                        fullProgram.schoolId = umich.id;
+                        expected.school = umich;
+                        expected.areas = [
+                            {
+                                name: 'Database Security',
+                                desc: 'This is database security',
+                                faculties: [ sammy, donny ]
+                            }
+                        ];
+
+                        master.program.assertEqual(fullProgram, expected);
+                    }
+            );
 
             describe('Pagination test', function () {
                 it('should return programs from 3rd to 5th position (MGMT, ME, PHIL)', function *() {

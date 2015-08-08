@@ -13,6 +13,9 @@ module.exports = function (router) {
     // Fetch a particular one given ID
     router.get(apiBase + '/:id', programApi.getProgramById);
 
+    // Fetch a particular one given ID
+    router.get(apiBase + '/:id/areas', programApi.getProgramAreas);
+
     // Add new program, returns id
     router.post(apiBase, auth.admin, programApi.createProgram);
 

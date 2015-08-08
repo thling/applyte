@@ -6,16 +6,17 @@
 // this line
 process.env.NODE_ENV = 'test';
 
-let _            = require('lodash');
-let assert       = require('assert');
-let superagent   = require('supertest');
-let app          = require('../../app');
-// let AreaCategory = require('../../models/area-category');
-let master       = require('../test-master');
-let Program      = require('../../models/program');
-let School       = require('../../models/school');
-let User         = require('../../models/user');
-let utils        = require('../../lib/utils');
+let _          = require('lodash');
+let assert     = require('assert');
+let co         = require('co');
+let superagent = require('supertest');
+let app        = require('../../app');
+let Faculty    = require('../../models/faculty');
+let master     = require('../test-master');
+let Program    = require('../../models/program');
+let School     = require('../../models/school');
+let User       = require('../../models/user');
+let utils      = require('../../lib/utils');
 
 require('co-mocha');
 
@@ -60,7 +61,8 @@ describe('Program API Routes', function () {
 
     describe('Basic API access test', function () {
         let createdId, program, template = master.program.template;
-        let schoolId;
+        let sammyId, schoolId;
+        let sammy = master.faculty.template;
 
         before('set up school', function *() {
             let school = master.school.template;
@@ -75,9 +77,19 @@ describe('Program API Routes', function () {
 
             let school = yield School.findById(schoolId);
             yield school.delete();
+
+            yield (yield Faculty.findById(sammyId)).delete();
         });
 
         it('should create a new program with POST request to /api/programs', function (done) {
+            template.areas = [
+                {
+                    name: 'Beastality',
+                    desc: 'The study of beastness',
+                    faculties: [sammy]
+                }
+            ];
+
             request()
                 .post('/api/programs')
                 .set('Authorization', 'Bearer ' + token)
@@ -104,11 +116,60 @@ describe('Program API Routes', function () {
                     if (err) {
                         throw err;
                     } else {
+                        sammyId = res.body.areas[0].faculties[0];
+                        template.areas[0].faculties[0] = sammyId;
                         master.program.assertEqual(res.body, template);
+                        done();
+                    }
+                });
+        });
+
+        it('should have created Sammy faculty as well', function *() {
+            let foundSammy = yield Faculty.findById(sammyId);
+            sammy.name.middle = '';
+            master.faculty.assertEqual(foundSammy, sammy);
+            sammy.id = foundSammy.id;
+        });
+
+        it('should update the program with PUT request to /api/programs', function (done) {
+            sammy.name.first = 'NOOOOOOO';
+            template.areas[0].faculties = [sammy];
+            template.id = createdId;
+            template.level = 'phd';
+
+            request()
+                .put('/api/programs')
+                .send(template)
+                .set('Authorization', 'Bearer ' + token)
+                .expect(200)
+                .expect('Content-Type', /json/)
+                .end(function (err, res) {
+                    if (err) {
+                        throw err;
+                    } else {
+                        assert.strictEqual(res.body.new.level, template.level);
+                        request()
+                            .get('/api/programs/' + createdId)
+                            .expect(200)
+                            .expect('Content-Type', /json/)
+                            .end(function (err, res) {
+                                if (err) {
+                                    throw err;
+                                } else {
+                                    assert.strictEqual(res.body.level, template.level);
+                                }
+
+                                done();
+                            });
                     }
 
-                    done();
                 });
+        });
+
+        it('should have updated the faculty as well when updating program', function *() {
+            let foundSammy = yield Faculty.findById(sammyId);
+            sammy.name.middle = '';
+            master.faculty.assertEqual(foundSammy, sammy);
         });
 
         it('should return the same thing with /api/programs?name', function (done) {
@@ -127,6 +188,7 @@ describe('Program API Routes', function () {
                     if (err) {
                         throw err;
                     } else {
+                        template.areas[0].faculties[0] = sammyId;
                         master.program.assertEqual(res.body[0], template);
                     }
 
@@ -140,7 +202,18 @@ describe('Program API Routes', function () {
         let purdue;
         let programs;
 
+        let donny = new Faculty(master.faculty.template),
+            sammy = new Faculty(master.faculty.template);
+
         before('setting up data', function *() {
+            donny.name = {
+                first: 'Donny',
+                last: 'Joe'
+            };
+
+            yield donny.save();
+            yield sammy.save();
+
             purdue = new School(master.school.template);
             yield purdue.save();
 
@@ -224,6 +297,8 @@ describe('Program API Routes', function () {
             }
 
             yield purdue.delete();
+            yield sammy.delete();
+            yield donny.delete();
         });
 
         it('should list everything', function (done) {

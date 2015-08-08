@@ -1,11 +1,12 @@
 'use strict';
 
-let _            = require('lodash');
-let co           = require('co');
-let schemas      = require('./utils/schemas');
-let School       = require('./school');
-let thinky       = require('./utils/thinky')();
-let utils        = require(basedir + 'lib/utils');
+let _       = require('lodash');
+let co      = require('co');
+let Faculty = require('./faculty');
+let schemas = require('./utils/schemas');
+let School  = require('./school');
+let thinky  = require('./utils/thinky')();
+let utils   = require(basedir + 'lib/utils');
 
 let r = thinky.r;
 
@@ -177,14 +178,23 @@ Program.defineStatic('getAllPrograms', function *() {
 
 /**
  * Returns all programs and their corresponding school object
- * embedded.
+ * and faculty objects embedded.
  *
  * @return  An array of objects like Program, with objects like School
- *          embedded into the 'school' property, e.g.
+ *          embedded into the 'school' property and Faculty embedded into
+ *          areas.faculties array, e.g.
  *              returnedProgram = {
  *                  id: ...,
  *                  name: 'Computer Science',
- *                  areas: [ ... ],
+ *                  areas: [
+ *                      ...
+ *                      faculties: [
+ *                          {
+ *                              name: { first: '', middle: '', ... },
+ *                              ...
+ *                          }
+ *                      ]
+ *                  ],
  *                  ...
  *                  school: {
  *                      id: ...,
@@ -196,13 +206,62 @@ Program.defineStatic('getAllPrograms', function *() {
  *
  *          Note that schoolId will be removed.
  */
-Program.defineStatic('getAllProgramsWithSchool', function *() {
+Program.defineStatic('getAllProgramsFull', function *() {
     let result = [];
 
     try {
-        result = yield Program.getJoin().without('schoolId');
+        result = yield r.table(TABLE)
+                .merge(function (prog) {
+                    // Use merge to ovewrite original 'areas'
+                    return {
+                        areas: prog('areas').merge(function (area) {
+                            // Use merge to overwrite original 'faculties'
+                            return {
+                                faculties: area('faculties').map(function (facultyId) {
+                                    // Use map to process each of the facultyIds
+                                    return r.table(Faculty.getTableName()).get(facultyId);
+                                })  // End map
+                            };
+                        })  // End middle merge
+                    };
+                })  // End top level merge
+                .merge(function (prog) {
+                    // Merge in school
+                    return {
+                        school: r.table(School.getTableName()).get(prog('schoolId'))
+                    };
+                })
+                .without('schoolId');
     } catch (error) {
         console.error(error);
+    }
+
+    return result;
+});
+
+/**
+ * Get the program in its full form (id joint from related tables)
+ *
+ * @return  The program in its full form
+ */
+Program.defineStatic('getProgramFull', function *(id) {
+    let result = null;
+    try {
+        result = yield Program.get(id).getJoin().without('schoolId');
+
+        for (let area of result.areas) {
+            let faculties = [];
+            for (let facultyId of area.faculties) {
+                let faculty = yield Faculty.findById(facultyId);
+                if (faculty) {
+                    faculties.push(faculty);
+                }
+            }
+
+            area.faculties = faculties;
+        }
+    } catch (error) {
+        console.log(error);
     }
 
     return result;
@@ -253,8 +312,6 @@ Program.defineStatic('getProgramsByRange', function *(start, length, desc) {
 
     return result;
 });
-
-// let addRangeFilters(field, )
 
 /**
  * Mega query composer for complex data filtering. Supports pagination.
@@ -429,14 +486,19 @@ Program.define('areasIter', function () {
  * @param   name        The name of the new area
  * @param   desc        The description of this area
  */
-Program.define('addArea', function (name, desc) {
+Program.define('addArea', function (name, desc, faculties) {
     if (!_.isArray(this.areas)) {
         this.areas = [];
     }
 
+    if (!faculties) {
+        faculties = [];
+    }
+
     this.areas.push({
         name: name,
-        desc: desc
+        desc: desc,
+        faculties: faculties
     });
 });
 
@@ -465,16 +527,28 @@ Program.define('update', function (properties) {
 });
 
 /**
- * We need to make sure that the schoolId exists in the school table
+ * We need to make sure that some foreign key condition matches
  * in the database for reference
  */
 Program.pre('save', function (next) {
     let _self = this;
     co(function *() {
         if (_self.schoolId) {
+            // Check if schoolId already existed
             let foundSchool = yield School.findById(_self.schoolId);
             if (!foundSchool) {
                 throw new Error('schoolId ' + _self.schoolId + ' does not exist');
+            }
+        }
+
+        if (_self.areas) {
+            // Check if listed faculty already existed
+            for (let area of _self.areas) {
+                if (area.faculties) {
+                    for (let facultyId of area.faculties) {
+                        yield Faculty.get(facultyId);
+                    }
+                }
             }
         }
     })
