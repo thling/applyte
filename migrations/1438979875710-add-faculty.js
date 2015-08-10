@@ -1,7 +1,8 @@
 'use strict';
 
-let co = require('co');
-let r  = require('../models/utils/thinky')().r;
+let basedir = '../';
+let co      = require('co');
+let r       = require(basedir + 'config/thinky')().r;
 
 let TABLE = 'faculty';
 let FULLNAME_INDEX = 'name';

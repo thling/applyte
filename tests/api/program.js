@@ -6,17 +6,17 @@
 // this line
 process.env.NODE_ENV = 'test';
 
+let basedir    = '../../';
 let _          = require('lodash');
 let assert     = require('assert');
-let co         = require('co');
 let superagent = require('supertest');
-let app        = require('../../app');
-let Faculty    = require('../../models/faculty');
-let master     = require('../test-master');
-let Program    = require('../../models/program');
-let School     = require('../../models/school');
-let User       = require('../../models/user');
-let utils      = require('../../lib/utils');
+let app        = require(basedir + 'app');
+let Faculty    = require(basedir + 'models/faculty');
+let master     = require(basedir + 'tests/test-master');
+let Program    = require(basedir + 'models/program');
+let School     = require(basedir + 'models/school');
+let User       = require(basedir + 'models/user');
+let utils      = require(basedir + 'lib/utils');
 
 require('co-mocha');
 
@@ -241,11 +241,11 @@ describe('Program API Routes', function () {
             management.ranking.rank = 4;
             philosophy.ranking.rank = 5;
 
-            compsci.tuition = 10000;
-            mecheng.tuition = 50000;
-            indseng.tuition = 30000;
-            management.tuition = 20000;
-            philosophy.tuition = 15400;
+            compsci.financials.tuition = 10000;
+            mecheng.financials.tuition = 50000;
+            indseng.financials.tuition = 30000;
+            management.financials.tuition = 20000;
+            philosophy.financials.tuition = 15400;
 
             compsci.deadlines = [{
                 semester: 'Spring 2016',
@@ -598,7 +598,9 @@ describe('Program API Routes', function () {
 
             newData.id = compsci.id;
             newData.name = 'Test Science';
-            newData.tuition = 40000;
+            newData.financials = {
+                tuition: 40000
+            };
             newData.deadlines = [{
                 semester: 'Spring 2016',
                 deadline: new Date(2015, 11, 5).toISOString()

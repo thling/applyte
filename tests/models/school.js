@@ -1,10 +1,11 @@
 'use strict';
 
+let basedir      = '../../';
 let _            = require('lodash');
 let assert       = require('assert');
-let master       = require('../test-master');
-let Program      = require('../../models/program');
-let School       = require('../../models/school');
+let master       = require(basedir + 'tests/test-master');
+let Program      = require(basedir + 'models/program');
+let School       = require(basedir + 'models/school');
 
 require('co-mocha');
 
@@ -93,7 +94,7 @@ describe('School model test', function () {
                 temp.phone = '+1 (123) 456 7890';
                 temp.email = 'new@email.cc';
                 temp.address = {
-                    address2: 'New address 2',
+                    address: 'New address 2',
                     country: 'Random country lol'
                 };
 
@@ -170,7 +171,7 @@ describe('School model test', function () {
                     campus: 'Urbana-Champaign',
                     address: {
                         city: 'Champaign',
-                        state: 'Illinois'
+                        adminDivision: 'Illinois'
                     }
                 });
 
@@ -179,7 +180,7 @@ describe('School model test', function () {
                     campus: 'Ann Arbor',
                     address: {
                         city: 'Ann Arbor',
-                        state: 'Michigan'
+                        adminDivision: 'Michigan'
                     }
                 });
 
@@ -188,7 +189,7 @@ describe('School model test', function () {
                     campus: 'Boston',
                     address: {
                         city: 'Boston',
-                        state: 'Massachusetts'
+                        adminDivision: 'Massachusetts'
                     }
                 });
 
@@ -197,7 +198,7 @@ describe('School model test', function () {
                     campus: 'Cambridge',
                     address: {
                         city: 'Cambridge',
-                        state: 'Massachusetts'
+                        adminDivision: 'Massachusetts'
                     }
                 });
 
@@ -235,7 +236,7 @@ describe('School model test', function () {
             });
 
             it('should be able to search by location', function *() {
-                let foundSchools = yield School.findByLocation({ state: 'Massachusetts' });
+                let foundSchools = yield School.findByLocation({ adminDivision: 'Massachusetts' });
                 master.listEquals(foundSchools, [bu, mit]);
             });
 

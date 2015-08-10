@@ -31,8 +31,8 @@ let assertLocation = function (query) {
         address.city = query.city;
     }
 
-    if (query.state) {
-        address.state = query.state;
+    if (query.adminDivision) {
+        address.adminDivision = query.adminDivision;
     }
 
     if (query.country) {
@@ -70,8 +70,8 @@ let flattenAddress = function (query) {
             query.city = query.address.city;
         }
 
-        if (query.address.state) {
-            query.state = query.address.state;
+        if (query.address.adminDivision) {
+            query.adminDivision = query.address.adminDivision;
         }
 
         if (query.address.country) {
@@ -100,7 +100,7 @@ let flattenAddress = function (query) {
  *
  * @apiParam    {String}    [country]   The country to search for. Must be encoded
  *                                      with <code>encodeURI</code>
- * @apiParam    {String}    [state]     The state/province to search for. Must be encoded
+ * @apiParam    {String}    [adminDivision] The state/province to search for. Must be encoded
  *                                      with <code>encodeURI</code>
  * @apiParam    {String}    [city]      The city to search for. Must be encoded
  *                                      with <code>encodeURI</code>
@@ -129,7 +129,7 @@ let flattenAddress = function (query) {
  *      <!-- Get fields [id, name, campus] of the schools that are located in Boston, MA, US,
  *              limit 1, start at 2, and sorted descendingly -->
  *      https://applyte.io/api/schools?fields=id||name||campus
- *              &country=United%20States%20of%20America&state=Massachusetts&city=Boston
+ *              &country=United%20States%20of%20America&adminDivision=Massachusetts&city=Boston
  *              &limit=1&start=2&order=desc
  *
  * @apiUse  successPaginationHeader
@@ -150,7 +150,7 @@ module.exports.query = function *() {
         // Remove unnecessary fields
         query = _.omit(
                 query,
-                ['start', 'limit', 'sort', 'order', 'city', 'state', 'country']
+                ['start', 'limit', 'sort', 'order', 'city', 'adminDivision', 'country']
         );
 
         let schools = yield School.query(query);
@@ -400,16 +400,16 @@ module.exports.createSchool = function *() {
  *                  name: 'Purdue University',
  *                  campus: 'West Lafayette',
  *                  address: {
- *                      address1: 'Just want to update this only'
+ *                      address: 'Just want to update this only'
  *                  }
  *              },
  *              old: {
  *                  name: 'Purdue Universities',
  *                  campus: 'Calumet',
  *                  address: {
- *                      address1: '610 Purdue Mall',
+ *                      address: '610 Purdue Mall',
  *                      city: 'West Lafayette',
- *                      state: 'Indiana',
+ *                      adminDivision: 'Indiana',
  *                      postalCode: '47907',
  *                      country: 'United States of America'
  *                  }

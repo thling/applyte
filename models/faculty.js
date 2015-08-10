@@ -1,15 +1,14 @@
 'use strict';
 
-let _       = require('lodash');
-let schemas = require('./utils/schemas');
-let thinky  = require('./utils/thinky')();
-let utils   = require(basedir + 'lib/utils');
+let _      = require('lodash');
+let schema = require('./schemas/faculty-schema');
+let thinky = require(basedir + 'config/thinky')();
+let utils  = require(basedir + 'lib/utils');
 
 const TABLE = 'faculty';
 const FULLNAME_INDEX = 'name';
-const SCHEMA = schemas[TABLE];
 
-let Faculty = thinky.createModel(TABLE, SCHEMA, {
+let Faculty = thinky.createModel(TABLE, schema, {
     // No extra fields allowed
     enforce_extra: 'strict'
 });

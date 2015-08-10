@@ -327,7 +327,7 @@ module.exports.createUser = function *() {
  *                      preferred: 'Joe'
  *                  },
  *                  address: {
- *                      address1: 'Just want to update this only'
+ *                      address: 'Just want to update this only'
  *                  }
  *              },
  *              old: {
@@ -335,7 +335,7 @@ module.exports.createUser = function *() {
  *                      preferred: 'Johnny'
  *                  },
  *                  address: {
- *                      address1: '610 Purdue Mall',
+ *                      address: '610 Purdue Mall',
  *                  }
  *              }
  *          }

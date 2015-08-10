@@ -195,6 +195,7 @@ let upsertFaculties = function *(program) {
                     if (facultyIds === null) {
                         facultyIds = [];
                     }
+
                     facultyIds.push(facultyToSave.id);
                 }
             }

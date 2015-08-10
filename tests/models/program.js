@@ -1,11 +1,12 @@
 'use strict';
 
+let basedir      = '../../';
 let _            = require('lodash');
 let assert       = require('assert');
-let Faculty      = require('../../models/faculty');
-let master       = require('../test-master');
-let Program      = require('../../models/program');
-let School       = require('../../models/school');
+let Faculty      = require(basedir + 'models/faculty');
+let master       = require(basedir + 'tests/test-master');
+let Program      = require(basedir + 'models/program');
+let School       = require(basedir + 'models/school');
 
 require('co-mocha');
 
@@ -133,7 +134,7 @@ describe('Program model tests', function () {
                     campus: 'Ann Arbor',
                     address: {
                         city: 'Ann Arbor',
-                        state: 'Michigan'
+                        adminDivision: 'Michigan'
                     }
                 });
 
@@ -142,7 +143,7 @@ describe('Program model tests', function () {
                     campus: 'Cambridge',
                     address: {
                         city: 'Cambridge',
-                        state: 'Massachusetts'
+                        adminDivision: 'Massachusetts'
                     }
                 });
 

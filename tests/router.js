@@ -6,8 +6,9 @@
 // this line
 process.env.NODE_ENV = 'test';
 
+let basedir    = '../';
 let superagent = require('supertest');
-let app        = require('../app');
+let app        = require(basedir + 'app');
 
 require('co-mocha');
 

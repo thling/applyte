@@ -1,17 +1,16 @@
 'use strict';
 
-let _       = require('lodash');
-let schemas = require('./utils/schemas');
-let thinky  = require('./utils/thinky')();
-let utils   = require(basedir + 'lib/utils');
+let _      = require('lodash');
+let schema = require('./schemas/school-schema');
+let thinky = require(basedir + 'config/thinky')();
+let utils  = require(basedir + 'lib/utils');
 
 let r = thinky.r;
 
 const TABLE = 'school';
 const NAME_CAMPUS_INDEX = 'name_campus';
-const SCHEMA = schemas[TABLE];
 
-let School = thinky.createModel(TABLE, SCHEMA, {
+let School = thinky.createModel(TABLE, schema, {
     // No extra fields allowed
     enforce_extra: 'strict'
 });
@@ -96,10 +95,9 @@ School.defineStatic('findByNameCampus', function *(name, campus) {
  *
  * @param   location    An object with one or more of the following properties:
  *                          {
- *                              address1: 'anything',
- *                              address2: 'anything',
+ *                              address: 'anything',
  *                              city: 'anything',
- *                              state: 'anything',
+ *                              adminDivision: 'anything',
  *                              postalCode: 'anything',
  *                              country: 'anything'
  *                          }
@@ -185,7 +183,7 @@ School.defineStatic('getSchoolsByRange', function *(start, length, order) {
 School.defineStatic('query', function *(query) {
     let q = r.table(TABLE);
     let pagination = query.pagination;
-    let tempQuery = _.pick(query, _.keys(SCHEMA));
+    let tempQuery = _.pick(query, _.keys(schema));
 
     // Determine the desired sorting index
     let queryChained = false, useIndex;
@@ -220,7 +218,7 @@ School.defineStatic('query', function *(query) {
 
     if (query.fields) {
         // Remove unwanted fields
-        q = q.pluck(_.intersection(query.fields, _.keys(SCHEMA)));
+        q = q.pluck(_.intersection(query.fields, _.keys(schema)));
     }
 
     // Actually execute query

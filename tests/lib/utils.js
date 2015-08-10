@@ -1,8 +1,9 @@
 'use strict';
 
-let _      = require('lodash');
-let assert = require('assert');
-let utils  = require('../../lib/utils');
+let basedir = '../../';
+let _       = require('lodash');
+let assert  = require('assert');
+let utils   = require(basedir + 'lib/utils');
 
 describe('utils.js tests', function () {
     describe('parseURI tests', function () {

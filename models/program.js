@@ -3,9 +3,9 @@
 let _       = require('lodash');
 let co      = require('co');
 let Faculty = require('./faculty');
-let schemas = require('./utils/schemas');
+let schema  = require('./schemas/program-schema');
 let School  = require('./school');
-let thinky  = require('./utils/thinky')();
+let thinky  = require(basedir + 'config/thinky')();
 let utils   = require(basedir + 'lib/utils');
 
 let r = thinky.r;
@@ -16,9 +16,8 @@ const NAME_INDEX = 'name';
 const SCHOOL_ID_INDEX = 'schoolId';
 const TAGS_INDEX = 'tags';
 const RANKING_INDEX = 'rank';
-const SCHEMA = schemas[TABLE];
 
-let Program = thinky.createModel(TABLE, SCHEMA, {
+let Program = thinky.createModel(TABLE, schema, {
     // No extra fields allowed
     enforce_extra: 'strict'
 });
@@ -328,8 +327,9 @@ Program.defineStatic('query', function *(query) {
     let q = r.table(TABLE);
     let pagination = query.pagination;
     let school = query.school;
+    let tuition = query.tuition;
     let deadline = query.deadline;
-    let tempQuery = _.pick(query, _.keys(SCHEMA));
+    let tempQuery = _.pick(query, _.keys(schema));
     let areas;
 
     if (tempQuery.areas) {
@@ -363,26 +363,26 @@ Program.defineStatic('query', function *(query) {
     // Filter using the information we have
     if (tempQuery.length !== 0) {
         // Filter tuition range
-        let tuition = tempQuery.tuition;
         if (_.isPlainObject(tuition)) {
             if (tuition.lt) {
-                q = q.filter(r.row('tuition').lt(tuition.lt));
+                q = q.filter(r.row('financials')('tuition').lt(tuition.lt));
             }
 
             if (tuition.le) {
-                q = q.filter(r.row('tuition').le(tuition.le));
+                q = q.filter(r.row('financials')('tuition').le(tuition.le));
             }
 
             if (tuition.gt) {
-                q = q.filter(r.row('tuition').gt(tuition.gt));
+                q = q.filter(r.row('financials')('tuition').gt(tuition.gt));
             }
 
             if (tuition.ge) {
-                q = q.filter(r.row('tuition').ge(tuition.ge));
+                q = q.filter(r.row('financials')('tuition').ge(tuition.ge));
             }
-
-            tempQuery = _.omit(tempQuery, 'tuition');
+        } else if (tuition) {
+            q = q.filter(r.row('financials')('tuition').eq(tuition));
         }
+
 
         // Filter deadline range
         if (_.isPlainObject(deadline)) {
@@ -409,6 +409,10 @@ Program.defineStatic('query', function *(query) {
                     return (lst('deadline')).ge(r.ISO8601(deadline.ge));
                 }));
             }
+        } else if (deadline) {
+            q = q.filter(r.row('deadlines').contains(function (lst) {
+                return (lst('deadline')).eq(r.ISO8601(deadline.ge));
+            }));
         }
 
         q = q.filter(tempQuery);
@@ -436,7 +440,7 @@ Program.defineStatic('query', function *(query) {
 
     if (query.fields) {
         // Remove unwanted fields
-        query.fields = _.intersection(query.fields, _.keys(SCHEMA));
+        query.fields = _.intersection(query.fields, _.keys(schema));
         q = q.pluck(query.fields);
     }
 

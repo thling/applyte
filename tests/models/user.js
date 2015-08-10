@@ -1,10 +1,11 @@
 'use strict';
 
+let basedir = '../../';
 let _       = require('lodash');
 let assert  = require('assert');
 let bcrypt  = require('bcrypt');
-let master  = require('../test-master');
-let User    = require('../../models/user');
+let master  = require(basedir + 'tests/test-master');
+let User    = require(basedir + 'models/user');
 
 require('co-mocha');
 
@@ -52,16 +53,14 @@ describe('User model test', function () {
                 contact: {
                     email: 'ling21@purdue.edu',
                     address: {
-                        address1: '320 S. Grant St.',
-                        address2: 'Apt. 424'
+                        address: '320 S. Grant St. Apt 123'
                     }
                 }
             });
 
             template.name.preferred = 'Samuel Beasto';
             template.contact.email = 'ling21@purdue.edu';
-            template.contact.address.address1 = '320 S. Grant St.';
-            template.contact.address.address2 = 'Apt. 424';
+            template.contact.address.address = '320 S. Grant St. Apt 123';
             template.verified = false;
 
             master.user.assertEqual(user, template);

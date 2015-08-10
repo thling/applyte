@@ -9,8 +9,6 @@ let jwt        = require('koa-jwt');
 let koa        = require('koa');
 let logger     = require('koa-logger');
 let passport   = require('koa-passport');
-let path       = require('path');
-let serve      = require('koa-static');
 let session    = require('koa-generic-session');
 let config     = require('./config');
 let router     = require('./routes');
@@ -41,9 +39,6 @@ module.exports = (function () {
 
         // Body parser for HTTP request parsing
         app.use(bodyParser());
-
-        // Serve static files
-        // app.use(serve(path.join(__dirname, 'public')));
 
         // Activates session
         app.use(session(config.sessionOptions));

@@ -6,15 +6,16 @@
 // this line
 process.env.NODE_ENV = 'test';
 
+let basedir      = '../../';
 let _            = require('lodash');
 let assert       = require('assert');
 let superagent   = require('supertest');
-let app          = require('../../app');
-let master       = require('../test-master');
-let Program      = require('../../models/program');
-let School       = require('../../models/school');
-let User         = require('../../models/user');
-let utils        = require('../../lib/utils');
+let app          = require(basedir + 'app');
+let master       = require(basedir + 'tests/test-master');
+let Program      = require(basedir + 'models/program');
+let School       = require(basedir + 'models/school');
+let User         = require(basedir + 'models/user');
+let utils        = require(basedir + 'lib/utils');
 
 require('co-mocha');
 
@@ -149,7 +150,7 @@ describe('School API Routes', function () {
                 campus: 'Urbana-Champaign',
                 address: {
                     city: 'Champaign',
-                    state: 'Illinois'
+                    adminDivision: 'Illinois'
                 }
             });
 
@@ -158,7 +159,7 @@ describe('School API Routes', function () {
                 campus: 'Ann Arbor',
                 address: {
                     city: 'Ann Arbor',
-                    state: 'Michigan'
+                    adminDivision: 'Michigan'
                 }
             });
 
@@ -167,7 +168,7 @@ describe('School API Routes', function () {
                 campus: 'Boston',
                 address: {
                     city: 'Boston',
-                    state: 'Massachusetts'
+                    adminDivision: 'Massachusetts'
                 }
             });
 
@@ -176,7 +177,7 @@ describe('School API Routes', function () {
                 campus: 'Boston',
                 address: {
                     city: 'Boston',
-                    state: 'Massachusetts'
+                    adminDivision: 'Massachusetts'
                 }
             });
 
@@ -185,7 +186,7 @@ describe('School API Routes', function () {
                 campus: 'Cambridge',
                 address: {
                     city: 'Cambridge',
-                    state: 'Massachusetts'
+                    adminDivision: 'Massachusetts'
                 }
             });
 
@@ -372,15 +373,15 @@ describe('School API Routes', function () {
 
         it('should find schools in Massachusetts, US', function (done) {
             let country = encodeURI(bu.address.country);
-            let state = encodeURI(bu.address.state);
+            let adminDivision = encodeURI(bu.address.adminDivision);
 
             request()
-                .get('/api/schools?country=' + country + '&state=' + state)
+                .get('/api/schools?country=' + country + '&adminDivision=' + adminDivision)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/schools?state=Massachusetts'
+                    '<http://applyte.io/api/schools?adminDivision=Massachusetts'
                             + '&country=United%20States%20of%20America'
                             + '&start=1&limit=10&sort=name&order=asc>; '
                             + 'rel="self"'
@@ -411,15 +412,15 @@ describe('School API Routes', function () {
         });
 
         it('should find schools in state MA', function (done) {
-            let state = encodeURI(bu.address.state);
+            let adminDivision = encodeURI(bu.address.adminDivision);
 
             request()
-                .get('/api/schools?state=' + state)
+                .get('/api/schools?adminDivision=' + adminDivision)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/schools?state=Massachusetts'
+                    '<http://applyte.io/api/schools?adminDivision=Massachusetts'
                             + '&start=1&limit=10&sort=name&order=asc>; '
                             + 'rel="self"'
                 )
@@ -434,18 +435,18 @@ describe('School API Routes', function () {
                 });
         });
 
-        it('should find schools in Boston, MA, US (?country=*&state=*&city=*)', function (done) {
+        it('should find schools in Boston, MA, US (?country=*&adminDivision=*&city=*)', function (done) {
             let country = encodeURI(bu.address.country);
-            let state = encodeURI(bu.address.state);
+            let adminDivision = encodeURI(bu.address.adminDivision);
             let city = encodeURI(bu.address.city);
 
             request()
-                .get('/api/schools?country=' + country + '&state=' + state + '&city=' + city)
+                .get('/api/schools?country=' + country + '&adminDivision=' + adminDivision + '&city=' + city)
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .expect(
                     'Link',
-                    '<http://applyte.io/api/schools?city=Boston&state=Massachusetts'
+                    '<http://applyte.io/api/schools?city=Boston&adminDivision=Massachusetts'
                             + '&country=United%20States%20of%20America'
                             + '&start=1&limit=10&sort=name&order=asc>; '
                             + 'rel="self"'
@@ -501,13 +502,13 @@ describe('School API Routes', function () {
                     let fields = ['id', 'name', 'campus'];
                     let queryFields = encodeURI(fields.join('||'));
                     let country = encodeURI('United States of America');
-                    let state = encodeURI('Massachusetts');
+                    let adminDivision = encodeURI('Massachusetts');
                     let city = encodeURI('Boston');
 
                     request()
                         .get('/api/schools?fields=' + queryFields
                                 + '&country=' + country
-                                + '&state=' + state
+                                + '&adminDivision=' + adminDivision
                                 + '&city=' + city
                                 + '&limit=1'
                                 + '&start=2'
@@ -517,12 +518,12 @@ describe('School API Routes', function () {
                         .expect(
                             'Link',
                             '<http://applyte.io/api/schools?fields=id%7C%7Cname%7C%7Ccampus'
-                                    + '&city=Boston&state=Massachusetts'
+                                    + '&city=Boston&adminDivision=Massachusetts'
                                     + '&country=United%20States%20of%20America'
                                     + '&start=1&limit=1&sort=name&order=desc>; '
                                     + 'rel="prev", '
                                     + '<http://applyte.io/api/schools?fields=id%7C%7Cname%7C%7Ccampus'
-                                    + '&city=Boston&state=Massachusetts'
+                                    + '&city=Boston&adminDivision=Massachusetts'
                                     + '&country=United%20States%20of%20America'
                                     + '&start=2&limit=1&sort=name&order=desc>; '
                                     + 'rel="self"'
@@ -565,7 +566,7 @@ describe('School API Routes', function () {
             newData.name = 'Purrrrrdue University';
             newData.campus = 'Lafayette';
             newData.address = {
-                address1: 'test'
+                address: 'test'
             };
 
             // Record the expected POST feedback

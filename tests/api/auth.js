@@ -6,11 +6,12 @@
 // this line
 process.env.NODE_ENV = 'test';
 
+let basedir    = '../../';
 let _          = require('lodash');
 let superagent = require('supertest');
-let app        = require('../../app');
-let master     = require('../test-master');
-let User       = require('../../models/user');
+let app        = require(basedir + 'app');
+let master     = require(basedir + 'tests/test-master');
+let User       = require(basedir + 'models/user');
 
 require('chai').should();
 require('co-mocha');

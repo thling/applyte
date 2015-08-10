@@ -9,10 +9,10 @@ let assert = require('assert');
 
 // Sample address
 let address = {
-    address1: '610 Purdue Mall',
-    address2: null,
+    recipient: 'Purdue University',
+    address: '610 Purdue Mall',
     city: 'West Lafayette',
-    state: 'Indiana',
+    adminDivision: 'Indiana',
     postalCode: '47907',
     country: 'United States of America'
 };
@@ -127,11 +127,15 @@ module.exports.program = {
                 source: 'QS',
                 rank: 1
             },
-            tuition: 30000,
+            financials: {
+                tuition: 30000
+            },
             deadlines: [{
+                type: 'generic',
                 semester: 'Fall 2015',
                 deadline: new Date(2014, 11, 12).toISOString()
             }, {
+                type: 'generic',
                 semester: 'Spring 2016',
                 deadline: new Date(2015, 6, 8).toISOString()
             }],
@@ -234,7 +238,7 @@ module.exports.user = {
             contact: {
                 email: 'sam@thling.com',
                 phone: '+1 (765) 237-9196',
-                address: _.cloneDeep(address)
+                address: _.omit(_.cloneDeep(address), 'recipient')
             },
             accessRights: 'user',
             verified: true,

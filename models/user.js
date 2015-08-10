@@ -5,8 +5,8 @@ let Promise = require('bluebird');
 let bcrypt  = Promise.promisifyAll(require('bcrypt'));
 let config  = require(basedir + 'config');
 let errors  = require(basedir + 'lib/errors');
-let schemas = require('./utils/schemas');
-let thinky  = require('./utils/thinky')();
+let schema  = require('./schemas/user-schema');
+let thinky  = require(basedir + 'config/thinky')();
 let utils   = require(basedir + 'lib/utils');
 
 let r = thinky.r;
@@ -17,9 +17,8 @@ let UserNotFoundError = errors.UserNotFoundError;
 const TABLE = 'user';
 const FULLNAME_INDEX = 'fullname';
 const EMAIL_INDEX = 'email';
-const SCHEMA = schemas[TABLE];
 
-let User = thinky.createModel(TABLE, SCHEMA, {
+let User = thinky.createModel(TABLE, schema, {
     // No extra fields allowed
     enforce_extra: 'strict'
 });
@@ -108,7 +107,7 @@ User.defineStatic('getAllUsers', function *() {
 User.defineStatic('query', function *(query) {
     let q = r.table(TABLE);
     let pagination = query.pagination;
-    let tempQuery = _.pick(query, _.keys(SCHEMA));
+    let tempQuery = _.pick(query, _.keys(schema));
 
     // Determine the desired sorting index
     let queryChained = false, useIndex;
@@ -143,7 +142,7 @@ User.defineStatic('query', function *(query) {
 
     if (query.fields) {
         // Remove unwanted fields
-        q = q.pluck(_.intersection(query.fields, _.keys(SCHEMA)));
+        q = q.pluck(_.intersection(query.fields, _.keys(schema)));
     }
 
     // Actually execute query
@@ -171,7 +170,7 @@ User.defineStatic('query', function *(query) {
 User.defineStatic('validate', function (properties) {
     utils.assertObjectSchema(
             properties,
-            SCHEMA,
+            schema,
             { noMissing: false }
     );
 });
