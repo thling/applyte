@@ -9,6 +9,7 @@ const TABLE = 'adminDivision';
 const NAME_INDEX = 'name';
 const ABBREV_INDEX = 'abbrev';
 const COUNTRY_INDEX = 'country';
+const SUBDIVISION_INDEX = 'subdivision';
 
 let AdminDivision = thinky.createModel(TABLE, schema, {
     // No extra fields allowed
@@ -18,6 +19,12 @@ let AdminDivision = thinky.createModel(TABLE, schema, {
 AdminDivision.ensureIndex(NAME_INDEX);
 AdminDivision.ensureIndex(ABBREV_INDEX);
 AdminDivision.ensureIndex(COUNTRY_INDEX);
+AdminDivision.ensureIndex(SUBDIVISION_INDEX,
+        function (doc) {
+            return doc('name').add(doc('country'));
+        }
+);
+
 
 AdminDivision.defineStatic('findById', function *(id) {
     let result = null;
