@@ -12,6 +12,11 @@ module.exports = {
     email: type.string().email(),
     phone: type.string(),
     logo: type.string(),
+    gallery: [{
+        title: type.string(),
+        caption: type.string(),
+        location: type.string()
+    }],
     address: {
         recipient: type.string(),
         address: type.string(),

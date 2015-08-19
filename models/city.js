@@ -106,6 +106,7 @@ City.define('update', function (properties) {
 City.pre('save', function (next) {
     if (!this.adminDivision) {
         this.adminDivision = '';
+        this.adminDivisionId = null;
     }
 
     next();

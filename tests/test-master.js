@@ -26,7 +26,7 @@ let address = {
  * @throws  Assertion error if two lists differ
  */
 module.exports.listEquals = function (items, tests, print) {
-    assert.strictEqual(items.length, tests.length);
+    assert.strictEqual(items.length, tests.length, 'List lengths are not the same');
     let count = items.length;
 
     for (let item of items) {
@@ -202,7 +202,7 @@ module.exports.faculty = {
     /**
      * Validates the program against the template
      *
-     * @param   prog    The prog to validate
+     * @param   faculty     The faculty to validate
      * @throws  AssertionError if not valid
      */
     assertEqual: function (faculty, test) {
@@ -250,7 +250,7 @@ module.exports.user = {
     /**
      * Validates the user against the template
      *
-     * @param   user    The category objecto validate
+     * @param   user    The object to validate
      * @throws  AssertionError if not valid
      */
     assertEqual: function (user, test) {
@@ -263,6 +263,75 @@ module.exports.user = {
         assert.deepEqual(user.created, test.created);
         assert.deepEqual(user.name, test.name);
         assert.deepEqual(user.contact, test.contact);
+    }
+};
+
+module.exports.adminDivision = {
+    get template() {
+        return {
+            name: 'Test',
+            abbrev: 'TS',
+            country: 'Imaginary'
+        };
+    },
+
+    /**
+     * Validates the admin division against the template
+     *
+     * @param   adminDivision   The object to validate
+     * @throws  AssertionError if not valid
+     */
+    assertEqual: function (adminDivision, test) {
+        assert(_.isObject(adminDivision), 'AdminDivision is not an object');
+        assert.strictEqual(adminDivision.name, test.name);
+        assert.strictEqual(adminDivision.abbrev, test.abbrev);
+        assert.strictEqual(adminDivision.country, test.country);
+    }
+};
+
+module.exports.city = {
+    get template() {
+        return {
+            name: 'Crazy',
+            adminDivision: 'Test',
+            adminDivisionId: null,
+            country: 'Imaginary'
+        };
+    },
+
+    /**
+     * Validates the city against the template
+     *
+     * @param   city    The city to validate
+     * @throws  AssertionError if not valid
+     */
+    assertEqual: function (city, test) {
+        assert(_.isObject(city), 'City is not an object');
+        assert.strictEqual(city.name, test.name);
+        assert.strictEqual(city.adminDivision, test.adminDivision);
+        assert.strictEqual(city.adminDivisionId, test.adminDivisionId);
+        assert.strictEqual(city.country, test.country);
+    }
+};
+
+module.exports.country = {
+    get template() {
+        return {
+            name: 'Imaginary',
+            abbrev: 'IG'
+        };
+    },
+
+    /**
+     * Validates the country against the template
+     *
+     * @param   country     The country to validate
+     * @throws  AssertionError if not valid
+     */
+    assertEqual: function (country, test) {
+        assert(_.isObject(country), 'Country is not an object');
+        assert.strictEqual(country.name, test.name);
+        assert.strictEqual(country.abbrev, test.abbrev);
     }
 };
 

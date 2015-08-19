@@ -9,8 +9,8 @@ const TABLE = 'country';
 const ABBREV_INDEX = 'abbrev';
 
 let Country = thinky.createModel(TABLE, schema, {
-    // No extra fields allowed
-    enforce_extra: 'strict'
+    pk: 'name', // Primary key is name
+    enforce_extra: 'strict' // No extra fields allowed
 });
 
 Country.ensureIndex(ABBREV_INDEX);
@@ -21,7 +21,19 @@ Country.defineStatic('findByName', function *(name) {
     try {
         result = yield Country.get(name);
     } catch(error) {
-        console.error(error);
+        console.error(error.message);
+    }
+
+    return result;
+});
+
+Country.defineStatic('findByAbbrev', function *(abbrev) {
+    let result = [];
+
+    try {
+        result = yield Country.getAll(abbrev, { index: ABBREV_INDEX });
+    } catch (error) {
+        console.error(error.message);
     }
 
     return result;
