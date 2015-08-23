@@ -11,6 +11,7 @@ let _          = require('lodash');
 let superagent = require('supertest');
 let app        = require(basedir + 'app');
 let master     = require(basedir + 'tests/test-master');
+let Session    = require(basedir + 'models/session');
 let User       = require(basedir + 'models/user');
 
 require('chai').should();
@@ -41,6 +42,7 @@ describe('Authentication test', function () {
     after('Clean up database', function *() {
         let foundUser = yield User.findById(createdId);
         yield foundUser.delete();
+        yield Session.deleteAllSessions();
     });
 
     describe('Signup request', function () {

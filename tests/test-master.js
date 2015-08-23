@@ -364,7 +364,6 @@ module.exports.getTestToken = function (agent, email, cb) {
             if (err) {
                 throw err;
             }
-
             // Signup with the CSRF token
             csrf = res.body._csrf;
             agent.post('/api/auth/signup')

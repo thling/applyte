@@ -14,6 +14,7 @@ let app          = require(basedir + 'app');
 let master       = require(basedir + 'tests/test-master');
 let Program      = require(basedir + 'models/program');
 let School       = require(basedir + 'models/school');
+let Session      = require(basedir + 'models/session');
 let User         = require(basedir + 'models/user');
 let utils        = require(basedir + 'lib/utils');
 
@@ -56,6 +57,7 @@ describe('School API Routes', function () {
     after('clean up area categories and user', function *() {
         let foundUser = yield User.findById(userId);
         yield foundUser.delete();
+        yield Session.deleteAllSessions();
     });
 
     describe('Basic API access test', function () {

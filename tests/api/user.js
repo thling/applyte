@@ -13,6 +13,7 @@ let co         = require('co');
 let superagent = require('supertest');
 let app        = require(basedir + 'app');
 let master     = require(basedir + 'tests/test-master');
+let Session    = require(basedir + 'models/session');
 let User       = require(basedir + 'models/user');
 
 require('co-mocha');
@@ -57,6 +58,7 @@ describe('User API Routes', function () {
     after('clean up area categories and user', function *() {
         let adminUser = yield User.findById(adminId);
         yield adminUser.delete();
+        yield Session.deleteAllSessions();
     });
 
     describe('Basic API access test', function () {

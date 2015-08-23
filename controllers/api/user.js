@@ -256,7 +256,6 @@ module.exports.createUser = function *() {
             break;
         }
     }
-
     // Reject immediately for invalid requests
     if (!_.isEmpty(invalid) || hasMissingFields) {
         this.status = 400;
@@ -273,6 +272,7 @@ module.exports.createUser = function *() {
 
         try {
             yield user.save();
+
             this.status = 201;
             this.body = {
                 message: this.message,

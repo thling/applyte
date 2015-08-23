@@ -10,6 +10,8 @@ let koa        = require('koa');
 let logger     = require('koa-logger');
 let passport   = require('koa-passport');
 let session    = require('koa-generic-session');
+let RdbSession = require('koa-generic-session-rethinkdb');
+let rdbDash    = require('rethinkdbdash');
 let config     = require('./config');
 let router     = require('./routes');
 
@@ -40,8 +42,24 @@ module.exports = (function () {
         // Body parser for HTTP request parsing
         app.use(bodyParser());
 
+        // Create RethinkDB session store
+        let sessionStore = new RdbSession({
+            connection: rdbDash({
+                host: config.session.host,
+                port: config.session.port
+            }),
+            db: config.session.db,
+            table: config.session.table
+        });
+
+        sessionStore.setup();
+
         // Activates session
-        app.use(session(config.sessionOptions));
+        app.use(session({
+            key: config.session.key,
+            prefix: config.session.prefix,
+            store: sessionStore
+        }));
 
         // Configure CSRF utility
         csrf(app);

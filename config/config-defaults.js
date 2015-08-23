@@ -14,9 +14,13 @@ module.exports = {
     },
 
     // Session related options (base on koa-generic-session)
-    sessionOptions: {
+    session: {
         key: 'applyte.sid',
-        prefix: 'applyte:sess:'
+        prefix: 'applyte:sess:',
+        host: 'localhost',
+        port: 28015,
+        db: 'userSession',
+        table: 'session'
     },
 
     // Security configurations

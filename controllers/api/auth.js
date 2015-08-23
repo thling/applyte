@@ -85,6 +85,8 @@ module.exports.login = function *() {
             accessRights: user.accessRights
         };
 
+        this.session.userId = user.id;
+
         // Sign the token
         let token = jwt.sign(claim, config.security.jwtSecret, {
             expiresInMinutes: 60 * 24 * 7
@@ -136,7 +138,7 @@ module.exports.refreshToken = function *() {
             message: 'Unauthorized'
         };
     } else {
-        let user = yield User.findById(this.state.user.userId);
+        let user = yield User.findById(this.session.userId);
 
         let newClaim = {
             userId: this.state.user.userId,
