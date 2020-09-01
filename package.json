@@ -8,7 +8,7 @@
     "build": "node --harmony $(which gulp)"
   },
   "dependencies": {
-    "bcrypt": "^0.8.4",
+    "bcrypt": "^5.0.0",
     "bluebird": "^2.9.34",
     "co": "^4.6.0",
     "koa": "^0.21.0",
